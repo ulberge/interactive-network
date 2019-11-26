@@ -1,26 +1,25 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { Component } from 'react';
+
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+import Network from './Network';
 
-export default App;
+import loadLayer1 from './neuralNetwork';
+
+export default class App extends Component {
+  render() {
+    const layer1 = loadLayer1();
+    debugger;
+
+    return (
+      <div className="App">
+        <header className="App-header">
+          Network Trainer
+        </header>
+        <div>
+          <Network />
+        </div>
+      </div>
+    );
+  }
+}
