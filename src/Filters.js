@@ -31,6 +31,7 @@ export default class Filters extends Component {
     const filterGroups = this.tensorToArray(weightsTensor);
     const filters = filterGroups[neuronIndex];
 
+    console.log('filters', filters);
     // normalize across arrays
     let max = -Infinity;
     let min = Infinity;
@@ -47,6 +48,7 @@ export default class Filters extends Component {
       return (v - min) / (max - min);
     };
     const filtersNorm = filters.map(filter => filter.map(row => row.map(v => normalize(v, max, min))));
+    console.log('filtersNorm', filtersNorm);
 
     // Draw filters
     filtersNorm.forEach(filter => {

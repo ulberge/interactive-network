@@ -48,3 +48,7 @@ body #root {
 .corpus {
   text-align: left;
 }
+
+.outputs canvas {
+  margin: 4px;
+}

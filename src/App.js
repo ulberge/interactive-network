@@ -40,11 +40,14 @@ export default class App extends Component {
   async train() {
     const { layers, layerIndex, neuronIndex, data } = this.state;
     // compile the model using the previous layers and the current neuron and add a layer at the end?
-    const updatedLayer = await train(layers, layerIndex, neuronIndex, data);
+    const newLayers = await train(layers, layerIndex, neuronIndex, data);
+
+    console.log('softmax weights', newLayers[3].getWeights());
 
     // update the neuron weights with what we learned...
     this.setState({
-      layers: [...this.state.layers.splice(0, 1), updatedLayer]
+      // layers: [...this.state.layers.splice(0, 1), updatedLayer]
+      layers: newLayers.slice(0, 2)
     });
   }
 
@@ -77,7 +80,7 @@ export default class App extends Component {
               <Grid item xs={6}>
                 <Paper style={paperStyle}>
                   <h3>Make Data</h3>
-                  <MakeData imgs={data} addImages={(imgs, label) => this.addImages(imgs, label)} />
+                  <MakeData imgs={data} addImages={(imgs, label) => this.addImages(imgs, label)} layers={layers} />
                 </Paper>
               </Grid>
               <Grid item xs={3}>
