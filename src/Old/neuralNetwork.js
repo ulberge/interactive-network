@@ -118,7 +118,7 @@ async function getModel(layers, layerIndex, neuronIndex) {
 
   // add softmax after
   model.add(tf.layers.flatten());
-  model.add(tf.layers.dense({units: 2, activation: 'softmax'}));
+  model.add(tf.layers.dense({units: 1, activation: 'linear'}));
 
   return model;
 }
@@ -137,7 +137,7 @@ function convertToTensor(data, shuffle=true) {
     const labels = data.map(d => d[1]);
 
     const inputTensor = tf.tensor4d(nj.array(inputs).reshape([inputs.length, 45, 45, 1]).tolist());
-    const labelTensor = tf.oneHot(tf.tensor1d(labels, 'int32'), 2);
+    const labelTensor = tf.tensor1d(labels, 'int32');
 
     return {
       xs: inputTensor,
@@ -150,7 +150,8 @@ async function trainModel(model, trainData, testData, epochs=1) {
   // Prepare the model for training.
   model.compile({
     optimizer: tf.train.adam(),
-    loss: tf.losses.meanSquaredError,
+    // loss: tf.losses.meanSquaredError,
+    loss: tf.losses.softmaxCrossEntropy,
     metrics: ['accuracy'],
   });
 

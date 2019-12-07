@@ -1,0 +1,45 @@
+body {
+  background-color: #fff;
+}
+
+body #root {
+  color: #000;
+}
+
+canvas {
+  border: 1px solid #ababab;
+  -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+  -moz-user-select: none; /* mozilla browsers */
+  -khtml-user-select: none; /* webkit (konqueror) browsers */
+  -ms-user-select: none; /* IE10+ */
+  user-select: none;
+  margin: 4px;
+}
+
+.App {
+  text-align: center;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 1;
+}
+
+.drawing canvas {
+  border: 1px solid #ababab;
+}
+
+.kernelLabel {
+  font-size: 32px;
+  color: #222;
+}
+
+.editable canvas {
+
+}
+
+.channelsContainer canvas {
+  display: block;
+}
