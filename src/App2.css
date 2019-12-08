@@ -40,6 +40,24 @@ canvas {
 
 }
 
-.channelsContainer canvas {
+.channelsContainer canvas, .remainingCanvases canvas {
   display: block;
 }
+
+.examples canvas {
+  margin: 0 1.2px;
+}
+
+.neuronLink {
+  cursor: pointer;
+}
+
+.editNeuronContainer {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ababab;
+}
+
+.networkContainer {
+  padding-top: 20px;
+}
+

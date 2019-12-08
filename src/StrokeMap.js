@@ -3,73 +3,71 @@ import p5 from 'p5';
 
 export default class StrokeMap extends Component {
   componentDidMount() {
-    const { kernels } = this.props;
-
-    if (kernels) {
-      this._draw(kernels);
-    }
+    this.sketch = new p5(this.getSketch(), this.refs.image);
+    this._draw();
   }
 
   componentDidUpdate() {
-    const { kernels } = this.props;
+    this._draw();
+  }
 
-    if (kernels) {
-      this._draw(kernels);
+  _draw() {
+    if (!this.sketch._renderer) {
+      setTimeout(() => this._draw(), 10);
+      return;
     }
+
+    const { kernels, scale, size, subReceptiveField, stride } = this.props;
+    this.sketch.drawKernels(kernels, scale, size, subReceptiveField, stride);
   }
 
-  async _draw(kernels) {
-    this.refs.image.innerHTML = '';
-
-    const { scale, size, offset } = this.props;
-    new p5(this.getSketch(kernels, size, offset, scale), this.refs.image);
-  }
-
-  getSketch(kernels, size, offsetSize, scale) {
-    const h = size;
-    const w = size;
-
+  getSketch() {
     return (p) => {
       p.setup = () => {
-        p.createCanvas(w * scale, h * scale);
+        const { size, scale } = this.props;
+        p.createCanvas(size * scale, size * scale);
+        p.background(255);
         p.noLoop();
       };
 
-      p.draw = () => {
+      p.draw = () => {};
+
+      p.drawKernels = (kernels, scale, size, subReceptiveField, stride) => {
+        p.clear();
+        p.push();
         p.stroke(0);
         p.strokeWeight(1);
         p.strokeCap(p.SQUARE);
-        p.push();
         p.scale(scale);
-        kernels.forEach((kernel, i) => drawType(i, kernel));
-        p.pop();
-      };
+        kernels.forEach((kernel, i) => {
+          const h = subReceptiveField / 6;
+          const f = subReceptiveField / 3;
+          const subStride = (subReceptiveField - f) / 2;
+          kernel.forEach((row, offsetY) => row.forEach((val, offsetX) => {
+            p.push();
+            p.translate(offsetX * stride, offsetY * stride);
+            p.stroke(0, 0, 0, val * 255);
+            // draw 3x3 grid matching first layer with opacity equal to value filtersMap
+            for (let y = 0; y < 3; y += 1) {
+              for (let x = 0; x < 3; x += 1) {
+                p.push();
+                p.translate(x * subStride, y * subStride);
+                const lines = [
+                  [ h, 0, h, f ], // vertical
+                  [ 0, h, f, h ], // horizontal
+                  [ 0, 0, f, f ], // diag1
+                  [ 0, f, f, 0 ], // diag2
+                ];
 
-      function drawType(type, filter) {
-        filter.forEach((row, offsetY) => row.forEach((val, offsetX) => {
-          p.push();
-          p.translate(offsetX * offsetSize, offsetY * offsetSize);
-
-          p.stroke(0, 0, 0, val * 255);
-          // draw 3x3 grid matching first layer with opacity equal to value kernels
-          for (let y = 0; y < 3; y += 1) {
-            for (let x = 0; x < 3; x += 1) {
-              p.push();
-              p.translate(x * 5, y * 5);
-              const lines = [
-                [ 2.5, 0, 2.5, 5 ], // vertical
-                [ 0, 2.5, 5, 2.5 ], // horizontal
-                [ 0, 0, 5, 5 ], // diag1
-                [ 0, 5, 5, 0 ], // diag2
-              ];
-
-              p.line(...lines[type]);
-              p.pop();
+                p.line(...lines[i]);
+                p.pop();
+              }
             }
-          }
 
-          p.pop();
-        }));
+            p.pop();
+          }));
+        });
+        p.pop();
       }
     };
   }

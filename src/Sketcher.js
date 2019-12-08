@@ -3,12 +3,17 @@ import Grid from '@material-ui/core/Grid';
 import p5 from 'p5';
 
 import Boid from './boid';
-// import StrokeMap from './StrokeMap';
+import { scale3DArray } from './helpers';
 
-const h = 25;
-const w = 25;
+const h = 19;
+const w = 19;
+
+const stride = 5;
+const subReceptiveField = 9;
+
 const speed = 10;
-const threshold = 0.1;
+const threshold = 3;
+const maxLines = 3;
 
 /* global nj */
 
@@ -36,22 +41,23 @@ function getSketch(scale, pixelDensity) {
     }
 
     function drawType(type, filter) {
+      const h = subReceptiveField / 6;
+      const f = subReceptiveField / 3;
+      const subStride = (subReceptiveField - f) / 2;
       filter.forEach((row, offsetY) => row.forEach((val, offsetX) => {
         p.push();
-        p.translate(offsetX * 5, offsetY * 5);
+        p.translate(offsetX * stride, offsetY * stride);
         p.stroke(0, 0, 0, val * 255);
-
         // draw 3x3 grid matching first layer with opacity equal to value filtersMap
         for (let y = 0; y < 3; y += 1) {
           for (let x = 0; x < 3; x += 1) {
             p.push();
-            p.translate(x * 5, y * 5);
-
+            p.translate(x * subStride, y * subStride);
             const lines = [
-              [ 2.5, 0, 2.5, 5 ], // vertical
-              [ 0, 2.5, 5, 2.5 ], // horizontal
-              [ 0, 0, 5, 5 ], // diag1
-              [ 0, 5, 5, 0 ], // diag2
+              [ h, 0, h, f ], // vertical
+              [ 0, h, f, h ], // horizontal
+              [ 0, 0, f, f ], // diag1
+              [ 0, f, f, 0 ], // diag2
             ];
 
             p.line(...lines[type]);
@@ -78,10 +84,10 @@ function getGradientSketch(scale) {
       Object.keys(remainingMap).forEach(key => remainingMap[key].forEach((row, offsetY) => row.forEach((val, offsetX) => {
         p.push();
         p.scale(scale);
-        p.translate(offsetX * 5, offsetY * 5);
+        p.translate(offsetX * stride, offsetY * stride);
         p.fill(0, 0, 0, val * 150);
         p.noStroke();
-        p.rect(0, 0, 15, 15);
+        p.rect(0, 0, subReceptiveField, subReceptiveField);
         p.pop();
       })));
     }
@@ -92,17 +98,17 @@ function getBlockSketch(scale) {
   return (p) => {
     p.setup = () => {
       p.pixelDensity(1);
-      p.createCanvas(1, 1);
+      p.createCanvas(3 * scale, 3 * scale);
       p.noLoop();
       p.noStroke();
     };
 
     p.drawArr = (imgArr) => {
-      p.createCanvas(imgArr[0].length * scale, imgArr.length * scale);
       for (let y = 0; y < imgArr.length; y += 1) {
         for (let x = 0; x < imgArr[y].length; x += 1) {
-          p.fill(0, 0, 0, imgArr[y][x] * 255);
-          p.rect(x * scale, y * scale, scale * 5, scale);
+          // p.fill(0, 0, 0, imgArr[y][x] * 255);
+          p.fill(0, 0, 0, imgArr[y][x] * 100);
+          p.rect(x * scale, y * scale, scale, scale);
         }
       }
     };
@@ -141,7 +147,7 @@ export default class Sketcher extends Component {
 
     // clear canvases and reset boid
     this.canvases.forEach(p => p.clear());
-    this.boid = new Boid(this.drawing, [w, h]);
+    this.boid = new Boid(this.drawing, [w, h], maxLines, this.drawingOverlay);
 
     const { kernels } = this.props;
     // draw something on them
@@ -189,15 +195,26 @@ export default class Sketcher extends Component {
 
     // create extra canvases for processing
     this.drawingExact = new p5(getEmptySketch(1), this.refs.drawingExact, 1);
-    this.remainingSketch = new p5(getBlockSketch(25), this.refs.remaining);
+
+    const remScale = 15;
+    this.remainingSketches = kernels.map((kernel, i) => {
+      return new p5(getBlockSketch(remScale), this.refs.remaining);
+    });
+    this.remainingSketches2 = kernels.map((kernel, i) => {
+      return new p5(getBlockSketch(remScale), this.refs.remaining2);
+    });
+    this.remainingSketches3 = kernels.map((kernel, i) => {
+      return new p5(getBlockSketch(remScale), this.refs.remaining3);
+    });
 
     this.canvases = [
       ...this.channelSketches, ...this.channelGradients, ...this.channelOverlays,
-      this.drawing, this.drawingOverlay, this.drawingExact, this.remainingSketch
+      this.drawing, this.drawingOverlay, this.drawingExact,
+      ...this.remainingSketches, ...this.remainingSketches2, ...this.remainingSketches3
     ];
 
     // initialize boid
-    this.boid = new Boid(this.drawing, [w, h]);
+    this.boid = new Boid(this.drawing, [w, h], maxLines, this.drawingOverlay);
   }
 
   animate() {
@@ -208,19 +225,23 @@ export default class Sketcher extends Component {
       return gradMagnitude;
     });
 
+    this.drawingOverlay.clear();
+    this.channelOverlays.forEach(p => p.clear());
     this.boid.run(gradients);
     this.boid.drawBoid(this.drawingOverlay);
     this.channelOverlays.forEach(p => this.boid.drawBoid(p));
     gradients.forEach(v => this.boid.drawVector(this.drawingOverlay, v));
 
-    const remaining = this.updateGradients();
 
-    // If no strong gradients left
-    let sum = 0;
-    remaining.forEach(kernel => kernel.forEach(row => row.forEach(val => sum += val)));
-    if (sum <= threshold) {
-      // done...
-      this.boid.dieOnNextWall = true;
+    if (this.boid.shouldUpdateGradients()) {
+      // Update gradients based on new marks
+      const { total } = this.updateGradients();
+
+      // If no strong gradients left
+      if (total > threshold) {
+        // done, but let line finish drawing...
+        this.boid.dieOnNextWall = true;
+      }
     }
 
     if (!this.boid.dead) {
@@ -229,8 +250,8 @@ export default class Sketcher extends Component {
       }, speed);
     } else {
       // clear boid
-      // this.drawingOverlay.clear();
-      this.reset();
+      this.drawingOverlay.clear();
+      // this.reset();
     }
   }
 
@@ -244,22 +265,38 @@ export default class Sketcher extends Component {
   }
 
   updateGradients() {
-    const { convnet, kernels } = this.props;
+    const { convnet, kernels, layerIndex, neuronIndex } = this.props;
 
     // Get current state of canvas as 2D array
     const input = this.drawing.get();
     input.resize(this.drawingExact.width, this.drawingExact.height);
+    this.drawingExact.clear();
     this.drawingExact.image(input, 0, 0);
     this.drawingExact.loadPixels();
     const imgArr = this.format(this.drawingExact.pixels, [this.drawingExact.height, this.drawingExact.width]);
 
     // Evaluate with network
     const layerOutputs = convnet.eval(imgArr);
-    // Get modifier for active neuron
-    const total = layerOutputs[1][0];
+
+    // // Get modifier for active neuron
+    // // Multiply output of previous layer by filters
+    const out = layerOutputs[layerIndex - 1];
+    // previousLayerOutput.forEach((out, i) => {
+    //   const kernel = kernels[i];
+
+    //   // compare the activations of the previous layer and the sensitivity of this neuron
+    //   // to see how well the directions (the true representation) match
+    //   const remaining = out.map((row, y) => row.map((col, x) => kernel[y][x] - outScaled[y][x]));
+    // });
+    const outScaled = scale3DArray(out);
+    // const remaining = outScaled.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => kernels[i][y][x] - col)));
+    const remaining = out.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels[i][y][x] - col))));
+
+    // total activation of this neuron...
+    const total = layerOutputs[layerIndex][neuronIndex][0][0];
 
     // Calculate remaining map
-    const remaining = kernels.map(kernel => kernel.map((row, i) => row.map((val, j) => Math.max(0, val - total[i][j]))));
+    // const remaining = kernels.map(kernel => kernel.map((row, i) => row.map((val, j) => Math.max(0, val - total[i][j]))));
 
     // Update remaining gradients
     this.channelSketches.forEach((p, i) => {
@@ -274,9 +311,21 @@ export default class Sketcher extends Component {
       remainingMapFiltered[i] = remaining[i];
       p.drawFiltersMap(remainingMapFiltered);
     });
-    this.remainingSketch.drawArr(total.map(row => row.map(val => val / 3)));
 
-    return remaining;
+    this.remainingSketches.forEach((p, i) => {
+      p.clear();
+      p.drawArr(out[i]);
+    });
+    // this.remainingSketches2.forEach((p, i) => {
+    //   p.clear();
+    //   p.drawArr(outScaled[i]);
+    // });
+    this.remainingSketches3.forEach((p, i) => {
+      p.clear();
+      p.drawArr(remaining[i]);
+    });
+
+    return { remaining, total };
   }
 
   render() {
@@ -287,9 +336,12 @@ export default class Sketcher extends Component {
     return (
       <Grid container alignItems="center" spacing={2}>
         <Grid>
+          <div ref="remaining" className="canvasContainer remainingCanvases"></div>
+        </Grid>
+        <Grid>
           { kernels.map((kernel, i) => (
             <Grid key={i} container>
-              <Grid item xs={4} style={{ position: 'relative' }}>
+              <Grid item style={{ position: 'relative' }}>
                 <div ref={'channel' + i} className="canvasContainer"></div>
                 <div ref={'channelGradient' + i} className="overlay canvasContainer"></div>
                 <div ref={'channelOverlay' + i} className="overlay canvasContainer"></div>
@@ -302,10 +354,11 @@ export default class Sketcher extends Component {
             <div ref="drawing" className="drawing canvasContainer"></div>
             <div ref="drawingOverlay" className="overlay drawing canvasContainer"></div>
           </div>
-          <div style={{ position: 'relative', display: 'none' }}>
-            <div ref="drawingExact" className="drawing canvasContainer"></div>
-            <div ref="remaining" className="canvasContainer"></div>
-          </div>
+        </Grid>
+        <Grid style={{ position: 'relative', display: 'none' }}>
+          <div ref="drawingExact" className="drawing canvasContainer"></div>
+          <div ref="remaining2" className="canvasContainer"></div>
+          <div ref="remaining3" className="canvasContainer"></div>
         </Grid>
       </Grid>
     );

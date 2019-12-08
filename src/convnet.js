@@ -16,30 +16,34 @@ export default class ConvNet {
     const layer1 = tf.layers.conv2d({
       filters: 4,
       kernelSize: 5, // 5x5
-      strides: 5,
+      strides: 1,
       padding: 'valid',
       weights: weights1Tensor,
       // activation: 'sigmoid',
-      activation: 'linear',
+      // activation: 'linear',
+      activation: 'relu',
       name: 'conv1'
     });
 
+    const layer1Pool = tf.layers.maxPooling2d({poolSize: 5});
+
     const kernel2 = this._weights['L2'];
     const weights2 = nj.array(kernel2).transpose(2, 3, 1, 0).tolist();
-    const biases2 = Array(1).fill(0);
+    const biases2 = Array(kernel2.length).fill(0);
     const weights2Tensor = [tf.tensor4d(weights2), tf.tensor1d(biases2)];
     const layer2 = tf.layers.conv2d({
-      filters: 1,
+      filters: kernel2.length,
       kernelSize: 3, // 3x3
       strides: 1,
       padding: 'valid',
       weights: weights2Tensor,
       // activation: 'sigmoid',
-      activation: 'linear',
+      // activation: 'linear',
+      activation: 'relu',
       name: 'conv2'
     });
 
-    return [layer1, layer2];
+    return [layer1, layer1Pool, layer2];
   }
 
   eval(imgArr) {
