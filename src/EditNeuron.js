@@ -8,8 +8,8 @@ import StrokeMap from './StrokeMap';
 
 const symbols = [
   ['|', '―', '⟍', '⟋'],
-  [],
-  ['a', 'b', 'c', 'd']
+  ['a', 'b', 'c', 'd'],
+  ['1', '2']
 ];
 const paperStyle = {
   padding: '2px 2px 0px 2px',
@@ -21,8 +21,8 @@ const paperStyle = {
 export default class EditNeuron extends Component {
 
   render() {
-    const { layer, layerIndex, neuronIndex, weights, convnet, onChange } = this.props;
-    const kernels = weights[layer][neuronIndex];
+    const { layers, layerIndex, neuronIndex, convnet, onChange } = this.props;
+    const kernels = layers[layerIndex].weights[neuronIndex];
 
     return (
       <Grid container alignItems="center" justify="flex-start" spacing={2} style={{ flexGrow: 1 }}>
@@ -30,7 +30,7 @@ export default class EditNeuron extends Component {
           { kernels.map((kernel, i) => (
             <Grid key={i} container alignItems="center" spacing={2} style={{ flexGrow: 1 }}>
               <Grid item xs={4}>
-                <span className="kernelLabel">{ symbols[layerIndex - 2][i] }</span>
+                <span className="kernelLabel">{ symbols[layerIndex - 1][i] }</span>
               </Grid>
               <Grid item xs={4}>
                 <Paper style={paperStyle}>
@@ -40,15 +40,15 @@ export default class EditNeuron extends Component {
             </Grid>
           )) }
         </Grid>
-        <Grid item>
+        {/*<Grid item>
           <Grid container alignItems="center" direction="column" spacing={2} style={{ flexGrow: 1 }}>
             <Grid item>
               <StrokeMap kernels={kernels} scale={5.49} size={19} subReceptiveField={9} stride={5} />
             </Grid>
           </Grid>
-        </Grid>
+        </Grid>*/}
         <Grid item>
-          <Sketcher kernels={kernels} weights={weights} convnet={convnet} scale={5.275} layerIndex={layerIndex} neuronIndex={neuronIndex} />
+          <Sketcher layers={layers} layerIndex={layerIndex} neuronIndex={neuronIndex} convnet={convnet} scale={5.275} />
         </Grid>
       </Grid>
     );

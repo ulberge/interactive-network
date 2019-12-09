@@ -5,7 +5,7 @@ import Boid from './boid';
 const h = 19;
 const w = 19;
 const speed = 0;
-const threshold = 5;
+const threshold = 7;
 const maxLines = 3;
 const stride = 5;
 const subReceptiveField = 9;
@@ -111,6 +111,7 @@ export default class SketcherMin extends Component {
         p.clear();
         p.drawKernel(remaining[i]);
       });
+      this.total = total;
 
       // If no strong gradients left
       if (total > threshold) {
@@ -124,6 +125,10 @@ export default class SketcherMin extends Component {
         this.animate();
       }, speed);
     } else {
+      // if not good enough, rerun
+      if (this.total < threshold) {
+        this.boid.reset();
+      }
       // const { onFinished } = this.props;
       // const image = this.drawing.get();
       // onFinished(image, total);

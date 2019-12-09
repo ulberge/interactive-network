@@ -1,9 +1,6 @@
-import { choose } from './helpers';
-
 export default class Boid {
-  constructor(p, bounds, maxLines, pOverlay) {
+  constructor(p, bounds, maxLines) {
     this.p = p;
-    this.pOverlay = pOverlay;
     this.remainingLines = maxLines;
     this.bounds = bounds;
     this.maxSpeed = 0.5;
@@ -17,10 +14,6 @@ export default class Boid {
     if (this.remainingLines <= 0) {
       this.dead = true;
       return;
-    }
-
-    if (this.p._renderer) {
-      this.p.clear();
     }
 
     if (Math.random() > 0.5) { // side wall
@@ -79,11 +72,7 @@ export default class Boid {
     p.pop();
   }
 
-  shouldUpdateGradients() {
-    return this.dominanceTimer <= 0;
-  }
-
-  run(gradients) {
+  run(force) {
     // draw stroke
     this.drawMark(this.p, this.pos, this.vel);
 
@@ -99,51 +88,10 @@ export default class Boid {
       }
     }
 
-    // get forces
-    const gradientVectors = gradients.map((mag, i) => {
-      // choose gradient direction that is closer to current velocity
-      const vecs = [
-        [[0, 1], [0, -1]],
-        [[1, 0], [0, -1]],
-        [[1, 1], [-1, -1]],
-        [[-1, 1], [1, -1]],
-      ];
-      const gradDirection1 = this.p.createVector(...vecs[i][0]);
-      const gradDirection2 = this.p.createVector(...vecs[i][1]);
-      let gradientVector;
-      if (Math.abs(this.vel.angleBetween(gradDirection1)) < Math.abs(this.vel.angleBetween(gradDirection2))) {
-        gradientVector = gradDirection1;
-      } else {
-        gradientVector = gradDirection2;
-      }
-
-      // return that gradient multiplied by its current magnitude
-      return gradientVector.normalize().mult(mag);
-    });
-
-    // choose dominant vector with probability equal to mag after timer expires
-    if (!this.dominanceTimer || this.dominanceTimer <= 0) {
-      this.dominantIndex = choose(gradients);
-      this.dominanceTimer = Math.floor(Math.random() * 3) + 3;
-    } else {
-      this.dominanceTimer--;
-    }
     // apply dominant gradient as acceleration
-    const acc = gradientVectors[this.dominantIndex].limit(this.maxAcc);
-
-    // choose vectors to use, must be a better way that does less of an average.
-    // const avgGradient = this.p.createVector(0, 0);
-    // gradientVectors.forEach(v => {
-    //   avgGradient.x += v.x;
-    //   avgGradient.y += v.y;
-    // });
-    // // apply gradient as acceleration
-    // const acc = avgGradient.limit(this.maxAcc);
-
-    if (this.pOverlay) {
-      gradientVectors.forEach(vec => this.drawVector(this.pOverlay, vec));
+    if (force) {
+      const acc = force.copy().limit(this.maxAcc);
+      this.vel.add(acc).limit(this.maxSpeed);
     }
-
-    this.vel.add(acc).limit(this.maxSpeed);
   }
 }

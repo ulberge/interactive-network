@@ -3,17 +3,37 @@ import * as tf from '@tensorflow/tfjs';
 /* global nj */
 
 export default class ConvNet {
-  constructor(weights) {
-    this._weights = weights;
+  constructor(data) {
+    this.data = data;
     this._layers = this.getLayers();
   }
 
+  getLayer(kernel) {
+    const weights = nj.array(kernel).transpose(2, 3, 1, 0).tolist();
+    const biases = Array(kernel.length).fill(0);
+    const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
+    const layer = tf.layers.conv2d({
+      filters: kernel.length,
+      kernelSize: 3, // 3x3
+      strides: 1,
+      padding: 'valid',
+      weights: weightsTensor,
+      // activation: 'sigmoid',
+      // activation: 'linear',
+      activation: 'relu'
+    });
+
+    return layer;
+  }
+
   getLayers() {
-    const kernel1 = this._weights['L1'];
+    const layers = [];
+
+    const kernel1 = this.data[0].weights;
     const weights1 = nj.array(kernel1).transpose(2, 3, 1, 0).tolist();
     const biases1 = Array(4).fill(0);
     const weights1Tensor = [tf.tensor4d(weights1), tf.tensor1d(biases1)];
-    const layer1 = tf.layers.conv2d({
+    layers.push(tf.layers.conv2d({
       filters: 4,
       kernelSize: 5, // 5x5
       strides: 1,
@@ -23,30 +43,18 @@ export default class ConvNet {
       // activation: 'linear',
       activation: 'relu',
       name: 'conv1'
-    });
+    }));
 
-    const layer1Pool = tf.layers.maxPooling2d({poolSize: 5});
+    layers.push(tf.layers.maxPooling2d({poolSize: 5}));
+    layers.push(this.getLayer(this.data[1].weights));
+    layers.push(this.getLayer(this.data[2].weights));
+    // layers.push(tf.layers.maxPooling2d({poolSize: 2}));
+    // layers.push(this.getLayer(this.data[3].weights));
 
-    const kernel2 = this._weights['L2'];
-    const weights2 = nj.array(kernel2).transpose(2, 3, 1, 0).tolist();
-    const biases2 = Array(kernel2.length).fill(0);
-    const weights2Tensor = [tf.tensor4d(weights2), tf.tensor1d(biases2)];
-    const layer2 = tf.layers.conv2d({
-      filters: kernel2.length,
-      kernelSize: 3, // 3x3
-      strides: 1,
-      padding: 'valid',
-      weights: weights2Tensor,
-      // activation: 'sigmoid',
-      // activation: 'linear',
-      activation: 'relu',
-      name: 'conv2'
-    });
-
-    return [layer1, layer1Pool, layer2];
+    return layers;
   }
 
-  eval(imgArr) {
+  eval(imgArr, maxLayer=4) {
     let imgArr_f = nj.array([imgArr]);
     imgArr_f = imgArr_f.reshape([1, imgArr.length, imgArr[0].length, 1]);
     imgArr_f = imgArr_f.tolist();
@@ -54,9 +62,11 @@ export default class ConvNet {
     let curr = tf.tensor4d(imgArr_f);
     let layerOutputs = [];
     this._layers.forEach((layer, i) => {
-      const result = layer.apply(curr);
-      layerOutputs.push(result.arraySync());
-      curr = result;
+      if (i <= maxLayer) {
+        const result = layer.apply(curr);
+        layerOutputs.push(result.arraySync());
+        curr = result;
+      }
     });
 
     // format output
