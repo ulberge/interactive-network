@@ -55,16 +55,19 @@ export default class ConvNet {
   }
 
   eval(imgArr, maxLayer=4) {
-    let imgArr_f = nj.array([imgArr]);
-    imgArr_f = imgArr_f.reshape([1, imgArr.length, imgArr[0].length, 1]);
-    imgArr_f = imgArr_f.tolist();
+    // let imgArr_f = nj.array([imgArr]);
+    // imgArr_f = imgArr_f.reshape([1, imgArr.length, imgArr[0].length, 1]);
+    // imgArr_f = imgArr_f.tolist();
+    const imgArr_f = [imgArr.map(row => row.map(col => [col]))];
 
     let curr = tf.tensor4d(imgArr_f);
-    let layerOutputs = [];
+    let layerOutputs = [[]];
     this._layers.forEach((layer, i) => {
       if (i <= maxLayer) {
         const result = layer.apply(curr);
-        layerOutputs.push(result.arraySync());
+        if (i !== 0) {
+          layerOutputs.push(result.arraySync());
+        }
         curr = result;
       }
     });

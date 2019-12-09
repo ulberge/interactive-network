@@ -58,6 +58,7 @@ export default class ArrayToImageEditable extends Component {
             imgArrCopy[scaledY][scaledX] = Math.max(0, imgArrCopy[scaledY][scaledX] - 0.2);
             e.preventDefault();
           }
+          drawImgArr();
           onChange(imgArrCopy);
         }
       }

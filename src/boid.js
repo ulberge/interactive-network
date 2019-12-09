@@ -1,12 +1,97 @@
+import { choose } from './helpers';
+
 export default class Boid {
-  constructor(p, bounds, maxLines) {
+  constructor(p, pExact, bounds, maxLines, kernels) {
     this.p = p;
+    this.pExact = pExact;
     this.remainingLines = maxLines;
     this.bounds = bounds;
-    this.maxSpeed = 0.5;
-    this.maxAcc = 0.5;
+    this.maxSpeed = 1;
+    this.maxAcc = 1;
     this.pos = null;
     this.vel = null;
+    this.kernels = kernels;
+
+    const totalKernel = [[0,0,0],[0,0,0],[0,0,0]];
+    kernels.forEach(kernel => kernel.map((row, y) => row.map((val, x) => totalKernel[y][x] += val)));
+    // remove center
+    totalKernel[1][1] = 0;
+    this.getHighProbStart = () => {
+      const startAreaIndex = choose(totalKernel.flat());
+      const startAreaX = startAreaIndex % 3;
+      const startAreaY = (startAreaIndex - startAreaX) / 3;
+
+      let x;
+      let y;
+      if (Math.random() < 0.9) {
+        if (startAreaX === 0) {
+          if (startAreaY === 0) {
+            if (Math.random() < 0.5) {
+              x = 0;
+              y = this.p.random(0, bounds[1] * 0.33);
+            } else {
+              y = 0;
+              x = this.p.random(0, bounds[0] * 0.33);
+            }
+          }
+          if (startAreaY === 1) {
+            x = 0;
+            y = this.p.random(bounds[1] * 0.33, bounds[1] * 0.67);
+          }
+          if (startAreaY === 2) {
+            if (Math.random() < 0.5) {
+              x = 0;
+              y = this.p.random(bounds[1] * 0.66, bounds[1]);
+            } else {
+              y = bounds[1];
+              x = this.p.random(0, bounds[0] * 0.33);
+            }
+          }
+        }
+        if (startAreaX === 1) {
+          if (startAreaY === 0) {
+            x = this.p.random(bounds[0] * 0.33, bounds[0] * 0.66);
+            y = 0;
+          }
+          if (startAreaY === 2) {
+            x = this.p.random(bounds[0] * 0.33, bounds[0] * 0.66);
+            y = bounds[1];
+          }
+        }
+        if (startAreaX === 2) {
+          if (startAreaY === 0) {
+            if (Math.random() < 0.5) {
+              x = bounds[0];
+              y = this.p.random(0, bounds[1] * 0.33);
+            } else {
+              y = 0;
+              x = this.p.random(bounds[0] * 0.67, bounds[0]);
+            }
+          }
+          if (startAreaY === 1) {
+            x = bounds[0];
+            y = this.p.random(bounds[1] * 0.33, bounds[1] * 0.67);
+          }
+          if (startAreaY === 2) {
+            if (Math.random() < 0.5) {
+              x = bounds[0];
+              y = this.p.random(bounds[1] * 0.66, bounds[1]);
+            } else {
+              y = bounds[1];
+              x = this.p.random(bounds[0] * 0.67, bounds[0]);
+            }
+          }
+        }
+      } else {
+        x = this.p.random(startAreaX * (bounds[0] / 3), (startAreaX + 1) * (bounds[0] / 3));
+        y = this.p.random(startAreaY * (bounds[1] / 3), (startAreaY + 1) * (bounds[1] / 3));
+      }
+      // console.log(startAreaX, startAreaY, x, y);
+
+      const vec = this.p.createVector(x, y);
+      return vec;
+    }
+
     this.reset();
   }
 
@@ -16,24 +101,27 @@ export default class Boid {
       return;
     }
 
-    if (Math.random() > 0.5) { // side wall
-      if (Math.random() > 0.5) { // left wall
-        this.pos = this.p.createVector(0, Math.random() * this.bounds[1]);
-      } else { // right wall
-        this.pos = this.p.createVector(this.bounds[0] - 0.01, Math.random() * this.bounds[1]);
-      }
-    } else { // top/bottom walls
-      if (Math.random() > 0.5) { // top wall
-        this.pos = this.p.createVector(Math.random() * this.bounds[0], 0);
-      } else { // bottom wall
-        this.pos = this.p.createVector(Math.random() * this.bounds[0], this.bounds[1] - 0.01);
-      }
-    }
+    this.pos = this.getHighProbStart();
+
+    // if (Math.random() > 0.5) { // side wall
+    //   if (Math.random() > 0.5) { // left wall
+    //     this.pos = this.p.createVector(0, Math.random() * this.bounds[1]);
+    //   } else { // right wall
+    //     this.pos = this.p.createVector(this.bounds[0] - 0.01, Math.random() * this.bounds[1]);
+    //   }
+    // } else { // top/bottom walls
+    //   if (Math.random() > 0.5) { // top wall
+    //     this.pos = this.p.createVector(Math.random() * this.bounds[0], 0);
+    //   } else { // bottom wall
+    //     this.pos = this.p.createVector(Math.random() * this.bounds[0], this.bounds[1] - 0.01);
+    //   }
+    // }
 
     const center = this.p.createVector(this.bounds[0] / 2, this.bounds[1] / 2);
     const vectorSomewhatToCenter = center.sub(this.pos).rotate((Math.PI / 2 * Math.random()) - Math.PI / 4);
     this.vel = vectorSomewhatToCenter.normalize().mult(this.maxSpeed);
 
+    this.isDrawing = false;
     this.remainingLines--;
   }
 
@@ -52,13 +140,15 @@ export default class Boid {
   }
 
   drawMark(p) {
-    p.push();
-    p.scale(p._scale);
-    p.stroke(0, 0, 0);
-    p.strokeWeight(1);
-    p.noFill();
-    p.line(this.pos.x, this.pos.y, this.pos.x + (0.25 * this.vel.x), this.pos.y + (0.25 * this.vel.y));
-    p.pop();
+    if (this.isDrawing) {
+      p.push();
+      p.scale(p._scale);
+      p.stroke(0, 0, 0);
+      p.strokeWeight(0.5);
+      p.noFill();
+      p.line(this.pos.x, this.pos.y, this.pos.x + this.vel.x, this.pos.y + this.vel.y);
+      p.pop();
+    }
   }
 
   drawVector(p, vec) {
@@ -67,7 +157,7 @@ export default class Boid {
     p.stroke(0, 0, 255, 150);
     p.strokeWeight(3 / p._scale);
     p.noFill();
-    const length = 10;
+    const length = 3;
     p.line(this.pos.x, this.pos.y, this.pos.x + (vec.x * length), this.pos.y + (vec.y * length));
     p.pop();
   }
@@ -75,6 +165,7 @@ export default class Boid {
   run(force) {
     // draw stroke
     this.drawMark(this.p, this.pos, this.vel);
+    this.drawMark(this.pExact, this.pos, this.vel);
 
     // update position
     this.pos.add(this.vel);

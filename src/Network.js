@@ -19,48 +19,42 @@ const paperStyle1 = {
   height: '16px'
 }
 
-const paperStyle2 = {
-  padding: '4px 1px 1px 4px',
-  background: '#fff',
-  border: '1px solid #ababab',
-  margin: '4px',
-  width: '64px',
-  height: '64px',
-}
-
 export default class Network extends Component {
 
   getExamples(kernels, layerIndex, neuronIndex) {
-    const { weights, convnet } = this.props;
-    const examples = new Array(4).fill(0).map((v, i) => {
-      return (
-        <Grid item key={'sketch_' + layerIndex + '_' + neuronIndex + '_' + i}>
-          <SketcherMin kernels={kernels} weights={weights} convnet={convnet} scale={1.4} layerIndex={layerIndex} neuronIndex={neuronIndex} />
-        </Grid>
-      )
-    });
+    const { layers, convnet } = this.props;
 
-    return (<Grid container spacing={0}>{examples}</Grid>);
+    return (
+      <div className="neuronBlock">
+        <div className="neuronRow">
+          <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={0} />
+          <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={1} />
+        </div>
+        <div className="neuronRow">
+          <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={2} />
+          <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={3} />
+        </div>
+      </div>
+    );
   }
 
   render() {
-    const { weights, selectNeuron } = this.props;
-    const layers = Object.keys(weights).map(key => weights[key]);
+    const { layers, selectNeuron, layerIndex, neuronIndex } = this.props;
 
     return (
       <Grid container alignItems="center" spacing={2}>
-        { layers.map((neurons, layerIndex) => {
+        { layers.map((layer, i) => {
           return (
-            <Grid key={'layer' + layerIndex} item>
+            <Grid key={'layer' + i} item>
               <Grid container direction="column" alignItems="center" spacing={0}>
-                { neurons.map((kernels, neuronIndex) => {
-                  return layerIndex === 0
-                    ? ( <div className="examples" key={'neuron_' + layerIndex + '_' + neuronIndex} style={paperStyle1}>
-                        { ['|', '―', '⟍', '⟋'][neuronIndex] }
+                { layer.weights.map((kernels, j) => {
+                  return i === 0
+                    ? ( <div className="examples" key={'neuron_' + i + '_' + j} style={paperStyle1}>
+                        { ['|', '―', '⟍', '⟋'][j] }
                       </div> )
-                    : ( <Paper className="examples neuronLink" key={'neuron_' + layerIndex + '_' + neuronIndex} style={paperStyle2} onClick={() => selectNeuron(layerIndex, neuronIndex)}>
-                      { this.getExamples(kernels, layerIndex, neuronIndex) }
-                      </Paper> )
+                    : ( <div className={'examples neuronLink ' + (layerIndex === i && neuronIndex === j ? 'selected' : '')} key={'neuron_' + i + '_' + j} onClick={() => selectNeuron(i, j)}>
+                      { this.getExamples(kernels, i, j) }
+                      </div> )
                 }) }
               </Grid>
             </Grid>

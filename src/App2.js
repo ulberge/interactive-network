@@ -13,19 +13,28 @@ const layers = getLayers();
 export default class App extends Component {
   state = {
     layers: layers,
-    layerIndex: 2,
+    layerIndex: 1,
     neuronIndex: 0
   }
 
   update(kernelIndex, imgArr) {
-    const { layers, layerIndex, neuronIndex } = this.state;
-    const updated = {
-      ...layers
-    };
-    updated[layerIndex].weights[neuronIndex][kernelIndex] = imgArr;
-    this.setState({
-      layers: updated
-    });
+    if (this.registerChange) {
+      clearTimeout(this.registerChange);
+    }
+    this.registerChange = setTimeout(() => {
+      const { layers, layerIndex, neuronIndex } = this.state;
+      const updated = [
+        ...layers
+      ];
+      updated[layerIndex].weights[neuronIndex][kernelIndex] = imgArr;
+      this.setState({
+        layers: updated
+      });
+    }, 200);
+  }
+
+  selectNeuron(layerIndex, neuronIndex) {
+    this.setState({ layerIndex, neuronIndex });
   }
 
   render() {
@@ -38,12 +47,15 @@ export default class App extends Component {
       <div className="App" style={{ margin: '20px' }}>
         <Grid container justify="center" spacing={2} style={{ flexGrow: 1 }} className="editNeuronContainer">
           <Grid item>
-            <EditNeuron layers={layers} layerIndex={layerIndex} neuronIndex={neuronIndex} convnet={convnet} onChange={(kernelIndex, imgArr) => this.update(kernelIndex, imgArr)} />
+            { layerIndex === 1
+              ? <EditNeuron key={1} layers={layers} layerIndex={layerIndex} neuronIndex={neuronIndex} convnet={convnet} onChange={(kernelIndex, imgArr) => this.update(kernelIndex, imgArr)} />
+              : <EditNeuron key={2} layers={layers} layerIndex={layerIndex} neuronIndex={neuronIndex} convnet={convnet} onChange={(kernelIndex, imgArr) => this.update(kernelIndex, imgArr)} />
+            }
           </Grid>
         </Grid>
         <Grid container justify="center" spacing={2} style={{ flexGrow: 1 }} className="networkContainer">
           <Grid item>
-            {/*<Network layers={layers} convnet={convnet} selectNeuron={(layerIndex, neuronIndex) => this.setState({ layerIndex, neuronIndex })} />*/}
+            <Network layers={layers} convnet={convnet} selectNeuron={(layerIndex, neuronIndex) => this.selectNeuron(layerIndex, neuronIndex)} layerIndex={layerIndex} neuronIndex={neuronIndex} />
           </Grid>
         </Grid>
       </div>

@@ -37,7 +37,7 @@ canvas {
 }
 
 .editable canvas {
-
+  cursor: pointer;
 }
 
 .channelsContainer canvas, .remainingCanvases canvas {
@@ -50,6 +50,11 @@ canvas {
 
 .neuronLink {
   cursor: pointer;
+  margin: 5px;
+}
+
+.neuronLink.selected {
+  border: 1px solid rgba(255, 0, 0, 150);
 }
 
 .editNeuronContainer {
@@ -61,3 +66,20 @@ canvas {
   padding-top: 20px;
 }
 
+.neuronRow > div {
+  display: inline-block;
+  margin-bottom: -4px;
+  margin-left: -1px;
+}
+.neuronRow canvas {
+  margin: 0;
+  display: block;
+}
+
+.neuronBlock {
+  margin: 3px 2px 3px 3px;
+}
+
+.acts canvas {
+  display: block;
+}

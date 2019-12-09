@@ -1,27 +1,32 @@
 import React, { Component } from 'react';
 import Grid from '@material-ui/core/Grid';
 import p5 from 'p5';
+import ReplayIcon from '@material-ui/icons/Replay';
+import IconButton from '@material-ui/core/IconButton';
+import PauseIcon from '@material-ui/icons/Pause';
+import PlayArrowIcon from '@material-ui/icons/PlayArrow';
 
 import Boid from './boid';
 import { choose } from './helpers';
 
-const speed = 100;
+const speed = 50;
 
 /* global nj */
 
 export default class Sketcher extends Component {
+  state = {
+    play: true
+  }
 
   componentDidMount() {
     this.setup();
-
-    // start animation
-    this.timeout = setTimeout(() => {
-      this.animate();
-    }, 0);
+    this.animate();
   }
 
   componentDidUpdate() {
-    this.reset();
+    if (this.state.play) {
+      this.reset();
+    }
   }
 
   reset() {
@@ -36,22 +41,21 @@ export default class Sketcher extends Component {
 
     // clear canvases and reset boid
     this.canvases.forEach(p => p.clear());
-    this.boid = new Boid(this.drawing, [w, h], maxLines);
+    this.boid = new Boid(this.drawing, this.drawingExact, [w, h], maxLines, kernels);
 
     // draw something on them
     this.channelSketches1.forEach((p, i) => {
       const remainingMapFiltered = {};
       remainingMapFiltered[i] = kernels[i];
+      p.clear();
       p.drawFiltersMap(remainingMapFiltered);
     });
     this.channelGradients1.forEach((p, i) => {
+      p.clear();
       p.drawKernel(kernels[i]);
     });
 
-    // start animation
-    this.timeout = setTimeout(() => {
-      this.animate();
-    }, 0);
+    this.animate();
   }
 
   setup() {
@@ -77,16 +81,20 @@ export default class Sketcher extends Component {
     });
 
     // create drawing area
-    const drawingScale = 10 * scale / w;
+    const drawingScale = 6 * scale / w;
     this.drawing = new p5(this.getEmptySketch(scale * drawingScale), this.refs.drawing);
     this.drawingOverlay = new p5(this.getEmptySketch(scale * drawingScale), this.refs.drawingOverlay);
 
     // create extra canvases for processing
     this.drawingExact = new p5(this.getEmptySketch(1), this.refs.drawingExact, 1);
 
+    this.acts = kernels.map((kernel, i) => {
+      return new p5(this.getBlockSketch(15), this.refs.acts);
+    });
+
     this.canvases = [
       ...this.channelSketches1, ...this.channelGradients1, ...this.channelOverlays1,
-      this.drawing, this.drawingOverlay, this.drawingExact
+      this.drawing, this.drawingOverlay, this.drawingExact, ...this.acts
     ];
 
     if (layerIndex > 1) {
@@ -103,25 +111,35 @@ export default class Sketcher extends Component {
     }
 
     // initialize boid
-    this.boid = new Boid(this.drawing, [w, h], maxLines);
+    this.boid = new Boid(this.drawing, this.drawingExact, [w, h], maxLines, kernels);
   }
 
   animate() {
     const { layers, layerIndex, convnet, neuronIndex } = this.props;
     const { threshold } = layers[layerIndex];
 
+    if (!this.drawing._renderer || this.channelGradients1.filter(p => !!p._renderer).length === 0) {
+      setTimeout(() => this.animate(), 10);
+      return;
+    }
+
     // clear overlays
     this.drawingOverlay.clear();
     this.channelOverlays1.forEach(p => p.clear());
 
-    // run boid
-    this.boid.run(this.force);
-
-    // render
-    this.boid.drawBoid(this.drawingOverlay);
-    this.channelOverlays1.forEach(p => this.boid.drawBoid(p));
     if (this.force) {
-      this.boid.drawVector(this.drawingOverlay, this.force.copy().mult(4));
+      // only start drawing once we hit something
+      if (this.force.mag() > 0.01) {
+        this.boid.isDrawing = true;
+      }
+
+      // run boid
+      this.boid.run(this.force);
+
+      // render
+      this.boid.drawBoid(this.drawingOverlay);
+      this.channelOverlays1.forEach(p => this.boid.drawBoid(p));
+      this.boid.drawVector(this.drawingOverlay, this.force.copy().mult(10));
     }
 
     // after timer ends, update force
@@ -132,7 +150,11 @@ export default class Sketcher extends Component {
       const layerOutputs = convnet.eval(imgArr, maxLayer);
 
       // check if we are done
-      const total = layerOutputs[layerIndex][neuronIndex][0][0];
+      const total = layerOutputs[layers[layerIndex].modelLayerIndex][neuronIndex][0][0];
+      this.total = total;
+      if (this.refs.total) {
+        this.refs.total.innerHTML = total.toFixed(2);
+      }
       // If no strong gradients left
       if (total > threshold) {
         // done, but let line finish drawing...
@@ -142,30 +164,28 @@ export default class Sketcher extends Component {
       // update gradient map
       this.updateForce(layerOutputs);
 
-      this.attentionTimer = Math.floor(Math.random() * 3) + 3;
+      this.attentionTimer = Math.floor(Math.random() * 2) + 2;
     } else {
       this.attentionTimer--;
     }
 
     if (!this.boid.dead) {
-      this.timeout = setTimeout(() => {
-        this.animate();
-      }, speed);
+      if (this.state.play) {
+        this.timeout = setTimeout(() => {
+          this.animate();
+        }, speed);
+      }
     } else {
       // clear boid
       this.drawingOverlay.clear();
       this.channelOverlays1.forEach(p => p.clear());
-      // this.reset();
+
+      console.log(this.total);
+      if (this.state.play) {
+        this.reset();
+      }
     }
   }
-
-  // Calculate the difference between the activations and the kernel at for given layer and channel
-  // getRemaining(layerOutputs, layers, layerIndex, neuronIndex) {
-  //   const kernels = layers[layerIndex].weights[neuronIndex];
-  //   const out = layerOutputs[modelLayerIndex - 1];
-  //   const remaining = out.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels[i][y][x] - col))));
-  //   return remaining;
-  // }
 
   getGradient(remaining, kernelIndex) {
     const p = this.channelGradients1[kernelIndex];
@@ -223,18 +243,21 @@ export default class Sketcher extends Component {
       // choose gradient direction that is closer to current velocity
       const vecs = [
         [[0, 1], [0, -1]],
-        [[1, 0], [0, -1]],
+        [[1, 0], [-1, 0]],
         [[1, 1], [-1, -1]],
         [[-1, 1], [1, -1]],
       ];
       const gradDirection1 = this.drawing.createVector(...vecs[i][0]);
       const gradDirection2 = this.drawing.createVector(...vecs[i][1]);
       let gradientVector;
-      if (Math.abs(this.boid.vel.angleBetween(gradDirection1)) < Math.abs(this.boid.vel.angleBetween(gradDirection2))) {
-        gradientVector = gradDirection1;
-      } else {
-        gradientVector = gradDirection2;
-      }
+      const options = [gradDirection1, gradDirection2];
+      const optionIndex = choose([Math.abs(this.boid.vel.angleBetween(gradDirection1)), Math.abs(this.boid.vel.angleBetween(gradDirection2))]);
+      gradientVector = options[optionIndex === 1 ? 0 : 1];
+      // if (Math.abs(this.boid.vel.angleBetween(gradDirection1)) < Math.abs(this.boid.vel.angleBetween(gradDirection2))) {
+      //   gradientVector = gradDirection1;
+      // } else {
+      //   gradientVector = gradDirection2;
+      // }
 
       // return that gradient multiplied by its current magnitude
       return gradientVector.normalize().mult(mag);
@@ -247,10 +270,10 @@ export default class Sketcher extends Component {
     const { layers, layerIndex, neuronIndex } = this.props;
 
     if (layerIndex === 1) {
-      const scopedOutputs = layerOutputs;
       // calculate remaining at level 1
       const kernels = layers[1].weights[neuronIndex];
       const out = layerOutputs[layers[1].modelLayerIndex - 1];
+      out.forEach((outKernel, i) => this.acts[i].drawArr(outKernel));
       const remaining = out.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels[i][y][x] - col))));
 
       // Generate the remaining map for each level for each channel showing remaining activation potential and fetch mag at location
@@ -265,6 +288,8 @@ export default class Sketcher extends Component {
     } else if (layerIndex === 2) {
       const kernels2 = layers[2].weights[neuronIndex];
       const out2 = layerOutputs[layers[2].modelLayerIndex - 1];
+      out2.forEach((outKernel, i) => this.acts[i].drawArr(outKernel));
+      debugger;
       const remaining2 = out2.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels2[i][y][x] - col))));
       const gradients2 = remaining2.map((kernel, i) => this.getGradientN(kernel, i));
 
@@ -378,24 +403,7 @@ export default class Sketcher extends Component {
           p.rect(0, 0, subReceptiveField, subReceptiveField);
           p.pop();
         }));
-      }
-
-      p.drawKernels = kernels => {
-        kernels.forEach((row, offsetY) => row.forEach((kernel, offsetX) => {
-          p.push();
-          p.scale(scale);
-          p.translate(offsetX, offsetY);
-          kernel.forEach((row, offsetY) => row.forEach((val, offsetX) => {
-            p.push();
-            p.translate(offsetX, offsetY);
-            p.fill(0, 0, 0, val * 150);
-            p.noStroke();
-            p.rect(0, 0, subReceptiveField, subReceptiveField);
-            p.pop();
-          }))
-          p.pop();
-        }));
-      }
+      };
     };
   }
 
@@ -420,13 +428,14 @@ export default class Sketcher extends Component {
     };
   }
 
-  getEmptySketch(scale) {
+  getEmptySketch(scale, pixelDensity=1) {
     const { layers, layerIndex } = this.props;
     const { w, h } = layers[layerIndex];
 
     return (p) => {
       p._scale = scale;
       p.setup = () => {
+        p.pixelDensity(pixelDensity);
         p.createCanvas(w * scale, h * scale);
         p.noLoop();
       };
@@ -444,13 +453,18 @@ export default class Sketcher extends Component {
 
   // Get current state of canvas as 2D array
   getCurrentImageArr() {
-    const input = this.drawing.get();
-    input.resize(this.drawingExact.width, this.drawingExact.height);
-    this.drawingExact.clear();
-    this.drawingExact.image(input, 0, 0);
+    // const input = this.drawing.get();
+    // input.resize(this.drawingExact.width, this.drawingExact.height);
+    // this.drawingExact.clear();
+    // this.drawingExact.image(input, 0, 0);
     this.drawingExact.loadPixels();
     const imgArr = this.format(this.drawingExact.pixels, [this.drawingExact.height, this.drawingExact.width]);
     return imgArr;
+  }
+
+  togglePlay() {
+    this.setState({ play: !this.state.play });
+    // this.reset();
   }
 
   render() {
@@ -489,9 +503,18 @@ export default class Sketcher extends Component {
             <div ref="drawing" className="drawing canvasContainer"></div>
             <div ref="drawingOverlay" className="overlay drawing canvasContainer"></div>
           </div>
+          <IconButton aria-label="generate batch" onClick={() => this.togglePlay()}>
+            { this.state.play
+              ? (<PauseIcon style={{ color: '#000' }}/>)
+              : (<PlayArrowIcon style={{ color: '#000' }}/>)
+            }
+            &nbsp;
+            <span ref="total" style={{ color: '#000', fontSize: '10px' }}></span>
+          </IconButton>
         </Grid>
-        <Grid style={{ position: 'relative', display: 'none' }}>
-          <div ref="drawingExact" className="drawing canvasContainer"></div>
+        <Grid style={{ position: 'relative', display: 'block' }}>
+          <div ref="acts" className="drawing canvasContainer acts" style={{ display: 'none' }}></div>
+          <div ref="drawingExact" className="drawing canvasContainer" style={{ display: 'none' }}></div>
         </Grid>
       </Grid>
     );

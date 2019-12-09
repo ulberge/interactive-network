@@ -11,12 +11,6 @@ const symbols = [
   ['a', 'b', 'c', 'd'],
   ['1', '2']
 ];
-const paperStyle = {
-  padding: '2px 2px 0px 2px',
-  background: '#fff',
-  border: '1px solid #ababab',
-  width: '70px'
-};
 
 export default class EditNeuron extends Component {
 
@@ -26,16 +20,19 @@ export default class EditNeuron extends Component {
 
     return (
       <Grid container alignItems="center" justify="flex-start" spacing={2} style={{ flexGrow: 1 }}>
-        <Grid item>
+        <Grid item style={{ marginRight: '40px' }}>
           { kernels.map((kernel, i) => (
             <Grid key={i} container alignItems="center" spacing={2} style={{ flexGrow: 1 }}>
+              {
+                layerIndex === 1
+                ? (
+                  <Grid item xs={4}>
+                    <span className="kernelLabel">{ symbols[layerIndex - 1][i] }</span>
+                  </Grid>
+                  ) : null
+              }
               <Grid item xs={4}>
-                <span className="kernelLabel">{ symbols[layerIndex - 1][i] }</span>
-              </Grid>
-              <Grid item xs={4}>
-                <Paper style={paperStyle}>
-                  <ArrayToImageEditable imgArr={kernel} scale={20} onChange={imgArr => onChange(i, imgArr)} />
-                </Paper>
+                <ArrayToImageEditable imgArr={kernel} scale={20} onChange={imgArr => onChange(i, imgArr)} />
               </Grid>
             </Grid>
           )) }

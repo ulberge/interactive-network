@@ -1,48 +1,12 @@
 import React, { Component } from 'react';
 import p5 from 'p5';
 import Boid from './boid';
+import { choose } from './helpers';
 
-const h = 19;
-const w = 19;
 const speed = 0;
-const threshold = 7;
-const maxLines = 3;
-const stride = 5;
-const subReceptiveField = 9;
 
 /* global nj */
-
-function getEmptySketch(scale) {
-  return (p) => {
-    p._scale = scale;
-    p.setup = () => {
-      p.pixelDensity(1);
-      p.createCanvas(w * scale, h * scale);
-      p.noLoop();
-    };
-  };
-}
-
-function getGradientSketch() {
-  return (p) => {
-    p.setup = () => {
-      p.pixelDensity(1);
-      p.createCanvas(w, h);
-      p.noLoop();
-    };
-
-    p.drawKernel = kernel => {
-      kernel.forEach((row, offsetY) => row.forEach((val, offsetX) => {
-        p.push();
-        p.translate(offsetX * stride, offsetY * stride);
-        p.fill(0, 0, 0, val * 150);
-        p.noStroke();
-        p.rect(0, 0, subReceptiveField, subReceptiveField);
-        p.pop();
-      }));
-    }
-  };
-}
+/* global window */
 
 export default class SketcherMin extends Component {
   componentDidMount() {
@@ -55,69 +19,89 @@ export default class SketcherMin extends Component {
   }
 
   reset() {
-    const { kernels } = this.props;
+    const { layers, layerIndex, neuronIndex } = this.props;
+    const kernels = layers[layerIndex].weights[neuronIndex];
+    const { w, h, maxLines } = layers[layerIndex];
+
     if (this.timeout) {
       clearTimeout(this.timeout);
     }
+    this.attentionTimer = 0;
 
     // clear canvases and reset boid
     this.canvases.forEach(p => p.clear());
-    this.boid = new Boid(this.drawing, [w, h], maxLines);
-
-    this.channelGradients.forEach((p, i) => {
-      p.clear();
-      p.drawKernel(kernels[i]);
-    });
+    this.boid = new Boid(this.drawing, this.drawingExact, [w, h], maxLines, kernels);
 
     this.animate();
   }
 
   setup() {
-    const { scale, kernels } = this.props;
-    this.drawing = new p5(getEmptySketch(scale), this.refs.drawing);
-    // set pixel density to 1 on sketch!
-    this.drawingExact = new p5(getEmptySketch(1), this.refs.drawingExact, 1);
+    const { layers, layerIndex, neuronIndex, scale } = this.props;
+    const kernels = layers[layerIndex].weights[neuronIndex];
+    const { w, h, maxLines } = layers[layerIndex];
 
-    this.channelGradients = kernels.map((kernel, i) => {
-      return new p5(getGradientSketch(scale / 2), this.refs['channelGradient' + i]);
+    this.drawing = new p5(this.getEmptySketch(scale), this.refs.drawing);
+    // set pixel density to 1 on sketch!
+    this.drawingExact = new p5(this.getEmptySketch(1), this.refs.drawingExact, 1);
+
+    this.channelGradients1 = kernels.map((kernel, i) => {
+      return new p5(this.getGradientSketch(1, 1), this.refs['channelGradient1' + i]);
     });
 
-    this.canvases = [ this.drawing, this.drawingExact, ...this.channelGradients ];
-    this.boid = new Boid(this.drawing, [w, h], maxLines);
+    this.canvases = [ this.drawing, this.drawingExact, ...this.channelGradients1 ];
+
+    if (layerIndex > 1) {
+      this.channelGradients2 = kernels.map((kernel, i) => {
+        const p = new p5(this.getGradientSketch(1, 2), this.refs['channelGradient2' + i]);
+        p._gradKey = i;
+        return p;
+      });
+      this.canvases.push(...this.channelGradients2);
+    }
+
+    this.boid = new Boid(this.drawing, this.drawingExact, [w, h], maxLines, kernels);
   }
 
   animate() {
-    if (!this.drawing._renderer || this.channelGradients.filter(p => !!p._renderer).length === 0) {
+    const { layers, layerIndex, convnet, neuronIndex, sketchIndex } = this.props;
+    const { threshold } = layers[layerIndex];
+
+    if (!this.drawing._renderer || this.channelGradients1.filter(p => !!p._renderer).length === 0) {
       setTimeout(() => this.animate(), 10);
       return;
     }
 
-    // Get gradient vectors at boid position
-    const gradients = this.channelGradients.map(p => {
-      const c = p.get(this.boid.pos.x, this.boid.pos.y);
-      const gradMagnitude = c[3] / 255; // magnitude of gradient equal to opacity
-      return gradMagnitude;
-    });
-
     // Draw marks
-    this.boid.run(gradients);
+    if (this.force) {
+      if (this.force.mag() > 0.01) {
+        this.boid.isDrawing = true;
+      }
 
-    if (this.boid.shouldUpdateGradients()) {
-      // Update gradients based on new marks
-      const { remaining, total } = this.updateGradients();
+      this.boid.run(this.force);
+    }
 
-      // Udpate gradient image
-      this.channelGradients.forEach((p, i) => {
-        p.clear();
-        p.drawKernel(remaining[i]);
-      });
+    // after timer ends, update force
+    if (!this.attentionTimer || this.attentionTimer <= 0) {
+      // evaluate current state
+      const imgArr = this.getCurrentImageArr();
+      const maxLayer = layers[layerIndex].modelLayerIndex;
+      const layerOutputs = convnet.eval(imgArr, maxLayer);
+
+      // check if we are done
+      const total = layerOutputs[layers[layerIndex].modelLayerIndex][neuronIndex][0][0];
       this.total = total;
-
       // If no strong gradients left
       if (total > threshold) {
         // done, but let line finish drawing...
         this.boid.dieOnNextWall = true;
       }
+
+      // update gradient map
+      this.updateForce(layerOutputs);
+
+      this.attentionTimer = Math.floor(Math.random() * 3) + 3;
+    } else {
+      this.attentionTimer--;
     }
 
     if (!this.boid.dead) {
@@ -125,13 +109,160 @@ export default class SketcherMin extends Component {
         this.animate();
       }, speed);
     } else {
-      // if not good enough, rerun
-      if (this.total < threshold) {
-        this.boid.reset();
+      // if did not pass threshold, try again
+      // console.log('final for layer ' + layerIndex + ' neuron ' + neuronIndex + ': ' + this.total);
+      // if (this.total < threshold) {
+      //   this.reset();
+      // } else {
+      //   console.log('Success! for layer ' + layerIndex + ' neuron ' + neuronIndex + ' sketch ' + sketchIndex + ': ' + this.total);
+      // }
+      console.log('Success! for layer ' + layerIndex + ' neuron ' + neuronIndex + ' sketch ' + sketchIndex + ': ' + this.total);
+      if (!window._data_sketches) {
+        window._data_sketches = {};
       }
-      // const { onFinished } = this.props;
-      // const image = this.drawing.get();
-      // onFinished(image, total);
+      if (!window._data_sketches[layerIndex + '_' + neuronIndex]) {
+        window._data_sketches[layerIndex + '_' + neuronIndex] = {
+          results: [Infinity, Infinity, Infinity, Infinity],
+          callbacks: [0, 0, 0, 0]
+        };
+      }
+
+      const dataStore = window._data_sketches[layerIndex + '_' + neuronIndex];
+      dataStore.results[sketchIndex] = this.total;
+      dataStore.callbacks[sketchIndex] = () => {
+        this.reset();
+      };
+
+      let min = Infinity;
+      dataStore.results.forEach(v => v < min ? min = v : null);
+      const lowestIndex = dataStore.results.indexOf(min);
+      dataStore.callbacks[lowestIndex]();
+    }
+  }
+
+
+  getGradient(remaining, kernelIndex) {
+    const p = this.channelGradients1[kernelIndex];
+    p.clear();
+    p.drawKernel(remaining);
+    const c = p.get(this.boid.pos.x * p._scale, this.boid.pos.y * p._scale);
+    const gradient = c[3] / 255; // magnitude of gradient equal to opacity
+    return gradient;
+  }
+
+  getGradientN(remaining, kernelIndex) {
+    const p = this.channelGradients2[kernelIndex];
+    p.clear();
+    p.drawKernel(remaining);
+    const c = p.get(this.boid.pos.x * p._scale, this.boid.pos.y * p._scale);
+    const gradient = c[3] / 255; // magnitude of gradient equal to opacity
+    return gradient;
+  }
+
+  /**
+   * Returns an empty 2D array
+   * @param {int} rows - Number of rows in the array
+   * @param {int} columns - Number of columns in the array
+   * @param defaultValue - Default value for new array cells
+   */
+  getEmpty2DArray(rows, columns, defaultValue = null) {
+    const arr = new Array(rows);
+    for (let i = 0; i < rows; i += 1) {
+      arr[i] = new Array(columns);
+      for (let j = 0; j < columns; j += 1) {
+        arr[i][j] = defaultValue;
+      }
+    }
+    return arr;
+  }
+
+  combineKernels(kernels) {
+    const arr2D = this.getEmpty2DArray(5, 5, 0);
+    kernels.forEach((row, offsetY) => row.forEach((kernel, offsetX) => {
+      kernel.forEach((rowInner, offsetYInner) => rowInner.forEach((val, offsetXInner) => {
+        arr2D[offsetY + offsetYInner][offsetX + offsetXInner] += val;
+      }))
+    }));
+    return arr2D;
+  }
+
+  getForces(gradients) {
+    // get forces
+    const forces = gradients.map((mag, i) => {
+      // choose gradient direction that is closer to current velocity
+      const vecs = [
+        [[0, 1], [0, -1]],
+        [[1, 0], [-1, 0]],
+        [[1, 1], [-1, -1]],
+        [[-1, 1], [1, -1]],
+      ];
+      const gradDirection1 = this.drawing.createVector(...vecs[i][0]);
+      const gradDirection2 = this.drawing.createVector(...vecs[i][1]);
+      let gradientVector;
+      if (Math.abs(this.boid.vel.angleBetween(gradDirection1)) < Math.abs(this.boid.vel.angleBetween(gradDirection2))) {
+        gradientVector = gradDirection1;
+      } else {
+        gradientVector = gradDirection2;
+      }
+
+      // return that gradient multiplied by its current magnitude
+      return gradientVector.normalize().mult(mag);
+    });
+
+    return forces;
+  }
+
+  updateForce(layerOutputs) {
+    const { layers, layerIndex, neuronIndex } = this.props;
+
+    if (layerIndex === 1) {
+      const scopedOutputs = layerOutputs;
+      // calculate remaining at level 1
+      const kernels = layers[1].weights[neuronIndex];
+      const out = layerOutputs[layers[1].modelLayerIndex - 1];
+      const remaining = out.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels[i][y][x] - col))));
+
+      // Generate the remaining map for each level for each channel showing remaining activation potential and fetch mag at location
+      const gradients = remaining.map((kernel, i) => this.getGradient(kernel, i));
+      const forces = this.getForces(gradients);
+
+      // At the location, select a channel with probability equal to magnitude
+      const channelIndex = choose(gradients);
+
+      // Set the force equal to this channel at bottom
+      this.force = forces[channelIndex];
+    } else if (layerIndex === 2) {
+      const kernels2 = layers[2].weights[neuronIndex];
+      const out2 = layerOutputs[layers[2].modelLayerIndex - 1];
+      const remaining2 = out2.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels2[i][y][x] - col))));
+      const gradients2 = remaining2.map((kernel, i) => this.getGradientN(kernel, i));
+
+      const channelIndexLayer2 = choose(gradients2);
+
+      // use the selected neuron to calculate the gradient like previous
+      const kernels1 = layers[1].weights[channelIndexLayer2];
+      const out1 = layerOutputs[layers[1].modelLayerIndex - 1];
+
+      // We can apply those kernels to the Layer 0 max pool output to make a gradient....
+      // produce the layer 1 original kernels modified by layer 2
+      const kernel2Selected = kernels2[channelIndexLayer2];
+      // for each channel in layer 1, produce a map multiplied by the kernel value
+      // should be a list of 3x3 kernels
+      const modifiedKernels = kernels1.map(kernel1 => kernel2Selected.map(row2 => row2.map(val2 => {
+        return kernel1.map(row1 => row1.map(val1 => val1 * val2 / 3));
+      })));
+
+      const projectedKernels = modifiedKernels.map(kernels2D => this.combineKernels(kernels2D));
+      const remaining = out1.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, projectedKernels[i][y][x] - col))));
+
+      const gradients = remaining.map((kernel, i) => this.getGradient(kernel, i));
+      const forces = this.getForces(gradients);
+
+      // At the location, select a channel with probability equal to magnitude
+      const channelIndexLayer1 = choose(gradients);
+
+      // Set the force equal to this channel at bottom
+      this.force = forces[channelIndexLayer1];
     }
   }
 
@@ -144,40 +275,74 @@ export default class SketcherMin extends Component {
     return gray_f.tolist();
   }
 
-  updateGradients() {
-    const { convnet, kernels, layerIndex, neuronIndex } = this.props;
+  getEmptySketch(scale, pixelDensity=1) {
+    const { layers, layerIndex } = this.props;
+    const { w, h } = layers[layerIndex];
 
-    // Get current state of canvas as 2D array
-    const input = this.drawing.get();
-    input.resize(this.drawingExact.width, this.drawingExact.height);
-    this.drawingExact.clear();
-    this.drawingExact.image(input, 0, 0);
+    return (p) => {
+      p._scale = scale;
+      p.setup = () => {
+        p.pixelDensity(pixelDensity);
+        p.createCanvas(w * scale, h * scale);
+        p.noLoop();
+      };
+    };
+  }
+
+  getGradientSketch(scale, layerIndexForSketch) {
+    const { layers, layerIndex } = this.props;
+    const { w, h } = layers[layerIndex];
+    const { subReceptiveField, stride } = layers[layerIndexForSketch];
+
+    return (p) => {
+      p._scale = scale;
+
+      p.setup = () => {
+        p.createCanvas(w * scale, h * scale);
+        p.noLoop();
+      };
+
+      p.drawKernel = kernel => {
+        kernel.forEach((row, offsetY) => row.forEach((val, offsetX) => {
+          p.push();
+          p.scale(scale);
+          p.translate(offsetX * stride, offsetY * stride);
+          p.fill(0, 0, 0, val * 150);
+          p.noStroke();
+          p.rect(0, 0, subReceptiveField, subReceptiveField);
+          p.pop();
+        }));
+      };
+    };
+  }
+
+  // Get current state of canvas as 2D array
+  getCurrentImageArr() {
+    // const input = this.drawing.get();
+    // input.resize(this.drawingExact.width, this.drawingExact.height);
+    // this.drawingExact.clear();
+    // this.drawingExact.image(input, 0, 0);
     this.drawingExact.loadPixels();
     const imgArr = this.format(this.drawingExact.pixels, [this.drawingExact.height, this.drawingExact.width]);
-
-    // Evaluate with network
-    const layerOutputs = convnet.eval(imgArr);
-
-    // Subtract current activation from original kernel weights to get remaining
-    // const out = layerOutputs[layerIndex - 1];
-    const out = layerOutputs[1];
-    const remaining = out.map((outKernel, i) => outKernel.map((row, y) => row.map((col, x) => Math.max(0, kernels[i][y][x] - col))));
-
-    // total activation of this neuron...
-    const total = layerOutputs[2][neuronIndex][0][0];
-    return { remaining, total };
+    return imgArr;
   }
 
   render() {
-    const { kernels } = this.props;
+    const { layers, layerIndex } = this.props;
     return (
       <div>
         <div ref="drawing" className="drawing canvasContainer"></div>
         <div style={{ position: 'relative', display: 'none' }}>
           <div ref="drawingExact" className="drawing canvasContainer"></div>
-          { kernels.map((kernel, i) => (
-            <div key={i} ref={'channelGradient' + i} className="overlay canvasContainer"></div>
+          { layers[0].weights.map((kernel, i) => (
+            <div key={i} ref={'channelGradient1' + i} className="canvasContainer"></div>
           )) }
+          { layerIndex > 1
+            ? new Array(4).fill(0).map((kernel, i) => (
+                <div key={'_2' + i} ref={'channelGradient2' + i} className="canvasContainer"></div>
+              ))
+            : null
+          }
         </div>
       </div>
     );
