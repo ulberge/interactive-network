@@ -503,14 +503,14 @@ export default class Sketcher extends Component {
             <div ref="drawing" className="drawing canvasContainer"></div>
             <div ref="drawingOverlay" className="overlay drawing canvasContainer"></div>
           </div>
-          <IconButton aria-label="generate batch" onClick={() => this.togglePlay()}>
+          {/*<IconButton aria-label="generate batch" onClick={() => this.togglePlay()}>
             { this.state.play
               ? (<PauseIcon style={{ color: '#000' }}/>)
               : (<PlayArrowIcon style={{ color: '#000' }}/>)
             }
             &nbsp;
             <span ref="total" style={{ color: '#000', fontSize: '10px' }}></span>
-          </IconButton>
+          </IconButton>*/}
         </Grid>
         <Grid style={{ position: 'relative', display: 'block' }}>
           <div ref="acts" className="drawing canvasContainer acts" style={{ display: 'none' }}></div>

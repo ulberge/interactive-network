@@ -35,3 +35,20 @@ export function scale3DArray(arr3D) {
   const arr3DScaled = arr3D.map(arr2D => arr2D.map(arr => arr.map(val => val / scale)));
   return arr3DScaled;
 }
+
+/**
+ * Returns an empty 2D array
+ * @param {int} rows - Number of rows in the array
+ * @param {int} columns - Number of columns in the array
+ * @param defaultValue - Default value for new array cells
+ */
+export function getEmpty2DArray(rows, columns, defaultValue = null) {
+  const arr = new Array(rows);
+  for (let i = 0; i < rows; i += 1) {
+    arr[i] = new Array(columns);
+    for (let j = 0; j < columns; j += 1) {
+      arr[i][j] = defaultValue;
+    }
+  }
+  return arr;
+}

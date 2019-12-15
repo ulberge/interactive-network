@@ -53,9 +53,9 @@ canvas {
   margin: 5px;
 }
 
-.neuronLink.selected {
+/*.neuronLink.selected {
   border: 1px solid rgba(255, 0, 0, 150);
-}
+}*/
 
 .editNeuronContainer {
   padding-bottom: 10px;
@@ -82,4 +82,12 @@ canvas {
 
 .acts canvas {
   display: block;
+}
+
+.makeData button {
+  color: #000;
+}
+
+.drawarea canvas {
+  cursor: crosshair;
 }

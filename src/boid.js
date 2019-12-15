@@ -7,7 +7,8 @@ export default class Boid {
     this.remainingLines = maxLines;
     this.bounds = bounds;
     this.maxSpeed = 1;
-    this.maxAcc = 1;
+    this.maxAcc = ((Math.random() * 2) ** 4) + 0.1;
+    this.accForce = 5;
     this.pos = null;
     this.vel = null;
     this.kernels = kernels;
@@ -181,7 +182,7 @@ export default class Boid {
 
     // apply dominant gradient as acceleration
     if (force) {
-      const acc = force.copy().limit(this.maxAcc);
+      const acc = force.copy().mult(this.accForce).limit(this.maxAcc);
       this.vel.add(acc).limit(this.maxSpeed);
     }
   }

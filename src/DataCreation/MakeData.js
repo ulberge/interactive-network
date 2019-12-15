@@ -83,23 +83,23 @@ export default class MakeData extends Component {
             p.line(px, py, x, y);
           } else {
             if (pressed) {
-              pressed = false;
-              const currBig = p.get();
-              currBig.resize(this.sketchToScale.width, this.sketchToScale.height);
-              this.sketchToScale.image(currBig, 0, 0);
-              this.sketchToScale.loadPixels();
-              const curr = this.sketchToScale.pixels;
-              const curr_f = this.format(curr, [h, w]);
-              const output = evalLayers(curr_f, this.props.layers);
-              console.log('input', curr_f);
+              // pressed = false;
+              // const currBig = p.get();
+              // currBig.resize(this.sketchToScale.width, this.sketchToScale.height);
+              // this.sketchToScale.image(currBig, 0, 0);
+              // this.sketchToScale.loadPixels();
+              // const curr = this.sketchToScale.pixels;
+              // const curr_f = this.format(curr, [h, w]);
+              // const output = evalLayers(curr_f, this.props.layers);
+              // console.log('input', curr_f);
 
-              let index = 0;
-              output.forEach((layer, layerIndex) => {
-                layer.forEach((neuron, neuronIndex) => {
-                  this.drawNeuron(output[layerIndex][neuronIndex], this.sketchActs[index]);
-                  index += 1;
-                });
-              });
+              // let index = 0;
+              // output.forEach((layer, layerIndex) => {
+              //   layer.forEach((neuron, neuronIndex) => {
+              //     this.drawNeuron(output[layerIndex][neuronIndex], this.sketchActs[index]);
+              //     index += 1;
+              //   });
+              // });
             }
           }
         }
@@ -204,9 +204,9 @@ export default class MakeData extends Component {
       <Grid container spacing={2} justify="center" style={{ marginTop: '20px' }} className="makeData">
         <Grid key={2} item xs={12} style={{ display: 'flex', margin: '0 10px' }} >
           <Grid container spacing={2} justify="center">
-            <Grid key={0} item xs={3} ref="canvas">
-              <div ref="canvasToScale" style={{ display: '' }}></div>
-              <div ref="outputs" className="outputs"></div>
+            <Grid key={0} item xs={9} ref="canvas">
+              <div ref="canvasToScale" style={{ display: 'none' }}></div>
+              <div ref="outputs" className="outputs" style={{ display: 'none' }}></div>
             </Grid>
             <Grid key={1} item xs={1} style={{ marginTop: '10px' }}>
               <Grid container spacing={2} direction="column" alignItems="center" justify="center">

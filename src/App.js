@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 
-import './App2.css';
+import './App.css';
 import Grid from '@material-ui/core/Grid';
 
 import EditNeuron from './EditNeuron';
 import Network from './Network';
 import ConvNet from './convnet';
 import getLayers from './layers';
+
+// import CompressionTest from './CompressionTest';
+
 
 const layers = getLayers();
 

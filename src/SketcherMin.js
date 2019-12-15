@@ -3,7 +3,7 @@ import p5 from 'p5';
 import Boid from './boid';
 import { choose } from './helpers';
 
-const speed = 0;
+const speed = 10;
 
 /* global nj */
 /* global window */

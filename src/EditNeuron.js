@@ -4,6 +4,7 @@ import Paper from '@material-ui/core/Paper';
 
 import ArrayToImageEditable from './ArrayToImageEditable';
 import Sketcher from './Sketcher';
+import SketcherMin from './SketcherMin';
 import StrokeMap from './StrokeMap';
 
 const symbols = [
@@ -46,6 +47,32 @@ export default class EditNeuron extends Component {
         </Grid>*/}
         <Grid item>
           <Sketcher layers={layers} layerIndex={layerIndex} neuronIndex={neuronIndex} convnet={convnet} scale={5.275} />
+        </Grid>
+        <Grid item className="neuronBlock">
+          <div className="neuronRow">
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={16} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={17} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={18} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={19} />
+          </div>
+          <div className="neuronRow">
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={4} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={5} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={6} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={7} />
+          </div>
+          <div className="neuronRow">
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={8} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={9} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={10} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={11} />
+          </div>
+          <div className="neuronRow">
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={12} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={13} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={14} />
+            <SketcherMin layers={layers} convnet={convnet} scale={1.5} layerIndex={layerIndex} neuronIndex={neuronIndex} sketchIndex={15} />
+          </div>
         </Grid>
       </Grid>
     );

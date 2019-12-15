@@ -5,15 +5,15 @@ np.set_printoptions(threshold=np.inf, precision=3)
 
 
 def process_img(name):
-    max_val = 16
-    img = cv2.imread(name + '.png')
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    img = cv2.resize(img, (11, 11), interpolation=cv2.INTER_AREA)
-    img = cv2.normalize(img, None, alpha=-1, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-    # img = (img - 127.0) / 255
-    img = img[3:8, 3:8]
-    save_img(img, name + '_test.png')
-    return img
+    # max_val = 16
+    # img = cv2.imread(name + '.png')
+    # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # img = cv2.resize(img, (11, 11), interpolation=cv2.INTER_AREA)
+    # img = cv2.normalize(img, None, alpha=-1, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+    # # img = (img - 127.0) / 255
+    # img = img[3:8, 3:8]
+    # save_img(img, name + '_test.png')
+    # return img
     # size = 31
     # img = cv2.imread(name + '.png')
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -23,6 +23,11 @@ def process_img(name):
     # save_img(img, name + '_test.png')
     # return img
 
+    img = cv2.imread(name + '.png')
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img = 1 - img / 255.0
+    return img
+
 
 def save_img(img, name):
     img = cv2.normalize(img, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
@@ -31,7 +36,8 @@ def save_img(img, name):
 
 
 if __name__ == '__main__':
-    imgs = [[process_img('g0')], [process_img('g2')], [process_img('g3')], [process_img('g1')]]
+    imgs = [process_img('corner0'), process_img('corner1'), process_img('corner2'), process_img('corner2')]
+    # imgs = [[process_img('g0')], [process_img('g2')], [process_img('g3')], [process_img('g1')]]
 
     print(repr(imgs).replace('array(', '').replace(')', '').replace('\n', '').replace(' ', '').replace(',dtype=float32', ''))
 
@@ -39,5 +45,4 @@ if __name__ == '__main__':
 
     # print(test)
     # save_img(test, 'test.png')
-
 
