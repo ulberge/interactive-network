@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
-import ArrayToImage from './ArrayToImage';
+import ArrayToImageAbs from './../ArrayToImageAbs';
 import * as tf from '@tensorflow/tfjs';
+import Grid from '@material-ui/core/Grid';
 
 /* global nj */
 
@@ -15,74 +16,36 @@ export default class CompressionTestOutput extends Component {
     // format output
     let out = nj.array(result[0]);
     out = out.transpose(2, 0, 1);
-    return out.tolist()[0];
-  }
-
-  doTest(imgArr, kernel, strides=1) {
-    if (!imgArr || imgArr.length === 0) {
-      return null;
-    }
-
-    const weights = nj.array(kernel).transpose(2, 3, 1, 0).tolist();
-    const biases = [0];
-    const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
-    const layer = tf.layers.conv2d({
-      filters: 1,
-      kernelSize: kernel[0][0].length,
-      strides: strides,
-      padding: 'valid',
-      weights: weightsTensor,
-      activation: 'relu',
-      name: 'conv1'
-    });
-
-    const output = this.eval(layer, imgArr);
-    return (<ArrayToImage imgArr={output} />);
-  }
-
-  doTest1(imgArr) {
-    const kernel = [
-      [
-        [
-          [1],
-        ],
-      ],
-    ];
-    return this.doTest(imgArr, kernel);
-  }
-
-  doTest2(imgArr) {
-    const kernel = [
-      [
-        [
-          [0.25, 0.25],
-          [0.25, 0.25]
-        ],
-      ],
-    ];
-    return this.doTest(imgArr, kernel);
-  }
-
-  doTest3(imgArr) {
-    const kernel = [
-      [
-        [
-          [0.25, 0.25],
-          [0.25, 0.25]
-        ],
-      ],
-    ];
-    return this.doTest(imgArr, kernel, 2);
+    return out.tolist();
   }
 
   render() {
-    const { imgArr } = this.props;
+    const { imgArr, filterSets, layers } = this.props;
+
+    let outputs = [];
+    if (imgArr && imgArr.length > 0) {
+      outputs = layers.map(layer => this.eval(layer, imgArr));
+    }
 
     return (
       <div>
-        <div>{ this.doTest1(imgArr) }</div>
-        <div>{ this.doTest2(imgArr) }</div>
-        <div>{ this.doTest3(imgArr) }</div>
+        <Grid item>
+          { filterSets.map((filterSet, setIndex) => {
+            const { numChannels, Lambda, gamma, filters } = filterSet;
+            const output = outputs[setIndex] || [];
+            return (
+              <div key={numChannels + '_' + Lambda + '_' + gamma}>
+                <div>
+                  <span style={{ fontSize: '8px' }}># ch: {numChannels}, L: {Lambda}, g: {gamma}  </span>
+                  { filters.map((filter, i) => (<ArrayToImageAbs key={i} imgArr={ filter } scale={4} />)) }
+                </div>
+                <div>
+                  { output.map((channel, i) => (<ArrayToImageAbs key={i} imgArr={ channel } scale={1} />)) }
+                </div>
+              </div>
+            )
+          })}
+        </Grid>
       </div>
     );
   }

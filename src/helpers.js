@@ -52,3 +52,60 @@ export function getEmpty2DArray(rows, columns, defaultValue = null) {
   }
   return arr;
 }
+
+export function getGaborSize(sigma, theta, gamma) {
+    const sigma_x = sigma;
+    const sigma_y = sigma / gamma;
+
+    // Bounding box
+    const nstds = 3;  // Number of standard deviation sigma
+    let xmax = Math.max(Math.abs(nstds * sigma_x * Math.cos(theta)), Math.abs(nstds * sigma_y * Math.sin(theta)));
+    xmax = Math.floor(Math.max(1, xmax));
+    let ymax = Math.max(Math.abs(nstds * sigma_x * Math.sin(theta)), Math.abs(nstds * sigma_y * Math.cos(theta)));
+    ymax = Math.floor(Math.max(1, ymax));
+    const xmin = -xmax;
+    const ymin = -ymax;
+
+    return Math.max(xmax - xmin, ymax - ymin);
+}
+
+// A port of Python gabor implementation to JS
+// https://en.wikipedia.org/wiki/Gabor_filter
+export function gabor(sigma, theta, Lambda, psi, gamma, windowSize) {
+    const sigma_x = sigma;
+    const sigma_y = sigma / gamma;
+
+    // Bounding box
+    const nstds = 3;  // Number of standard deviation sigma
+    let xmax = Math.max(Math.abs(nstds * sigma_x * Math.cos(theta)), Math.abs(nstds * sigma_y * Math.sin(theta)));
+    xmax = Math.floor(Math.max(1, xmax));
+    let ymax = Math.max(Math.abs(nstds * sigma_x * Math.sin(theta)), Math.abs(nstds * sigma_y * Math.cos(theta)));
+    ymax = Math.floor(Math.max(1, ymax));
+    const xmin = -xmax;
+    const ymin = -ymax;
+
+    const filter = getEmpty2DArray(windowSize, windowSize, 0);
+
+    const yOffset = Math.floor((windowSize - (ymax - ymin)) / 2);
+    const xOffset = Math.floor((windowSize - (xmax - xmin)) / 2);
+
+    const maxSize = Math.max(xmax - xmin, ymax -ymin);
+    if (windowSize < maxSize) {
+      console.log('Window size too small at ' + windowSize + '. Needs to be ' + maxSize);
+      return
+    } else {
+      // console.log('Window size is ' + windowSize + '. Could be ' + maxSize);
+    }
+    for (let y = ymin; y <= ymax; y += 1) {
+      for (let x = xmin; x <= xmax; x += 1) {
+        // Rotation
+        const x_theta = x * Math.cos(theta) + y * Math.sin(theta);
+        const y_theta = -x * Math.sin(theta) + y * Math.cos(theta);
+
+        const gb = Math.exp(-.5 * (x_theta ** 2 / sigma_x ** 2 + y_theta ** 2 / sigma_y ** 2)) * Math.cos(2 * Math.PI / Lambda * x_theta + psi);
+        filter[y - ymin + yOffset][x - xmin + xOffset] = gb;
+      }
+    }
+
+    return filter;
+}
