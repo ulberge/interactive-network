@@ -43,8 +43,10 @@ export function getEditableSketch(size, onChange, scale=1) {
         } else {
           if (pressed) {
             pressed = false;
-            p.loadPixels();
-            const imgArr = format(p.pixels, size);
+            const g = p.createGraphics(w, h);
+            g.image(p.get(), 0, 0, w, h);
+            g.loadPixels();
+            const imgArr = format(g.pixels, size);
             if (onChange) {
               onChange(imgArr);
             }
@@ -78,7 +80,14 @@ export function getArraySketch(imgArr, scale) {
       p.clear();
       for (let y = 0; y < h; y += 1) {
         for (let x = 0; x < w; x += 1) {
-          p.fill(((1 - imgArr[y][x]) / 2) * 255);
+          const v = ((1 - imgArr[y][x]) / 2) * 255;
+          if (v > 255) {
+            p.fill(255, 0, 0);
+          } else if (v < 0) {
+            p.fill(0, 0, 255);
+          } else {
+            p.fill(v);
+          }
           p.rect(x * scale, y * scale, scale, scale);
         }
       }

@@ -5,8 +5,8 @@ import { getEditableSketch } from './sketches';
 
 export default class EditableCanvas extends Component {
   componentDidMount() {
-    const { size, onChange } = this.props;
-    new p5(getEditableSketch(size, onChange), this.refs.canvas);
+    const { size, scale, onChange } = this.props;
+    new p5(getEditableSketch(size, onChange, scale), this.refs.canvas);
   }
 
   render() {
