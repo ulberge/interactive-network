@@ -1,3 +1,19 @@
+import * as tf from '@tensorflow/tfjs';
+
+/* global nj */
+
+
+// Returns the result of a given a layer applied to an image as a 2D array.
+export function eval2DArray(layer, imgArr) {
+  const imgArr_f = [imgArr.map(row => row.map(col => [col]))];
+  let curr = tf.tensor4d(imgArr_f);
+  const result = layer.apply(curr).arraySync();
+
+  // format output
+  let out = nj.array(result[0]);
+  out = out.transpose(2, 0, 1);
+  return out.tolist();
+}
 
 // make array add up to 1
 export function normalize(arr) {
@@ -71,7 +87,7 @@ export function getGaborSize(sigma, theta, gamma) {
 
 // A port of Python gabor implementation to JS
 // https://en.wikipedia.org/wiki/Gabor_filter
-export function gabor(sigma, theta, Lambda, psi, gamma, windowSize) {
+export function getGaborFilter(sigma, theta, lambda, psi, gamma, windowSize) {
     const sigma_x = sigma;
     const sigma_y = sigma / gamma;
 
@@ -89,23 +105,57 @@ export function gabor(sigma, theta, Lambda, psi, gamma, windowSize) {
     const yOffset = Math.floor((windowSize - (ymax - ymin)) / 2);
     const xOffset = Math.floor((windowSize - (xmax - xmin)) / 2);
 
-    const maxSize = Math.max(xmax - xmin, ymax -ymin);
-    if (windowSize < maxSize) {
-      console.log('Window size too small at ' + windowSize + '. Needs to be ' + maxSize);
-      return
-    } else {
-      // console.log('Window size is ' + windowSize + '. Could be ' + maxSize);
-    }
     for (let y = ymin; y <= ymax; y += 1) {
       for (let x = xmin; x <= xmax; x += 1) {
         // Rotation
         const x_theta = x * Math.cos(theta) + y * Math.sin(theta);
         const y_theta = -x * Math.sin(theta) + y * Math.cos(theta);
 
-        const gb = Math.exp(-.5 * (x_theta ** 2 / sigma_x ** 2 + y_theta ** 2 / sigma_y ** 2)) * Math.cos(2 * Math.PI / Lambda * x_theta + psi);
-        filter[y - ymin + yOffset][x - xmin + xOffset] = gb;
+        // restrict vals to center bulge and side dips
+        const cosVal = 2 * Math.PI / lambda * x_theta + psi;
+        let gb = 0;
+        if (Math.abs(cosVal) < (Math.PI * 1.5)) {
+          gb = Math.exp(-.5 * (x_theta ** 2 / sigma_x ** 2 + y_theta ** 2 / sigma_y ** 2)) * Math.cos(cosVal);
+        }
+
+        const yIndex = y - ymin + yOffset;
+        const xIndex = x - xmin + xOffset;
+        if (yIndex >= 0 && yIndex < windowSize && xIndex >= 0 && xIndex < windowSize) {
+          filter[y - ymin + yOffset][x - xmin + xOffset] = gb;
+        }
       }
     }
 
     return filter;
+}
+
+export function getGaborFilters(numChannels, lambda, gamma, sigma, windowSize) {
+  const thetaDelta = Math.PI / numChannels;
+  const filters = [];
+  for (let i = 0; i < numChannels; i += 1) {
+    const psi = 0; // offset
+    const theta = thetaDelta * i;
+    const filter = getGaborFilter(sigma, theta, lambda, psi, gamma, windowSize);
+    if (filter) {
+      filters.push(filter);
+    }
+  }
+  return filters;
+}
+
+export function getLayer(filters, strides=1) {
+  const kernel = filters.map(filter => [filter]);
+  const weights = nj.array(kernel).transpose(2, 3, 1, 0).tolist();
+  const biases = new Array(kernel.length).fill(0);
+  const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
+  const layer = tf.layers.conv2d({
+    filters: kernel.length,
+    kernelSize: filters[0].length,
+    strides: strides,
+    padding: 'valid',
+    weights: weightsTensor,
+    activation: 'relu',
+    name: 'conv1'
+  });
+  return layer;
 }
