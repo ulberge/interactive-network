@@ -152,7 +152,7 @@ export function getLayer(filters, strides=1) {
     filters: kernel.length,
     kernelSize: filters[0].length,
     strides: strides,
-    padding: 'valid',
+    padding: 'same',
     weights: weightsTensor,
     activation: 'relu',
     name: 'conv1'

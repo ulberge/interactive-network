@@ -6,12 +6,18 @@ import { getArraySketch } from './sketches';
 export default class Array2DView extends Component {
   componentDidMount() {
     const { imgArr, scale } = this.props;
-    new p5(getArraySketch(imgArr, scale), this.refs.image);
+    this.p = new p5(getArraySketch(), this.refs.image);
+    this.p.customDraw(imgArr, scale);
+  }
+
+  componentDidUpdate() {
+    const { imgArr, scale } = this.props;
+    this.p.customDraw(imgArr, scale);
   }
 
   render() {
     return (
-      <span ref="image"></span>
+      <div ref="image"></div>
     );
   }
 }

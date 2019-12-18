@@ -8,6 +8,7 @@ import { Provider } from 'react-redux';
 import store from './redux/store';
 
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
+import grey from '@material-ui/core/colors/grey';
 
 import './index.css';
 import * as serviceWorker from './serviceWorker';
@@ -15,7 +16,11 @@ import * as serviceWorker from './serviceWorker';
 import GaborExplorer from './gabor/GaborExplorer';
 import NetworkBuilder from './network/NetworkBuilder';
 
-const theme = createMuiTheme();
+const theme = createMuiTheme({
+  palette: {
+    primary: grey,
+  },
+});
 const history = createHashHistory();
 
 ReactDOM.render(

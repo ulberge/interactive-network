@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import Grid from '@material-ui/core/Grid';
 
-import EditableCanvas from '../common/EditableCanvas';
 import GaborFilters from './GaborFilters';
+import GaborFiltersControls from './GaborFiltersControls';
+import GaborDrawingInput from './GaborDrawingInput';
 import Layer from './Layer';
 
 import { getLayer, getGaborFilters } from '../common/helpers';
@@ -16,31 +17,38 @@ export default class GaborExplorer extends Component {
       gamma: 2,
       sigma: 1.1,
       windowSize: 5
-    }
+    },
+    selectedIndex: 1
   }
 
   render() {
-    const { imgArr, filterConfig } = this.state;
+    const { imgArr, filterConfig, selectedIndex } = this.state;
     const { numComponents, lambda, gamma, sigma, windowSize } = filterConfig;
-    const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * 0.5 * lambda, windowSize);
+
+    const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
 
     let layer = null;
-    if (filters && filters.length > 0) {
-      layer = getLayer(filters);
+    if (filters && filters.length > selectedIndex) {
+      layer = getLayer([filters[selectedIndex]]);
     }
 
     return (
-      <Grid container direction="column" spacing={4}>
-        <Grid item>
-          <GaborFilters onChange={update => this.setState({ filterConfig: { ...filterConfig, ...update }})} filterConfig={filterConfig} filters={filters} />
+      <Grid container spacing={4}>
+        <Grid item xs={2}>
+          <GaborFiltersControls
+            filterConfig={filterConfig} onChange={update => this.setState({ filterConfig: { ...filterConfig, ...update }})}
+           />
         </Grid>
-        <Grid item>
+        <Grid item xs={2} className="bordered-canvas">
+          <GaborFilters filters={filters} scale={90} selectedIndex={selectedIndex} onSelect={(selectedIndex) => this.setState({selectedIndex})} />
+        </Grid>
+        <Grid item xs={7}>
           <Grid container spacing={4}>
-            <Grid item className="bordered-canvas" xs={4}>
-              <EditableCanvas size={[80, 80]} scale={3} onChange={imgArr => this.setState({ imgArr })} />
+            <Grid item>
+              <GaborDrawingInput onChange={imgArr => this.setState({ imgArr })} />
             </Grid>
-            <Grid item xs={8}>
-              <Layer scale={1} layer={layer} imgArr={imgArr} />
+            <Grid item className="bordered-canvas">
+              <Layer scale={10} layer={layer} imgArr={imgArr} />
             </Grid>
           </Grid>
         </Grid>

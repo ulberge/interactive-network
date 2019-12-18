@@ -1,26 +1,32 @@
 import React from 'react';
-import Grid from '@material-ui/core/Grid';
-
-import GaborFiltersControls from './GaborFiltersControls';
+import PropTypes from 'prop-types';
 import Array2DView from '../common/Array2DView';
 
 const GaborFilters = props => {
-  const { filters, filterConfig } = props;
-  const { numComponents, lambda, gamma, sigma, windowSize } = filterConfig;
-  const filterScale = 100 / filters[0].length;
-  return (
-    <Grid container spacing={4}>
-      <Grid item xs={3}>
-        <GaborFiltersControls
-          numComponents={numComponents} lambda={lambda} gamma={gamma} sigma={sigma} windowSize={windowSize}
-          onChange={props.onChange}
-         />
-      </Grid>
-      <Grid item xs={9}>
-        { filters.map((filter, i) => <span key={numComponents + '_' + lambda + '_' + gamma + '_' + sigma + '_' + windowSize+ '_' + i} style={{ margin: '4px' }}><Array2DView imgArr={filter} scale={filterScale} /></span>) }
-      </Grid>
-    </Grid>
-  );
+  const { filters, scale, selectedIndex, onSelect } = props;
+
+  let filterScale = 1;
+  if (filters.length > 0 && scale) {
+    // keep same absolute  size regardless of filter size
+    filterScale = scale / filters[0].length;
+  }
+
+  return filters.map((filter, i) => (
+    <div
+      key={i}
+      className={'selectable ' + (i === selectedIndex ? 'selected' : '')}
+      style={{ margin: '4px', display: 'inline-block' }}
+      onClick={() => onSelect(i)}
+    >
+      <Array2DView imgArr={filter} scale={filterScale} />
+    </div>
+  ));
 }
+
+GaborFilters.propTypes = {
+  filters: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
+  scale: PropTypes.number,
+  selectedIndex: PropTypes.number
+};
 
 export default GaborFilters;

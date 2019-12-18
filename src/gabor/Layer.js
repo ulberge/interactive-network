@@ -3,7 +3,7 @@ import Array2DView from '../common/Array2DView';
 import { eval2DArray } from '../common/helpers';
 
 const Layer = props => {
-  const { imgArr, layer } = props;
+  const { imgArr, layer, scale } = props;
 
   let outputs = [];
   if (imgArr && imgArr.length > 0 && layer) {
@@ -12,7 +12,7 @@ const Layer = props => {
 
   return (
     <span>
-      { outputs.map((output, i) => <Array2DView key={i} imgArr={output} scale={1} />) }
+      { outputs.map((output, i) => <Array2DView key={i} imgArr={output} scale={scale} />) }
     </span>
   );
 }
