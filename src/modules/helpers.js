@@ -37,6 +37,10 @@ export function choose(arr) {
   }
 }
 
+export function deepCopy(arr) {
+  return JSON.parse(JSON.stringify(arr));
+}
+
 // normalize 3D array based on max positive value
 export function scale3DArray(arr3D) {
   let maxPos = 0;

@@ -1,6 +1,6 @@
 import React from 'react';
 import Array2DView from '../common/Array2DView';
-import { eval2DArray } from '../common/helpers';
+import { eval2DArray } from '../modules/helpers';
 
 const Layer = props => {
   const { imgArr, layer, scale } = props;

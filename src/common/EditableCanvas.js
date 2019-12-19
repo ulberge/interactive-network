@@ -1,12 +1,15 @@
 import React, { Component } from 'react';
 import p5 from 'p5';
 
-import { getEditableSketch } from './sketches';
+import { getEditableSketch } from '../modules/sketches';
 
 export default class EditableCanvas extends Component {
   componentDidMount() {
-    const { shape, strokeWidth, scale, onChange } = this.props;
-    new p5(getEditableSketch(shape, strokeWidth, onChange, scale), this.refs.canvas);
+    this.p = new p5(getEditableSketch(this.props), this.refs.canvas);
+  }
+
+  componentDidUpdate() {
+    this.p.updateConfig(this.props);
   }
 
   render() {

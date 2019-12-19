@@ -6,7 +6,7 @@ import GaborFiltersControls from './GaborFiltersControls';
 import GaborDrawingInput from './GaborDrawingInput';
 import Layer from './Layer';
 
-import { getLayer, getGaborFilters } from '../common/helpers';
+import { getLayer, getGaborFilters } from '../modules/helpers';
 
 export default class GaborExplorer extends Component {
   state = {
