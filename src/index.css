@@ -29,3 +29,14 @@ canvas {
 .selectable {
   cursor: pointer;
 }
+
+.overlay-container {
+  position: relative;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 1;
+}

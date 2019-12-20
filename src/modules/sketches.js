@@ -67,11 +67,11 @@ const getImgArr = (pixels, width) => {
  * @param {Number[]} shape - Real shape of the canvas
  * @param {Number[][][]} originalMarks - An array of marks, each of which is a series of points that will be connected with a line
  * @param {function} onChange - Callback on end of mark
- * @param {Number} strokeWidth - Width of lines
+ * @param {Number} strokeWeight - Width of lines
  * @param {Number} scale - Scale to draw the canvas
  */
 export function getEditableSketch(config) {
-  // a sketch that renders marks with the provided strokeWidth
+  // a sketch that renders marks with the provided strokeWeight
   // returns the rendered version
   // accepts a mark and returns the updated marks
 
@@ -89,7 +89,7 @@ export function getEditableSketch(config) {
         if (pts.length > 1) {
           for (let i = 1; i < pts.length; i += 1) {
             let curr = pts[i];
-            state.g.strokeWeight(state.strokeWidth);
+            state.g.strokeWeight(state.strokeWeight);
             state.g.stroke(0);
             state.g.line(prev[0] + state.offset, prev[1] + state.offset, curr[0] + state.offset, curr[1] + state.offset);
             prev = curr;
@@ -134,7 +134,7 @@ export function getEditableSketch(config) {
     }
 
     p.setup = () => {
-      const { shape, marks, onRender, onNewMark, strokeWidth, scale, offset } = config;
+      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset } = config;
 
       const [ h, w ] = shape;
       p.createCanvas(w * scale, h * scale);
@@ -148,12 +148,12 @@ export function getEditableSketch(config) {
       state.g.loadPixels();
 
       state.marks = marks.slice();
-      state.onNewMark = onNewMark;
-      state.onRender = onRender;
+      state.onNewMark = onNewMark || (() => {});
+      state.onRender = onRender || (() => {});
       state.shape = shape;
-      state.scale = scale;
-      state.strokeWidth = strokeWidth;
-      state.offset = offset;
+      state.scale = scale || 1;
+      state.strokeWeight = strokeWeight || 1;
+      state.offset = offset || 0;
 
       state.newMark = [];
 
@@ -177,7 +177,7 @@ export function getEditableSketch(config) {
     };
 
     p.updateConfig = config => {
-      const { shape, marks, onRender, onNewMark, strokeWidth, scale, offset } = config;
+      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset } = config;
 
       const [ h, w ] = shape;
       if ((h * scale) !== p.height || (w * scale) !== p.width) {
@@ -195,12 +195,12 @@ export function getEditableSketch(config) {
       }
 
       state.marks = marks.slice();
-      state.onNewMark = onNewMark;
-      state.onRender = onRender;
+      state.onNewMark = onNewMark || (() => {});
+      state.onRender = onRender || (() => {});
       state.shape = shape;
-      state.scale = scale;
-      state.strokeWidth = strokeWidth;
-      state.offset = offset;
+      state.scale = scale || 1;
+      state.strokeWeight = strokeWeight || 1;
+      state.offset = offset || 0;
 
       state.newMark = [];
 
@@ -260,6 +260,28 @@ export function getArraySketch() {
       p.stroke(255);
       p.noLoop();
     };
+  };
+}
+
+/**
+ * Returns an empty p5 sketch
+ */
+export function getEmptySketch() {
+  return (p) => {
+    p.setup = () => {
+      p.pixelDensity(1);
+      p.createCanvas(1, 1);
+      p.noLoop();
+    };
+
+    p.update = (shape, scale) => {
+      const [ h, w ] = shape;
+      if ((h * scale) !== p.height || (w * scale) !== p.width) {
+        p.resizeCanvas(w * scale, h * scale);
+      } else {
+        p.clear();
+      }
+    }
   };
 }
 

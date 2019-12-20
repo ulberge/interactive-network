@@ -19,7 +19,6 @@ const defaultMarks = [
 export default class GaborDrawingInput extends Component {
   state = {
     marks: deepCopy(defaultMarks),
-    strokeWidth: 1,
     offset: 0
   }
 
@@ -29,17 +28,17 @@ export default class GaborDrawingInput extends Component {
   }
 
   render() {
-    const { strokeWidth, marks, offset } = this.state;
-    const { onChange } = this.props;
+    const { marks, offset } = this.state;
+    const { onDraw, strokeWeight, onChangeStrokeWeight } = this.props;
     const strokeWidthBounds = [0.1, 3];
     const offsetBounds = [-0.5, 0.5];
 
     return (
       <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
         <Grid item className="bordered-canvas">
-          <EditableCanvas shape={[20, 20]} marks={marks} strokeWidth={strokeWidth} scale={10} offset={offset}
+          <EditableCanvas shape={[20, 20]} marks={marks} strokeWeight={strokeWeight} scale={10} offset={offset}
             onNewMark={newMark => this.setState({ marks: [...marks, newMark] })}
-            onRender={onChange}
+            onRender={onDraw}
           />
         </Grid>
         <Grid item>
@@ -53,7 +52,7 @@ export default class GaborDrawingInput extends Component {
             <Grid item xs>
               <div>Stroke</div>
               <Slider
-                value={strokeWidth}
+                value={strokeWeight}
                 track={false}
                 aria-labelledby="stroke width"
                 valueLabelDisplay="auto"
@@ -61,7 +60,7 @@ export default class GaborDrawingInput extends Component {
                 step={0.1}
                 min={strokeWidthBounds[0]}
                 max={strokeWidthBounds[1]}
-                onChange={(event, strokeWidth) => this.setState({ strokeWidth })}
+                onChange={(event, strokeWeight) => onChangeStrokeWeight(strokeWeight)}
               />
               <div>Offset</div>
               <Slider
@@ -84,5 +83,7 @@ export default class GaborDrawingInput extends Component {
 }
 
 GaborDrawingInput.propTypes = {
-  onChange: PropTypes.func.isRequired
+  onChangeStrokeWeight: PropTypes.func.isRequired,
+  onDraw: PropTypes.func.isRequired,
+  strokeWeight: PropTypes.number.isRequired,
 };

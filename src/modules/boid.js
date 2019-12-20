@@ -28,7 +28,7 @@ export default class Boid {
     if (this.isDrawing) {
       p.push();
 
-      p.stroke(0, 0, 0);
+      p.stroke(0);
       p.strokeWeight(this.diameter);
       p.noFill();
       p.line(this.pos.x, this.pos.y, this.pos.x - this.vel.x, this.pos.y - this.vel.y);

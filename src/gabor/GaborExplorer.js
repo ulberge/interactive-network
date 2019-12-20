@@ -4,9 +4,11 @@ import Grid from '@material-ui/core/Grid';
 import GaborFilters from './GaborFilters';
 import GaborFiltersControls from './GaborFiltersControls';
 import GaborDrawingInput from './GaborDrawingInput';
-import Layer from './Layer';
+import Channels from './Channels';
 
-import { getLayer, getGaborFilters } from '../modules/helpers';
+import Array2DDraw from '../common/Array2DDraw';
+
+import { getLayer, getGaborFilters, eval2DArray } from '../modules/helpers';
 
 export default class GaborExplorer extends Component {
   state = {
@@ -18,18 +20,24 @@ export default class GaborExplorer extends Component {
       sigma: 1.1,
       windowSize: 7,
       bias: 0
-    }
+    },
+    strokeWeight: 1
   }
 
   render() {
-    const { imgArr, filterConfig } = this.state;
+    const { imgArr, filterConfig, strokeWeight } = this.state;
     const { numComponents, lambda, gamma, sigma, windowSize, bias } = filterConfig;
 
     const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
 
     let layer = null;
+    let channels = [];
     if (filters) {
       layer = getLayer(filters, bias);
+
+      if (imgArr && imgArr.length > 0 && layer) {
+        channels = eval2DArray(layer, imgArr);
+      }
     }
 
     return (
@@ -45,10 +53,13 @@ export default class GaborExplorer extends Component {
             <GaborFilters filters={filters} scale={75} />
           </Grid>
           <Grid item xs={2}>
-            <GaborDrawingInput onChange={imgArr => this.setState({ imgArr })} />
+            <GaborDrawingInput strokeWeight={strokeWeight} onDraw={imgArr => this.setState({ imgArr })} onChangeStrokeWeight={strokeWeight => this.setState({ strokeWeight })} />
           </Grid>
           <Grid item xs={2} className="bordered-canvas">
-            <Layer scale={5} filters={filters} layer={layer} imgArr={imgArr} />
+            <Channels scale={5} filters={filters} channels={channels} />
+          </Grid>
+          <Grid item xs={2} className="bordered-canvas">
+            <Array2DDraw key={Math.random()} scale={10} channels={channels} strokeWeight={strokeWeight} speed={100} />
           </Grid>
         </Grid>
       </div>
