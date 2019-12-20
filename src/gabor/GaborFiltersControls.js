@@ -8,6 +8,7 @@ const GaborFiltersControls = props => {
       <div>Number of Components</div>
       <Slider
         value={props.filterConfig.numComponents}
+        track={false}
         aria-labelledby="number of components"
         marks={[1, 2, 3, 4, 5].map(value => ({ value, label: (2 ** value) }))}
         step={null}
@@ -18,6 +19,7 @@ const GaborFiltersControls = props => {
       <div>Lambda (width)</div>
       <Slider
         value={props.filterConfig.lambda}
+        track={false}
         aria-labelledby="lambda"
         valueLabelDisplay="auto"
         marks={[1.1, 8].map(value => ({ value, label: value }))}
@@ -29,6 +31,7 @@ const GaborFiltersControls = props => {
       <div>Gamma (length)</div>
       <Slider
         value={props.filterConfig.gamma}
+        track={false}
         aria-labelledby="gamma"
         valueLabelDisplay="auto"
         marks={[0.1, 4].map(value => ({ value, label: value }))}
@@ -40,6 +43,7 @@ const GaborFiltersControls = props => {
       <div>Sigma (size of Gaussian)</div>
       <Slider
         value={props.filterConfig.sigma}
+        track={false}
         aria-labelledby="sigma"
         valueLabelDisplay="auto"
         marks={[0.1, 2].map(value => ({ value, label: value }))}
@@ -51,6 +55,7 @@ const GaborFiltersControls = props => {
       <div>Window Size</div>
       <Slider
         value={props.filterConfig.windowSize}
+        track={false}
         aria-labelledby="window size"
         valueLabelDisplay="auto"
         marks={[1, 27].map(value => ({ value, label: value }))}
@@ -58,6 +63,18 @@ const GaborFiltersControls = props => {
         min={1}
         max={27}
         onChange={(event, value) => props.onChange({ windowSize: value })}
+      />
+      <div>Bias</div>
+      <Slider
+        value={props.filterConfig.bias}
+        track={false}
+        aria-labelledby="bias"
+        valueLabelDisplay="auto"
+        marks={[-5, 5].map(value => ({ value, label: value }))}
+        step={0.1}
+        min={-5}
+        max={5}
+        onChange={(event, value) => props.onChange({ bias: value })}
       />
     </div>
   );
@@ -70,6 +87,7 @@ GaborFiltersControls.propTypes = {
     gamma: PropTypes.number,
     sigma: PropTypes.number,
     windowSize: PropTypes.number,
+    bias: PropTypes.number,
   }).isRequired,
   onChange: PropTypes.func.isRequired
 };

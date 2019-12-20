@@ -147,10 +147,10 @@ export function getGaborFilters(numChannels, lambda, gamma, sigma, windowSize) {
   return filters;
 }
 
-export function getLayer(filters, strides=1) {
+export function getLayer(filters, bias, strides=1) {
   const kernel = filters.map(filter => [filter]);
   const weights = nj.array(kernel).transpose(2, 3, 1, 0).tolist();
-  const biases = new Array(kernel.length).fill(0);
+  const biases = new Array(kernel.length).fill(bias);
   const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
   const layer = tf.layers.conv2d({
     filters: kernel.length,
