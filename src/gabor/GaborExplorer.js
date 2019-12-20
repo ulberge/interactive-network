@@ -18,19 +18,17 @@ export default class GaborExplorer extends Component {
       sigma: 1.1,
       windowSize: 7,
       bias: 0
-    },
-    selectedIndex: 1
+    }
   }
 
   render() {
-    const { imgArr, filterConfig, selectedIndex } = this.state;
+    const { imgArr, filterConfig } = this.state;
     const { numComponents, lambda, gamma, sigma, windowSize, bias } = filterConfig;
 
     const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
 
     let layer = null;
-    if (filters && filters.length > selectedIndex) {
-      // layer = getLayer([filters[selectedIndex]], bias);
+    if (filters) {
       layer = getLayer(filters, bias);
     }
 
@@ -44,7 +42,7 @@ export default class GaborExplorer extends Component {
              />
           </Grid>
           <Grid item xs={1} className="bordered-canvas">
-            <GaborFilters filters={filters} scale={75} selectedIndex={selectedIndex} onSelect={(selectedIndex) => this.setState({selectedIndex})} />
+            <GaborFilters filters={filters} scale={75} />
           </Grid>
           <Grid item xs={2}>
             <GaborDrawingInput onChange={imgArr => this.setState({ imgArr })} />

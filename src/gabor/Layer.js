@@ -14,20 +14,22 @@ const Layer = props => {
   }
 
   return (
-    <div>
+    <Grid container spacing={2}>
       { outputs.map((output, i) => {
         return (
-          <Grid container alignItems="center" justify="center" spacing={2}>
-            <Grid item>
-              <GaborFilter filter={filters[i]} scale={40} />
-            </Grid>
-            <Grid item>
-              <Array2DView key={i} imgArr={output} scale={scale} />
+          <Grid item>
+            <Grid container alignItems="center" justify="center" spacing={2}>
+              <Grid item>
+                <GaborFilter filter={filters[i]} scale={40} />
+              </Grid>
+              <Grid item>
+                <Array2DView key={i} imgArr={output} scale={scale} />
+              </Grid>
             </Grid>
           </Grid>
         );
       }) }
-    </div>
+    </Grid>
   );
 }
 

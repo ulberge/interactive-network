@@ -35,7 +35,7 @@ export default class GaborDrawingInput extends Component {
     const offsetBounds = [-0.5, 0.5];
 
     return (
-      <Grid container direction="column" spacing={4} style={{ position: 'relative' }}>
+      <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
         <Grid item className="bordered-canvas">
           <EditableCanvas shape={[20, 20]} marks={marks} strokeWidth={strokeWidth} scale={10} offset={offset}
             onNewMark={newMark => this.setState({ marks: [...marks, newMark] })}
