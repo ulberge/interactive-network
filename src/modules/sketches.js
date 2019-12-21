@@ -1,67 +1,4 @@
 
-// function drawPixelsScaled(p, imgArr, scale) {
-//   const gridWeight = 0.08;
-//   p.strokeWeight(scale * gridWeight);
-
-//   for (let y = 0; y < imgArr.length; y += 1) {
-//     for (let x = 0; x < imgArr[0].length; x += 1) {
-//       const v = ((1 - imgArr[y][x]) / 2) * 255;
-//       if (v > 255) {
-//         p.fill(255, 0, 0);
-//       } else if (v < 0) {
-//         p.fill(0, 0, 255);
-//       } else {
-//         p.fill(v);
-//       }
-//       p.rect(x * scale, y * scale, scale, scale);
-//     }
-//   }
-// }
-
-// function drawPixels(p, imgArr) {
-//   p.push();
-//   p.noStroke();
-
-//   for (let y = 0; y < imgArr.length; y += 1) {
-//     for (let x = 0; x < imgArr[0].length; x += 1) {
-//       p.fill(imgArr[y][x]);
-//       p.rect(x, y, 1, 1);
-//     }
-//   }
-//   p.pop();
-// }
-
-// Given a pixel array and the image height, render at a larger scale
-function upscalePixels(p, pixels, height, scale) {
-  const gridWeight = 0.08;
-  p.stroke(255);
-  p.strokeWeight(scale * gridWeight);
-
-  for (let i = 3; i < pixels.length; i += 4) {
-    if (pixels[i] > 0) {
-      p.fill(255 - pixels[i]);
-      const x = ((i - 3) / 4) % height;
-      const y = Math.floor(((i - 3) / 4) / height);
-      p.rect(x * scale, y * scale, scale, scale);
-    }
-  }
-}
-
-// Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
-const getImgArr = (pixels, width) => {
-  const imgArr = [];
-  let row = [];
-  for (let i = 3; i < pixels.length; i += 4) {
-    // use opacity since this a graphics object
-    row.push(pixels[i] / 255);
-    if (row.length === width) {
-      imgArr.push(row);
-      row = [];
-    }
-  }
-  return imgArr;
-}
-
 /**
  * Returns a p5 sketch that can be drawn on with the mouse
  * @param {Number[]} shape - Real shape of the canvas
@@ -285,3 +222,33 @@ export function getEmptySketch() {
   };
 }
 
+// Given a pixel array and the image height, render at a larger scale
+function upscalePixels(p, pixels, height, scale) {
+  const gridWeight = 0.08;
+  p.stroke(255);
+  p.strokeWeight(scale * gridWeight);
+
+  for (let i = 3; i < pixels.length; i += 4) {
+    if (pixels[i] > 0) {
+      p.fill(255 - pixels[i]);
+      const x = ((i - 3) / 4) % height;
+      const y = Math.floor(((i - 3) / 4) / height);
+      p.rect(x * scale, y * scale, scale, scale);
+    }
+  }
+}
+
+// Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
+const getImgArr = (pixels, width) => {
+  const imgArr = [];
+  let row = [];
+  for (let i = 3; i < pixels.length; i += 4) {
+    // use opacity since this a graphics object
+    row.push(pixels[i] / 255);
+    if (row.length === width) {
+      imgArr.push(row);
+      row = [];
+    }
+  }
+  return imgArr;
+}

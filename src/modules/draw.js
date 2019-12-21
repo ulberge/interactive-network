@@ -16,18 +16,7 @@ export function sumChannelsWithLimit(arrays2D, limit=1) {
   return remaining;
 }
 
-/*
-* Pauses the execution loop to allow animation of action.
-*/
-async function pause(t) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, t);
-  });
-}
-
-function drawTick(p, pDebug, boid, speed) {
+function drawTick(p, pDebug, boid) {
   boid.run(new p5.Vector(4, 4));
   boid.isDrawing = true;
   boid.draw(p);
@@ -37,46 +26,35 @@ function drawTick(p, pDebug, boid, speed) {
   }
 }
 
-
-async function drawLine(p, pDebug, boid, speed=0) {
-  // update the boid with the info from the current location
-  let i = 10;
-  while (i > 0) {
-    drawTick(p, pDebug, boid);
-    i -= 1;
-    await pause(speed);
-  }
-}
-
-/**
- * Draws the given channels output on the provided canvas
- * @param {Object} p - p5 sketch to draw on
- * @param {number[][][]} channels - Activations for the different channels
- * @param {number} speed - Speed with which to execute animation (0 = fast as possible, higher is slower)
- */
-export async function draw(p, channels, scale, strokeWeight, speed, pDebug) {
-  if (!channels || channels.length === 0) {
-    return;
+export class Drawer {
+  constructor(p, pDebug) {
+    this.p = p;
+    this.pDebug = pDebug;
   }
 
-  // create a grid of remaining marks to make (max val of 1 for any given point)
-  const remaining = sumChannelsWithLimit(channels);
+  // Cancel the last drawing, then draw from the channels provided
+  /**
+   * Draws the given channels output on the provided canvas
+   * @param {Object} p - p5 sketch to draw on
+   * @param {number[][][]} channels - Activations for the different channels
+   * @param {number} speed - Speed with which to execute animation (0 = fast as possible, higher is slower)
+   */
+  draw(channels, strokeWeight, speed) {
+    if (this.drawingTimer) {
+      clearTimeout(this.drawingTimer);
+    }
 
-  // while still has remaining marks
-  // decide on a start location and direction
-  // create a boid
-  const startPos = new p5.Vector(0, 0);
-  const startVel = new p5.Vector(0, 0);
-  const diameter = strokeWeight;
-  const boid = new Boid(startPos, startVel, diameter);
+    // create a grid of remaining marks to make (max val of 1 for any given point)
+    // const remaining = sumChannelsWithLimit(channels);
 
-  p.push();
-  p.scale(scale);
-  pDebug.push();
-  pDebug.scale(scale);
+    // decide on a start location and direction and create a boid
+    const startPos = new p5.Vector(0, 0);
+    const startVel = new p5.Vector(0, 0);
+    const diameter = strokeWeight;
+    const boid = new Boid(startPos, startVel, diameter);
 
-  await drawLine(p, pDebug, boid, speed);
-
-  pDebug.pop();
-  p.pop();
+    this.drawingTimer = setTimeout(() => {
+      drawTick(this.p, this.pDebug, boid);
+    }, speed);
+  }
 }

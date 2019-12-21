@@ -9,6 +9,7 @@ import Slider from '@material-ui/core/Slider';
 import EditableCanvas from '../common/EditableCanvas';
 import { deepCopy } from '../modules/helpers';
 
+// Some default marks
 const defaultMarks = [
   [[5.2, 5.4],[11.7, 11.1]],
   [[5.2, 5.6],[5.2, 13.0]],

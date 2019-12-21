@@ -4,9 +4,6 @@ import ReactDOM from 'react-dom';
 import { Router, Route, Redirect } from 'react-router-dom';
 import { createHashHistory } from 'history';
 
-import { Provider } from 'react-redux';
-import store from './redux/store';
-
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import grey from '@material-ui/core/colors/grey';
 
@@ -25,21 +22,19 @@ const history = createHashHistory();
 
 ReactDOM.render(
   (<ThemeProvider theme={theme}>
-     <Provider store={store}>
-      <Router onUpdate={() => window.scrollTo(0, 0)} history={history}>
-        <Route
-          name="Gabor Explorer"
-          path="/gaborexplorer"
-          component={GaborExplorer}
-        />
-        <Route
-          name="Network Builder"
-          path="/networkbuilder"
-          component={NetworkBuilder}
-        />
-        <Redirect path="*" to="/gaborexplorer" />
-      </Router>
-    </Provider>
+    <Router onUpdate={() => window.scrollTo(0, 0)} history={history}>
+      <Route
+        name="Gabor Explorer"
+        path="/gaborexplorer"
+        component={GaborExplorer}
+      />
+      <Route
+        name="Network Builder"
+        path="/networkbuilder"
+        component={NetworkBuilder}
+      />
+      <Redirect path="*" to="/gaborexplorer" />
+    </Router>
   </ThemeProvider>),
   document.getElementById('root')
 );
