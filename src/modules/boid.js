@@ -1,11 +1,11 @@
 // A class for an agent that can be controlled to make a drawing
 export default class Boid {
-  constructor(pos, vel, diameter) {
+  constructor(diameter) {
     this.maxSpeed = 2;
     this.maxAcc = 1;
     // this.maxAcc = ((Math.random() * 2) ** 4) + 0.1;
-    this.pos = pos;
-    this.vel = vel;
+    this.pos = null;
+    this.vel = null;
     this.diameter = diameter;
     this.isDrawing = false;
   }

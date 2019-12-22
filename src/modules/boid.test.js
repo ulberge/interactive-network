@@ -2,9 +2,9 @@ import Boid from './boid';
 import p5 from 'p5';
 
 it('correctly updates boid on run with no limit encountered', () => {
-  const pos = new p5.Vector(1, 1);
-  const vel = new p5.Vector(0, 0);
-  const boid = new Boid(pos, vel, 1);
+  const boid = new Boid(1);
+  boid.pos = new p5.Vector(1, 1);
+  boid.vel = new p5.Vector(0, 0);
   boid.maxSpeed = 10;
   boid.maxAcc = 10;
 
@@ -18,9 +18,9 @@ it('correctly updates boid on run with no limit encountered', () => {
 });
 
 it('correctly updates boid on run with acc limit encountered', () => {
-  const pos = new p5.Vector(1, 1);
-  const vel = new p5.Vector(0, 0);
-  const boid = new Boid(pos, vel, 1);
+  const boid = new Boid(1);
+  boid.pos = new p5.Vector(1, 1);
+  boid.vel = new p5.Vector(0, 0);
   boid.maxSpeed = 10;
   boid.maxAcc = Math.sqrt(2);
 
@@ -34,9 +34,9 @@ it('correctly updates boid on run with acc limit encountered', () => {
 });
 
 it('correctly updates boid on run with vel limit encountered', () => {
-  const pos = new p5.Vector(1, 1);
-  const vel = new p5.Vector(0, 0);
-  const boid = new Boid(pos, vel, 1);
+  const boid = new Boid(1);
+  boid.pos = new p5.Vector(1, 1);
+  boid.vel = new p5.Vector(0, 0);
   boid.maxSpeed = Math.sqrt(2);
   boid.maxAcc = 10;
 
@@ -50,9 +50,9 @@ it('correctly updates boid on run with vel limit encountered', () => {
 });
 
 it('correctly updates boid on run with initial vel', () => {
-  const pos = new p5.Vector(1, 1);
-  const vel = new p5.Vector(1, 1);
-  const boid = new Boid(pos, vel, 1);
+  const boid = new Boid(1);
+  boid.pos = new p5.Vector(1, 1);
+  boid.vel = new p5.Vector(1, 1);
   boid.maxSpeed = 10;
   boid.maxAcc = 10;
 
@@ -66,9 +66,9 @@ it('correctly updates boid on run with initial vel', () => {
 });
 
 it('correctly updates boid on run with initial vel and limits', () => {
-  const pos = new p5.Vector(2, 2);
-  const vel = new p5.Vector(1, 1);
-  const boid = new Boid(pos, vel, 1);
+  const boid = new Boid(1);
+  boid.pos = new p5.Vector(2, 2);
+  boid.vel = new p5.Vector(1, 1);
   boid.maxSpeed = 2 * Math.sqrt(2);
   boid.maxAcc = Math.sqrt(2);
   const force = new p5.Vector(10, 10);

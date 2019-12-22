@@ -1,3 +1,4 @@
+import { getImgArrFromPixels } from './helpers';
 
 /**
  * Returns a p5 sketch that can be drawn on with the mouse
@@ -104,7 +105,7 @@ export function getEditableSketch(config) {
         drawOnce(state.marks);
 
         state.g.loadPixels();
-        const imgArr = getImgArr(state.g.pixels, state.shape[0]);
+        const imgArr = getImgArrFromPixels(state.g.pixels, state.shape[0]);
         state.onRender(imgArr);
         state.firstDraw = false;
       }
@@ -203,11 +204,16 @@ export function getArraySketch() {
 /**
  * Returns an empty p5 sketch
  */
-export function getEmptySketch() {
+export function getEmptySketch(shape, scale) {
   return (p) => {
     p.setup = () => {
       p.pixelDensity(1);
-      p.createCanvas(1, 1);
+      if (shape) {
+        const [ h, w ] = shape;
+        p.createCanvas(w * scale, h * scale);
+      } else {
+        p.createCanvas(1, 1);
+      }
       p.noLoop();
     };
 
@@ -236,19 +242,4 @@ function upscalePixels(p, pixels, height, scale) {
       p.rect(x * scale, y * scale, scale, scale);
     }
   }
-}
-
-// Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
-const getImgArr = (pixels, width) => {
-  const imgArr = [];
-  let row = [];
-  for (let i = 3; i < pixels.length; i += 4) {
-    // use opacity since this a graphics object
-    row.push(pixels[i] / 255);
-    if (row.length === width) {
-      imgArr.push(row);
-      row = [];
-    }
-  }
-  return imgArr;
 }

@@ -2,9 +2,21 @@ import * as tf from '@tensorflow/tfjs';
 
 /* global nj */
 
+export const CONSTANTS = {
+  ANGLES: [
+    0, Math.PI / 2,
+    Math.PI / 4, 3 * Math.PI / 4,
+    Math.PI / 8, 3 * Math.PI / 8, 5 * Math.PI / 8, 7 * Math.PI / 8,
+    Math.PI / 16, 3 * Math.PI / 16, 5 * Math.PI / 16, 7 * Math.PI / 16, 9 * Math.PI / 16, 11 * Math.PI / 16, 13 * Math.PI / 16, 15 * Math.PI / 16,
+    Math.PI / 32, 3 * Math.PI / 32, 5 * Math.PI / 32, 7 * Math.PI / 32, 9 * Math.PI / 32, 11 * Math.PI / 32, 13 * Math.PI / 32, 15 * Math.PI / 32, 17 * Math.PI / 32, 19 * Math.PI / 32, 21 * Math.PI / 32, 23 * Math.PI / 32, 25 * Math.PI / 32, 27 * Math.PI / 32, 29 * Math.PI / 32, 31 * Math.PI / 32
+  ]
+};
 
 // Returns the result of a given a layer applied to an image as a 2D array.
 export function eval2DArray(layer, imgArr) {
+  if (!layer || !imgArr) {
+    return null;
+  }
   const imgArr_f = [imgArr.map(row => row.map(col => [col]))];
   let curr = tf.tensor4d(imgArr_f);
   const result = layer.apply(curr).arraySync();
@@ -134,11 +146,12 @@ export function getGaborFilter(sigma, theta, lambda, psi, gamma, windowSize) {
 }
 
 export function getGaborFilters(numChannels, lambda, gamma, sigma, windowSize) {
-  const thetaDelta = Math.PI / numChannels;
+  // const thetaDelta = Math.PI / numChannels;
   const filters = [];
   for (let i = 0; i < numChannels; i += 1) {
     const psi = 0; // offset
-    const theta = thetaDelta * i;
+    // const theta = thetaDelta * i;
+    const theta = CONSTANTS.ANGLES[i];
     const filter = getGaborFilter(sigma, theta, lambda, psi, gamma, windowSize);
     if (filter) {
       filters.push(filter);
@@ -162,4 +175,19 @@ export function getLayer(filters, bias, strides=1) {
     name: 'conv1'
   });
   return layer;
+}
+
+// Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
+export const getImgArrFromPixels = (pixels, width) => {
+  const imgArr = [];
+  let row = [];
+  for (let i = 3; i < pixels.length; i += 4) {
+    // use opacity since this a graphics object
+    row.push(pixels[i] / 255);
+    if (row.length === width) {
+      imgArr.push(row);
+      row = [];
+    }
+  }
+  return imgArr;
 }
