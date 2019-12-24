@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 
@@ -14,12 +14,12 @@ const defaultMarks = [
   [[18.2, 3.7],[15.2, 7.4]],
 ];
 
-class GaborDrawingInput extends Component {
+class GaborDrawingInput extends PureComponent {
   constructor(props) {
     super(props);
     this.onNewMark = this.onNewMark.bind(this);
-    this.onChangeOffset = offset => this.setState({ offset });
-    this.onClear = () => this.setState({ marks: [] });
+    this.onChangeOffset = this.onChangeOffset.bind(this);
+    this.onClear = this.onClear.bind(this);
 
     this.state = {
       marks: deepCopy(defaultMarks),
@@ -41,6 +41,14 @@ class GaborDrawingInput extends Component {
     this.setState({ marks: [...marks, newMark] });
   }
 
+  onChangeOffset(offset) {
+    this.setState({ offset });
+  }
+
+  onClear() {
+    this.setState({ marks: [] });
+  }
+
   render() {
     const { marks, offset } = this.state;
     const { onDraw, strokeWeight, onChangeStrokeWeight, scale } = this.props;
@@ -54,14 +62,14 @@ class GaborDrawingInput extends Component {
           />
         </Grid>
         <Grid item>
-          <GaborDrawingInputControls
+          {<GaborDrawingInputControls
             strokeWeight={strokeWeight}
             offset={offset}
             onChangeStrokeWeight={onChangeStrokeWeight}
             onChangeOffset={this.onChangeOffset}
             onReset={this.reset}
             onClear={this.onClear}
-          />
+          />}
         </Grid>
       </Grid>
     );

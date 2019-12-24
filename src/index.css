@@ -40,3 +40,7 @@ canvas {
   left: 0;
   opacity: 1;
 }
+
+.overlay canvas {
+  border-color: transparent;
+}

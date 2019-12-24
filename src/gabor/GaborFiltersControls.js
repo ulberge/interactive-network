@@ -12,7 +12,7 @@ const NumComponentsSlider = React.memo(function NumComponentsSlider(props) {
         track={false}
         aria-labelledby="number of components"
         marks={numComponentsMarks}
-        step={null}
+        step={1}
         min={1}
         max={5}
         onChange={(event, value) => props.onChange('numComponents', value)}

@@ -14,7 +14,7 @@ export default class EditableCanvas extends Component {
 
   render() {
     return (
-      <span ref="canvas" className="editable"></span>
+      <div ref="canvas" className="editable" style={{ textAlign: 'center' }}></div>
     );
   }
 }

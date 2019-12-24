@@ -92,13 +92,13 @@ export default class GaborExplorer extends Component {
              />
           </Grid>
           <Grid item xs={1} className="bordered-canvas">
-            <GaborFilters filters={filters} scale={50} />
+            <GaborFilters filters={filters} scale={60} />
           </Grid>
           <Grid item xs={2}>
             <GaborDrawingInput scale={6} strokeWeight={strokeWeight} onDraw={this.onDraw} onChangeStrokeWeight={this.onChangeStrokeWeight} />
           </Grid>
-          <Grid item xs={1} className="bordered-canvas">
-            <Channels scale={3} channels={channels} />
+          <Grid item xs={2} className="bordered-canvas">
+            <Channels scale={5} channels={channels} />
           </Grid>
           <Grid item xs={2} className="bordered-canvas">
             { shape ?
