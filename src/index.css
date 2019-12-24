@@ -44,3 +44,7 @@ canvas {
 .overlay canvas {
   border-color: transparent;
 }
+
+h2, h3, h4 {
+  text-align: center;
+}

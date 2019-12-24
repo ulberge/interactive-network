@@ -31,7 +31,7 @@ StrokeSlider.propTypes = {
   onChangeStrokeWeight: PropTypes.func.isRequired
 };
 
-const offsetBounds = [-0.5, 0.5];
+const offsetBounds = [-1, 1];
 const offsetMarks = offsetBounds.map(value => ({ value, label: value }));
 const OffsetSlider = React.memo(function OffsetSlider(props) {
   return (
@@ -82,16 +82,16 @@ const GaborDrawingInputControls = (function GaborDrawingInputControls(props) {
   const { strokeWeight, onChangeStrokeWeight, offset, onChangeOffset, onReset, onClear } = props;
 
   return (
-    <div>
-      <MemoResetButton onReset={onReset} />
-      <MemoClearButton onClear={onClear} />
-      <Grid container direction="column" spacing={4}>
-        <Grid item xs>
-          <StrokeSlider strokeWeight={strokeWeight} onChangeStrokeWeight={onChangeStrokeWeight} />
-          <OffsetSlider offset={offset} onChangeOffset={onChangeOffset} />
-        </Grid>
+    <Grid container direction="column" justify="center" spacing={1}>
+      <Grid item xs style={{ textAlign: 'center' }}>
+        <MemoResetButton onReset={onReset} />
+        <MemoClearButton onClear={onClear} />
       </Grid>
-    </div>
+      <Grid item xs>
+        <StrokeSlider strokeWeight={strokeWeight} onChangeStrokeWeight={onChangeStrokeWeight} />
+        <OffsetSlider offset={offset} onChangeOffset={onChangeOffset} />
+      </Grid>
+    </Grid>
   );
 });
 

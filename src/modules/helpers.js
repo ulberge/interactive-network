@@ -28,6 +28,25 @@ export function eval2DArray(layer, imgArr) {
   return out.tolist();
 }
 
+// Returns the result of a given a layer applied to an image as a 2D array.
+export function eval2DArrayMultipleLayers(layers, imgArr) {
+  if (!layers || !imgArr) {
+    return null;
+  }
+  const imgArr_f = [imgArr.map(row => row.map(col => [col]))];
+  let curr = tf.tensor4d(imgArr_f);
+
+  layers.forEach(layer => {
+    curr = layer.apply(curr);
+  });
+  const result = curr.arraySync();
+
+  // format output
+  let out = nj.array(result[0]);
+  out = out.transpose(2, 0, 1);
+  return out.tolist();
+}
+
 // make array add up to 1
 export function normalize(arr) {
   let sum = arr.reduce((a, b) => a + b, 0);

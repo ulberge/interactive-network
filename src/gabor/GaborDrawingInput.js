@@ -19,7 +19,8 @@ class GaborDrawingInput extends PureComponent {
     super(props);
     this.onNewMark = this.onNewMark.bind(this);
     this.onChangeOffset = this.onChangeOffset.bind(this);
-    this.onClear = this.onClear.bind(this);
+    this.clear = this.clear.bind(this);
+    this.reset = this.reset.bind(this);
 
     this.state = {
       marks: deepCopy(defaultMarks),
@@ -45,7 +46,7 @@ class GaborDrawingInput extends PureComponent {
     this.setState({ offset });
   }
 
-  onClear() {
+  clear() {
     this.setState({ marks: [] });
   }
 
@@ -56,19 +57,19 @@ class GaborDrawingInput extends PureComponent {
     return (
       <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
         <Grid item className="bordered-canvas">
-          <EditableCanvas shape={[20, 20]} marks={marks} strokeWeight={strokeWeight} scale={scale} offset={offset}
+          <EditableCanvas shape={[21, 21]} marks={marks} strokeWeight={strokeWeight} scale={scale} offset={offset}
             onNewMark={this.onNewMark}
             onRender={onDraw}
           />
         </Grid>
-        <Grid item>
+        <Grid item style={{ margin: '0 auto', width: '200px' }}>
           {<GaborDrawingInputControls
             strokeWeight={strokeWeight}
             offset={offset}
             onChangeStrokeWeight={onChangeStrokeWeight}
             onChangeOffset={this.onChangeOffset}
             onReset={this.reset}
-            onClear={this.onClear}
+            onClear={this.clear}
           />}
         </Grid>
       </Grid>

@@ -103,10 +103,10 @@ const WindowSizeSlider = React.memo(function WindowSizeSlider(props) {
         track={false}
         aria-labelledby="window size"
         valueLabelDisplay="auto"
-        marks={[{ value: 1, label: '1'}, { value: 27, label: '27'}]}
+        marks={[{ value: 3, label: '3'}, { value: 19, label: '19'}]}
         step={2}
-        min={1}
-        max={27}
+        min={3}
+        max={19}
         onChange={(event, value) => props.onChange('windowSize', value)}
       />
     </div>
@@ -142,25 +142,25 @@ BiasSlider.propTypes = {
 
 const GaborFiltersControls = (function GaborFiltersControls(props) {
   return (
-    <div>
+    <div style={{ width: '200px' }}>
       <NumComponentsSlider
         numComponents={props.numComponents}
         onChange={props.onChange}
       />
-      <LambdaSlider
-        lambda={props.lambda}
+      <WindowSizeSlider
+        windowSize={props.windowSize}
         onChange={props.onChange}
       />
       <GammaSlider
         gamma={props.gamma}
         onChange={props.onChange}
       />
-      <SigmaSlider
-        sigma={props.sigma}
+      <LambdaSlider
+        lambda={props.lambda}
         onChange={props.onChange}
       />
-      <WindowSizeSlider
-        windowSize={props.windowSize}
+      <SigmaSlider
+        sigma={props.sigma}
         onChange={props.onChange}
       />
       <BiasSlider
