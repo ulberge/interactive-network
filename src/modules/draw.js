@@ -56,6 +56,12 @@ export class Drawer {
     runDraw();
   }
 
+  stop() {
+    if (this.drawingTimer) {
+      clearTimeout(this.drawingTimer);
+    }
+  }
+
   // Subtract the activation from the 2D arrays
   getRemaining(arrays2D, imgArr) {
     const remaining = arrays2D.map(array2D => array2D.map((row, i) => row.map((v, j) => {
@@ -134,10 +140,6 @@ export class Drawer {
   drawTick(channels) {
     // check if ready to draw new line
     const matchDistance = 0.1;
-
-    if (this.boid.pos) {
-      console.log(this.boid.pos, this.boid.vel, this.boid.goal, this.boid.pos.copy().sub(this.boid.goal).mag());
-    }
 
     if (this.boid.pos === null || this.boid.pos.copy().sub(this.boid.goal).mag() <= matchDistance) {
       // start new line

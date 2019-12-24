@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
-import ClearIcon from '@material-ui/icons/Clear';
-import ReplayIcon from '@material-ui/icons/Replay';
-import IconButton from '@material-ui/core/IconButton';
-import Slider from '@material-ui/core/Slider';
 
 import EditableCanvas from '../common/EditableCanvas';
+import GaborDrawingInputControls from './GaborDrawingInputControls';
 import { deepCopy } from '../modules/helpers';
 
 // Some default marks
@@ -17,10 +14,17 @@ const defaultMarks = [
   [[18.2, 3.7],[15.2, 7.4]],
 ];
 
-export default class GaborDrawingInput extends Component {
-  state = {
-    marks: deepCopy(defaultMarks),
-    offset: 0
+class GaborDrawingInput extends Component {
+  constructor(props) {
+    super(props);
+    this.onNewMark = this.onNewMark.bind(this);
+    this.onChangeOffset = offset => this.setState({ offset });
+    this.onClear = () => this.setState({ marks: [] });
+
+    this.state = {
+      marks: deepCopy(defaultMarks),
+      offset: 0
+    };
   }
 
   updateCanvas(imgArr, marks) {
@@ -28,55 +32,36 @@ export default class GaborDrawingInput extends Component {
     this.props.onChange(imgArr);
   }
 
+  reset() {
+    this.setState({ marks: deepCopy(defaultMarks) });
+  }
+
+  onNewMark(newMark) {
+    const { marks } = this.state;
+    this.setState({ marks: [...marks, newMark] });
+  }
+
   render() {
     const { marks, offset } = this.state;
-    const { onDraw, strokeWeight, onChangeStrokeWeight } = this.props;
-    const strokeWidthBounds = [0.1, 3];
-    const offsetBounds = [-0.5, 0.5];
+    const { onDraw, strokeWeight, onChangeStrokeWeight, scale } = this.props;
 
     return (
       <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
         <Grid item className="bordered-canvas">
-          <EditableCanvas shape={[20, 20]} marks={marks} strokeWeight={strokeWeight} scale={10} offset={offset}
-            onNewMark={newMark => this.setState({ marks: [...marks, newMark] })}
+          <EditableCanvas shape={[20, 20]} marks={marks} strokeWeight={strokeWeight} scale={scale} offset={offset}
+            onNewMark={this.onNewMark}
             onRender={onDraw}
           />
         </Grid>
         <Grid item>
-          <IconButton aria-label="reset" onClick={() => this.setState({ marks: deepCopy(defaultMarks) })}>
-            <ReplayIcon />
-          </IconButton>
-          <IconButton aria-label="clear" onClick={() => this.setState({ marks: [] })}>
-            <ClearIcon />
-          </IconButton>
-          <Grid container direction="column" spacing={4}>
-            <Grid item xs>
-              <div>Stroke</div>
-              <Slider
-                value={strokeWeight}
-                track={false}
-                aria-labelledby="stroke width"
-                valueLabelDisplay="auto"
-                marks={strokeWidthBounds.map(value => ({ value, label: value }))}
-                step={0.1}
-                min={strokeWidthBounds[0]}
-                max={strokeWidthBounds[1]}
-                onChange={(event, strokeWeight) => onChangeStrokeWeight(strokeWeight)}
-              />
-              <div>Offset</div>
-              <Slider
-                value={offset}
-                track={false}
-                aria-labelledby="stroke offset"
-                valueLabelDisplay="auto"
-                marks={offsetBounds.map(value => ({ value, label: value }))}
-                step={0.1}
-                min={offsetBounds[0]}
-                max={offsetBounds[1]}
-                onChange={(event, offset) => this.setState({ offset })}
-              />
-            </Grid>
-          </Grid>
+          <GaborDrawingInputControls
+            strokeWeight={strokeWeight}
+            offset={offset}
+            onChangeStrokeWeight={onChangeStrokeWeight}
+            onChangeOffset={this.onChangeOffset}
+            onReset={this.reset}
+            onClear={this.onClear}
+          />
         </Grid>
       </Grid>
     );
@@ -88,3 +73,5 @@ GaborDrawingInput.propTypes = {
   onDraw: PropTypes.func.isRequired,
   strokeWeight: PropTypes.number.isRequired,
 };
+
+export default GaborDrawingInput;

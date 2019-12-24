@@ -1,4 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
+tf.setBackend('cpu');
 
 /* global nj */
 

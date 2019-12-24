@@ -13,6 +13,9 @@ import { getLayer, getGaborFilters, eval2DArray } from '../modules/helpers';
 export default class GaborExplorer extends Component {
   constructor(props) {
     super(props);
+    this.onFilterConfigChange = this.onFilterConfigChange.bind(this);
+    this.onDraw = this.onDraw.bind(this);
+    this.onChangeStrokeWeight = this.onChangeStrokeWeight.bind(this);
 
     const filterConfig = {
       numComponents: 2, // power of 2
@@ -28,7 +31,7 @@ export default class GaborExplorer extends Component {
 
     this.layer = layer;
     this.state = {
-      filterConfig,
+      ...filterConfig,
       filters,
       channels: [],
       strokeWeight: 1.3,
@@ -37,19 +40,19 @@ export default class GaborExplorer extends Component {
     };
   }
 
-  onFilterConfigChange(update) {
-    // update filter config, filters, and CNN
-    const { filterConfig } = this.state;
-    const newFilterConfig = { ...filterConfig, ...update };
-
-    const { numComponents, lambda, gamma, sigma, windowSize, bias } = newFilterConfig;
-    const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize); // filters of CNN
-    const layer = getLayer(filters, bias); // layer of CNN
-    const channels = eval2DArray(this.layer, this.imgArr); // output of CNN
-
-    this.layer = layer;
+  onFilterConfigChange(field, value) {
     this.setState({
-      filterConfig: newFilterConfig,
+      [field]: value
+    });
+    let { numComponents, lambda, gamma, sigma, windowSize, bias } = this.state;
+    // update the filters and CNN layer
+    const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
+    const layer = getLayer(filters, bias);
+    this.layer = layer;
+
+    // reevaluate output of layer
+    const channels = eval2DArray(this.layer, this.imgArr);
+    this.setState({
       filters,
       channels
     });
@@ -61,8 +64,12 @@ export default class GaborExplorer extends Component {
     this.setState({ channels });
   }
 
+  onChangeStrokeWeight(strokeWeight) {
+    this.setState({ strokeWeight });
+  }
+
   render() {
-    const { filterConfig, strokeWeight, filters, channels } = this.state;
+    const { numComponents, lambda, gamma, sigma, windowSize, bias, strokeWeight, filters, channels } = this.state;
 
     let shape = null;
     if (channels && channels.length > 0) {
@@ -75,21 +82,27 @@ export default class GaborExplorer extends Component {
         <Grid container spacing={4}>
           <Grid item xs={2}>
             <GaborFiltersControls
-              filterConfig={filterConfig} onChange={update => this.onFilterConfigChange(update)}
+              numComponents={numComponents}
+              lambda={lambda}
+              gamma={gamma}
+              sigma={sigma}
+              windowSize={windowSize}
+              bias={bias}
+              onChange={this.onFilterConfigChange}
              />
           </Grid>
           <Grid item xs={1} className="bordered-canvas">
-            <GaborFilters filters={filters} scale={75} />
+            <GaborFilters filters={filters} scale={50} />
           </Grid>
           <Grid item xs={2}>
-            <GaborDrawingInput strokeWeight={strokeWeight} onDraw={imgArr => this.onDraw(imgArr)} onChangeStrokeWeight={strokeWeight => this.setState({ strokeWeight })} />
+            <GaborDrawingInput scale={6} strokeWeight={strokeWeight} onDraw={this.onDraw} onChangeStrokeWeight={this.onChangeStrokeWeight} />
           </Grid>
-          <Grid item xs={2} className="bordered-canvas">
-            <Channels scale={8} channels={channels} />
+          <Grid item xs={1} className="bordered-canvas">
+            <Channels scale={3} channels={channels} />
           </Grid>
           <Grid item xs={2} className="bordered-canvas">
             { shape ?
-                <Array2DDraw scale={10} channels={channels} strokeWeight={strokeWeight} speed={100} shape={shape} />
+                <Array2DDraw scale={6} channels={channels} strokeWeight={strokeWeight} speed={100} shape={shape} />
                 : null
             }
           </Grid>

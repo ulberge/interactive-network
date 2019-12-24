@@ -29,23 +29,30 @@ class Array2DDraw extends Component {
     const { channels, strokeWeight } = this.props;
 
     // Clear out any stale requests
-    if (this.startTimer) {
-      clearTimeout(this.startTimer);
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
     }
+    if (this.drawDelay) {
+      clearTimeout(this.drawDelay);
+    }
+    this.drawer.stop();
 
-    // Need to wait for p5 sketches to be ready for drawing before we actually start
-    this.startTimer = setTimeout(() => {
-      if (this.p._setupDone && this.pDebug._setupDone) {
-        // Clear canvases
-        this.p.clear();
-        this.pDisplay.clear();
-        this.pDebug.clear();
-        // execute drawing
+    if (this.p._setupDone && this.pDebug._setupDone) {
+      // Clear canvases
+      this.p.clear();
+      this.pDisplay.clear();
+      this.pDebug.clear();
+
+      // execute drawing after slight delay to speed up page
+      this.drawDelay = setTimeout(() => {
         this.drawer.draw(channels, strokeWeight);
-      } else {
+      }, 300);
+    } else {
+      // Need to wait for p5 sketches to be ready for drawing before we actually start
+      this.retryTimer = setTimeout(() => {
         this.startDrawing();
-      }
-    }, 10);
+      }, 10);
+    }
   }
 
   render() {
