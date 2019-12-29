@@ -17,14 +17,17 @@ const defaultMarks = [
 class GaborDrawingInput extends PureComponent {
   constructor(props) {
     super(props);
+
     this.onNewMark = this.onNewMark.bind(this);
     this.onChangeOffset = this.onChangeOffset.bind(this);
+    this.onChangeStrokeWeight = this.onChangeStrokeWeight.bind(this);
     this.clear = this.clear.bind(this);
     this.reset = this.reset.bind(this);
 
     this.state = {
       marks: deepCopy(defaultMarks),
-      offset: 0
+      strokeWeight: 1.3,
+      offset: 0,
     };
   }
 
@@ -42,6 +45,10 @@ class GaborDrawingInput extends PureComponent {
     this.setState({ marks: [...marks, newMark] });
   }
 
+  onChangeStrokeWeight(strokeWeight) {
+    this.setState({ strokeWeight });
+  }
+
   onChangeOffset(offset) {
     this.setState({ offset });
   }
@@ -51,8 +58,8 @@ class GaborDrawingInput extends PureComponent {
   }
 
   render() {
-    const { marks, offset } = this.state;
-    const { onDraw, strokeWeight, onChangeStrokeWeight, scale } = this.props;
+    const { marks, offset, strokeWeight } = this.state;
+    const { onDraw, scale } = this.props;
 
     return (
       <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
@@ -66,7 +73,7 @@ class GaborDrawingInput extends PureComponent {
           {<GaborDrawingInputControls
             strokeWeight={strokeWeight}
             offset={offset}
-            onChangeStrokeWeight={onChangeStrokeWeight}
+            onChangeStrokeWeight={this.onChangeStrokeWeight}
             onChangeOffset={this.onChangeOffset}
             onReset={this.reset}
             onClear={this.clear}
@@ -78,9 +85,7 @@ class GaborDrawingInput extends PureComponent {
 }
 
 GaborDrawingInput.propTypes = {
-  onChangeStrokeWeight: PropTypes.func.isRequired,
   onDraw: PropTypes.func.isRequired,
-  strokeWeight: PropTypes.number.isRequired,
 };
 
 export default GaborDrawingInput;

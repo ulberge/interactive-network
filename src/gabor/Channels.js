@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 
 import Array2DView from '../common/Array2DView';
@@ -22,5 +23,10 @@ const Channels = props => {
     </Grid>
   );
 }
+
+Channels.propTypes = {
+  channels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
+  scale: PropTypes.number.isRequired,
+};
 
 export default Channels;

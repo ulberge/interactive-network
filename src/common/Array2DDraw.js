@@ -7,7 +7,12 @@ import { Drawer } from '../modules/draw';
 
 class Array2DDraw extends Component {
   componentDidMount() {
-    const { shape, scale, speed } = this.props;
+    const { scale, speed, channels } = this.props;
+
+    let shape = [ 0, 0 ];
+    if (channels && channels.length > 0) {
+      shape = [ channels[0].length, channels[0][0].length ];
+    }
 
     // Create p5 sketches for both
     // Sketch at 1:1 scale

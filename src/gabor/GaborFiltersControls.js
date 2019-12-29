@@ -142,7 +142,7 @@ BiasSlider.propTypes = {
 
 const GaborFiltersControls = (function GaborFiltersControls(props) {
   return (
-    <div style={{ width: '200px' }}>
+    <div style={{ width: '180px' }}>
       <NumComponentsSlider
         numComponents={props.numComponents}
         onChange={props.onChange}
