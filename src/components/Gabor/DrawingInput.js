@@ -2,9 +2,9 @@ import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 
-import EditableCanvas from '../common/EditableCanvas';
-import GaborDrawingInputControls from './GaborDrawingInputControls';
-import { deepCopy } from '../modules/helpers';
+import EditableCanvas from '../UI/EditableCanvas';
+import GaborDrawingInputControls from './DrawingInputControls';
+import { deepCopy } from '../../js/helpers';
 
 // Some default marks
 const defaultMarks = [

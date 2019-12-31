@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import GaborFilters from './GaborFilters';
+import GaborFilters from './Gabor/Filters';
 import 'jest-canvas-mock';
 
 it('renders without crashing', () => {

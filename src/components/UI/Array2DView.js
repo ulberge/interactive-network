@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import p5 from 'p5';
 
-import { getArraySketch } from '../modules/sketches';
+import { getArraySketch } from '../../js/sketches';
 
 export default class Array2DView extends Component {
   componentDidMount() {

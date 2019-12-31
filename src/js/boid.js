@@ -1,25 +1,24 @@
 // A class for an agent that can be controlled to make a drawing
 export default class Boid {
-  constructor(diameter) {
-    this.maxSpeed = 2;
-    this.maxAcc = 1;
-    // this.maxAcc = ((Math.random() * 2) ** 4) + 0.1;
-    this.pos = null;
-    this.vel = null;
+  constructor(diameter=1) {
     this.diameter = diameter;
     this.isDrawing = false;
+    this.prevPos = null;
+    this.pos = null;
+    this.vel = null;
   }
 
   reset() {
     this.isDrawing = false;
+    this.prevPos = null;
+    this.pos = null;
+    this.vel = null;
   }
 
   // Update the position and velocity of the boid
-  run(force) {
-    const acc = force.copy().limit(this.maxAcc);
-    this.vel.add(acc).limit(this.maxSpeed);
-
-    // update position
+  run(vel) {
+    this.vel = vel;
+    this.prevPos = this.pos.copy();
     this.pos.add(this.vel);
   }
 

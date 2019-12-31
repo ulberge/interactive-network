@@ -1,9 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import GaborFilter from './GaborFilter';
+import Array2DView from '../UI/Array2DView';
 
 const GaborFilters = props => {
   const { filters, scale } = props;
+
+  let filterScale = 1;
+  if (filters && filters.length > 0 && scale) {
+    // keep same absolute  size regardless of filter size
+    filterScale = scale / filters[0].length;
+  }
 
   return (
     <div style={{ textAlign: 'center' }}>
@@ -13,7 +19,7 @@ const GaborFilters = props => {
             key={i}
             style={{ margin: '4px', display: 'inline-block' }}
           >
-            <GaborFilter filter={filter} scale={scale} />
+            <Array2DView imgArr={filter} scale={filterScale} />
           </div>
         ))
       }

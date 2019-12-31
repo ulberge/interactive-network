@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import GaborFiltersControls from './GaborFiltersControls';
+import GaborFiltersControls from './Gabor/FiltersControls';
 
 it('renders without crashing', () => {
   const div = document.createElement('div');

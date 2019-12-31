@@ -10,8 +10,7 @@ import grey from '@material-ui/core/colors/grey';
 import './index.css';
 import * as serviceWorker from './serviceWorker';
 
-import GaborExplorer from './gabor/GaborExplorer';
-import NetworkBuilder from './network/NetworkBuilder';
+import GaborExplorer from './components/Gabor/Explorer';
 
 const theme = createMuiTheme({
   palette: {
@@ -25,15 +24,10 @@ ReactDOM.render(
     <Router onUpdate={() => window.scrollTo(0, 0)} history={history}>
       <Route
         name="Gabor Explorer"
-        path="/gaborexplorer"
+        path="/gabor"
         component={GaborExplorer}
       />
-      <Route
-        name="Network Builder"
-        path="/networkbuilder"
-        component={NetworkBuilder}
-      />
-      <Redirect path="*" to="/gaborexplorer" />
+      <Redirect path="*" to="/gabor" />
     </Router>
   </ThemeProvider>),
   document.getElementById('root')

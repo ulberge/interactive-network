@@ -2,11 +2,11 @@ import React, { Component } from 'react';
 import Grid from '@material-ui/core/Grid';
 import * as tf from '@tensorflow/tfjs';
 
-import GaborFilters from './GaborFilters';
-import GaborFiltersControls from './GaborFiltersControls';
-import GaborDrawingInput from './GaborDrawingInput';
-import Channels from './Channels';
-import { getLayer, getGaborFilters, eval2DArray, eval2DArrayMultipleLayers } from '../modules/helpers';
+import GaborFilters from './Filters';
+import GaborFiltersControls from './FiltersControls';
+import GaborDrawingInput from './DrawingInput';
+import Array2DViewList from '../UI/Array2DViewList';
+import { getLayer, getGaborFilters, eval2DArray, eval2DArrayMultipleLayers } from '../../js/helpers';
 
 // Set to cpu to avoid high cost of syncing gpu to cpu (and there
 // is little gain from using gpu on such a small network)
@@ -52,8 +52,8 @@ export default class GaborExplorer extends Component {
 
     // reevaluate output of layers
     newState.channels = eval2DArray(this.layer, this.imgArr);
-    newState.channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], this.imgArr);
-    newState.channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], this.imgArr);
+    newState.channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], [this.imgArr])[0];
+    newState.channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], [this.imgArr])[0];
 
     this.setState(newState);
   }
@@ -64,8 +64,8 @@ export default class GaborExplorer extends Component {
 
     // reevaluate output of layers
     const channels = eval2DArray(this.layer, this.imgArr);
-    const channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], this.imgArr);
-    const channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], this.imgArr);
+    const channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], [this.imgArr])[0];
+    const channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], [this.imgArr])[0];
 
     this.setState({
       channels,
@@ -109,15 +109,15 @@ export default class GaborExplorer extends Component {
               <h3>Activations</h3>
               <Grid container spacing={1}>
                 <Grid item xs={4}>
-                  <Channels scale={4} channels={channels} />
+                  <Array2DViewList scale={4} imgArrs={channels} />
                   <h4>Conv2D</h4>
                 </Grid>
                 <Grid item xs={4}>
-                  <Channels scale={12} channels={channelsMaxPool} />
+                  <Array2DViewList scale={12} imgArrs={channelsMaxPool} />
                   <h4>Max Pool</h4>
                 </Grid>
                 <Grid item xs={4}>
-                  <Channels scale={12} channels={channelsAvgPool} />
+                  <Array2DViewList scale={12} imgArrs={channelsAvgPool} />
                   <h4>Avg Pool</h4>
                 </Grid>
               </Grid>

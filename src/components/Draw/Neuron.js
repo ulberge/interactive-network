@@ -2,10 +2,10 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
 
-import { getEmptySketch, getArraySketch } from '../modules/sketches';
-import { Drawer } from '../modules/draw';
+import { getEmptySketch, getArraySketch } from '../../js/sketches';
+import { Drawer } from '../../js/draw';
 
-class Array2DDraw extends Component {
+class DrawNeuron extends Component {
   componentDidMount() {
     const { scale, speed, channels } = this.props;
 
@@ -71,7 +71,7 @@ class Array2DDraw extends Component {
   }
 }
 
-Array2DDraw.propTypes = {
+DrawNeuron.propTypes = {
   channels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
   scale: PropTypes.number.isRequired,
   strokeWeight: PropTypes.number.isRequired,
@@ -79,4 +79,4 @@ Array2DDraw.propTypes = {
   shape: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
 
-export default Array2DDraw;
+export default DrawNeuron;

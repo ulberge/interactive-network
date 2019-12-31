@@ -29,22 +29,23 @@ export function eval2DArray(layer, imgArr) {
 }
 
 // Returns the result of a given a layer applied to an image as a 2D array.
-export function eval2DArrayMultipleLayers(layers, imgArr) {
-  if (!layers || !imgArr) {
-    return null;
-  }
-  const imgArr_f = [imgArr.map(row => row.map(col => [col]))];
-  let curr = tf.tensor4d(imgArr_f);
+export function eval2DArrayMultipleLayers(layers, imgArrs) {
+  const imgArrs_f = imgArrs.map(imgArr => imgArr.map(row => row.map(col => [col])));
 
+  let curr = tf.tensor4d(imgArrs_f);
   layers.forEach(layer => {
     curr = layer.apply(curr);
   });
-  const result = curr.arraySync();
+  let outputs = curr.arraySync();
 
   // format output
-  let out = nj.array(result[0]);
-  out = out.transpose(2, 0, 1);
-  return out.tolist();
+  const formattedOutputs = outputs.map(output => {
+    output = nj.array(output);
+    output = output.transpose(2, 0, 1);
+    return output.tolist();
+  });
+
+  return formattedOutputs;
 }
 
 // make array add up to 1

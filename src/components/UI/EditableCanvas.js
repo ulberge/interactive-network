@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import p5 from 'p5';
 
-import { getEditableSketch } from '../modules/sketches';
+import { getEditableSketch } from '../../js/sketches';
 
 export default class EditableCanvas extends Component {
   componentDidMount() {
