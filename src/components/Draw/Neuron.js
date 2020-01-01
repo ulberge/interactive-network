@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-
 import { getEmptySketch, getArraySketch } from '../../js/sketches';
 import { Drawer } from '../../js/draw';
 

@@ -22,6 +22,12 @@ export function getEditableSketch(config) {
       state.g.clear();
       p.clear();
 
+      state.g.push();
+      state.g.angleMode(state.g.DEGREES);
+      state.g.translate(state.g.width / 2, state.g.height / 2);
+      state.g.rotate(state.rotation);
+      state.g.push();
+      state.g.translate(-state.g.width / 2, -state.g.height / 2);
       marks.forEach(pts => {
         let prev = pts[0];
         if (pts.length > 1) {
@@ -34,6 +40,8 @@ export function getEditableSketch(config) {
           }
         }
       });
+      state.g.pop();
+      state.g.pop();
 
       state.g.loadPixels();
       upscalePixels(p, state.g.pixels, state.shape[1], state.scale);
@@ -72,7 +80,7 @@ export function getEditableSketch(config) {
     }
 
     p.setup = () => {
-      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset } = config;
+      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset, rotation } = config;
 
       const [ h, w ] = shape;
       p.createCanvas(w * scale, h * scale);
@@ -92,6 +100,7 @@ export function getEditableSketch(config) {
       state.scale = scale || 1;
       state.strokeWeight = strokeWeight || 1;
       state.offset = offset || 0;
+      state.rotation = rotation || 0;
 
       state.newMark = [];
 
@@ -115,7 +124,7 @@ export function getEditableSketch(config) {
     };
 
     p.updateConfig = config => {
-      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset } = config;
+      const { shape, marks, onRender, onNewMark, strokeWeight, scale, offset, rotation } = config;
 
       const [ h, w ] = shape;
       if ((h * scale) !== p.height || (w * scale) !== p.width) {
@@ -139,6 +148,7 @@ export function getEditableSketch(config) {
       state.scale = scale || 1;
       state.strokeWeight = strokeWeight || 1;
       state.offset = offset || 0;
+      state.rotation = rotation || 0;
 
       state.newMark = [];
 
@@ -177,11 +187,12 @@ export function getArraySketch() {
       p.strokeWeight(p.scale * gridWeight);
 
       // normalize to max value (positive or negative)
-      let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
+      // let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
 
       for (let y = 0; y < imgArr.length; y += 1) {
         for (let x = 0; x < imgArr[0].length; x += 1) {
-          const v = (imgArr[y][x] / max) * 255;
+          // const v = (imgArr[y][x] / max) * 255;
+          const v = imgArr[y][x] * 255;
           if (v >= 0) {
             p.fill(0, 0, 0, v);
           } else {

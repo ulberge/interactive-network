@@ -1,20 +1,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
-
 import Array2DView from './Array2DView';
 
 const Array2DViewList = props => {
-  const { imgArrs, scale } = props;
-
   return (
     <Grid container spacing={2} style={{ position: 'relative' }}>
-      { imgArrs.map((imgArr, i) => {
+      { props.imgArrs.map((imgArr, i) => {
         return (
           <Grid item key={i} style={{ margin: 'auto' }}>
             <Grid container alignItems="center" justify="center" spacing={2}>
               <Grid item>
-                <Array2DView imgArr={imgArr} scale={scale} />
+                <Array2DView imgArr={imgArr} scale={props.scale} />
               </Grid>
             </Grid>
           </Grid>

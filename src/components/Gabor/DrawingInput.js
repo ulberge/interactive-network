@@ -1,10 +1,12 @@
-import React, { PureComponent } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
-
 import EditableCanvas from '../UI/EditableCanvas';
-import GaborDrawingInputControls from './DrawingInputControls';
 import { deepCopy } from '../../js/helpers';
+import ClearIcon from '@material-ui/icons/Clear';
+import ReplayIcon from '@material-ui/icons/Replay';
+import IconButton from '@material-ui/core/IconButton';
+import DebounceSlider from '../UI/DebounceSlider';
 
 // Some default marks
 const defaultMarks = [
@@ -14,78 +16,96 @@ const defaultMarks = [
   [[18.2, 3.7],[15.2, 7.4]],
 ];
 
-class GaborDrawingInput extends PureComponent {
-  constructor(props) {
-    super(props);
+const GaborDrawingInput = memo(function GaborDrawingInput(props) {
+  const [ state, setState ] = useState({
+    marks: deepCopy(defaultMarks),
+    strokeWeight: 1,
+    offset: 0,
+    rotation: 0,
+  });
 
-    this.onNewMark = this.onNewMark.bind(this);
-    this.onChangeOffset = this.onChangeOffset.bind(this);
-    this.onChangeStrokeWeight = this.onChangeStrokeWeight.bind(this);
-    this.clear = this.clear.bind(this);
-    this.reset = this.reset.bind(this);
+  const onChange = useCallback((field, value) => setState(state => ({ ...state, [field]: value })), []);
+  const onNewMark = useCallback(newMark => setState(state => ({ ...state, marks: [...state.marks, newMark] })), []);
+  const reset = useCallback(newMark => setState(state => ({ ...state, marks: deepCopy(defaultMarks) })), []);
+  const clear = useCallback(newMark => setState(state => ({ ...state, marks: [] })), []);
 
-    this.state = {
-      marks: deepCopy(defaultMarks),
-      strokeWeight: 1.3,
-      offset: 0,
-    };
-  }
-
-  updateCanvas(imgArr, marks) {
-    this.setState({ marks });
-    this.props.onChange(imgArr);
-  }
-
-  reset() {
-    this.setState({ marks: deepCopy(defaultMarks) });
-  }
-
-  onNewMark(newMark) {
-    const { marks } = this.state;
-    this.setState({ marks: [...marks, newMark] });
-  }
-
-  onChangeStrokeWeight(strokeWeight) {
-    this.setState({ strokeWeight });
-  }
-
-  onChangeOffset(offset) {
-    this.setState({ offset });
-  }
-
-  clear() {
-    this.setState({ marks: [] });
-  }
-
-  render() {
-    const { marks, offset, strokeWeight } = this.state;
-    const { onDraw, scale } = this.props;
-
-    return (
-      <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
-        <Grid item className="bordered-canvas">
-          <EditableCanvas shape={[21, 21]} marks={marks} strokeWeight={strokeWeight} scale={scale} offset={offset}
-            onNewMark={this.onNewMark}
-            onRender={onDraw}
-          />
-        </Grid>
-        <Grid item style={{ margin: '0 auto', width: '200px' }}>
-          {<GaborDrawingInputControls
-            strokeWeight={strokeWeight}
-            offset={offset}
-            onChangeStrokeWeight={this.onChangeStrokeWeight}
-            onChangeOffset={this.onChangeOffset}
-            onReset={this.reset}
-            onClear={this.clear}
-          />}
+  return (
+    <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
+      <Grid item className="bordered-canvas" style={{ margin: '0 auto' }}>
+        <EditableCanvas
+          shape={[21, 21]}
+          marks={state.marks}
+          strokeWeight={state.strokeWeight}
+          scale={props.scale}
+          rotation={state.rotation}
+          offset={state.offset}
+          onNewMark={onNewMark}
+          onRender={props.onUpdate}
+        />
+      </Grid>
+      <Grid item style={{ margin: '0 auto', width: '200px' }}>
+        <Grid container direction="column" justify="center" spacing={1}>
+          <Grid item xs style={{ textAlign: 'center' }}>
+            <IconButton aria-label="reset" onClick={reset}>
+              <ReplayIcon />
+            </IconButton>
+            <IconButton aria-label="reset" onClick={clear}>
+              <ClearIcon />
+            </IconButton>
+          </Grid>
+          <Grid item xs>
+            <div>
+              <div>Stroke</div>
+              <DebounceSlider
+                defaultValue={state.strokeWeight}
+                track={false}
+                aria-labelledby="stroke width"
+                valueLabelDisplay="auto"
+                marks={[{ value: 0.1, label: '0.1'}, { value: 3, label: '3'}]}
+                step={0.1}
+                min={0.1}
+                max={3}
+                onChange={value => onChange('strokeWeight', value)}
+              />
+            </div>
+            <div>
+              <div>Offset</div>
+              <DebounceSlider
+                defaultValue={state.offset}
+                track={false}
+                aria-labelledby="stroke offset"
+                valueLabelDisplay="auto"
+                marks={[{ value: -1, label: '-1'}, { value: 0, label: '0'}, { value: 1, label: '1'}]}
+                step={0.1}
+                min={-1}
+                max={1}
+                onChange={value => onChange('offset', value)}
+              />
+            </div>
+            <div>
+              <div>Rotation</div>
+              <DebounceSlider
+                defaultValue={state.rotation}
+                track={false}
+                aria-labelledby="drawing rotation"
+                valueLabelDisplay="auto"
+                marks={[{ value: -360, label: '-360'}, { value: 0, label: '0'}, { value: 360, label: '360'}]}
+                step={1}
+                min={-360}
+                max={360}
+                onChange={value => onChange('rotation', value)}
+              />
+            </div>
+          </Grid>
         </Grid>
       </Grid>
-    );
-  }
-}
+    </Grid>
+  );
+});
 
 GaborDrawingInput.propTypes = {
-  onDraw: PropTypes.func.isRequired,
+  onUpdate: PropTypes.func.isRequired,
+  scale: PropTypes.number.isRequired,
 };
 
 export default GaborDrawingInput;

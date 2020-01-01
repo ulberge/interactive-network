@@ -1,23 +1,32 @@
-import React, { Component } from 'react';
+import React, { useRef, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import p5 from 'p5';
-
 import { getArraySketch } from '../../js/sketches';
 
-export default class Array2DView extends Component {
-  componentDidMount() {
-    const { imgArr, scale } = this.props;
-    this.p = new p5(getArraySketch(), this.refs.image);
-    this.p.customDraw(imgArr, scale);
-  }
+const Array2DView = props => {
+  const imgRef = useRef(null);
+  const pRef = useRef(null);
 
-  componentDidUpdate() {
-    const { imgArr, scale } = this.props;
-    this.p.customDraw(imgArr, scale);
-  }
+  useEffect(() => {
+    // run once
+    if (!pRef.current && imgRef.current) {
+      pRef.current = new p5(getArraySketch(), imgRef.current);
+    }
 
-  render() {
-    return (
-      <div ref="image"></div>
-    );
-  }
-}
+    // run every time
+    if (pRef.current) {
+      pRef.current.customDraw(props.imgArr, props.scale);
+    }
+  }, [props]);
+
+  return (
+    <div ref={imgRef}></div>
+  );
+};
+
+Array2DView.propTypes = {
+  imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)).isRequired,
+  scale: PropTypes.number.isRequired,
+};
+
+export default Array2DView;

@@ -1,7 +1,6 @@
-import React, { Component } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import Grid from '@material-ui/core/Grid';
 import * as tf from '@tensorflow/tfjs';
-
 import GaborFilters from './Filters';
 import GaborFiltersControls from './FiltersControls';
 import GaborDrawingInput from './DrawingInput';
@@ -12,120 +11,89 @@ import { getLayer, getGaborFilters, eval2DArray, eval2DArrayMultipleLayers } fro
 // is little gain from using gpu on such a small network)
 tf.setBackend('cpu');
 
-export default class GaborExplorer extends Component {
-  constructor(props) {
-    super(props);
+export default function GaborExplorer(props) {
+  const [state, setState] = useState({
+    numComponents: 2, // power of 2
+    lambda: 4,
+    gamma: 3,
+    sigma: 0.6,
+    windowSize: 5,
+    bias: -0.8,
+    imgArr: null
+  });
+  const { numComponents, lambda, gamma, sigma, windowSize, bias, imgArr } = state;
 
-    this.onFilterConfigChange = this.onFilterConfigChange.bind(this);
-    this.onDraw = this.onDraw.bind(this);
-
-    const filterConfig = {
-      numComponents: 2, // power of 2
-      lambda: 4,
-      gamma: 2,
-      sigma: 1.1,
-      windowSize: 7,
-      bias: -1.6
-    };
-    const { numComponents, lambda, gamma, sigma, windowSize, bias } = filterConfig;
+  // the TensorFlow layer is created using the filters
+  const { filters, layer } = useMemo(() => {
     const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
-    this.layer = getLayer(filters, bias);
-    // Set up pooling layers
-    this.maxPoolLayer = tf.layers.maxPooling2d({poolSize: 3});
-    this.avgPoolLayer = tf.layers.avgPooling2d({poolSize: 3});
+    const layer = getLayer(filters, bias);
+    return { filters, layer };
+  }, [numComponents, lambda, gamma, sigma, windowSize, bias]);
 
-    this.state = {
-      ...filterConfig,
-      filters,
-    };
-  }
+  // Set up pooling layers
+  const maxPoolLayer = useMemo(() => tf.layers.maxPooling2d({poolSize: 3}), []);
+  const avgPoolLayer = useMemo(() => tf.layers.avgPooling2d({poolSize: 3}), []);
 
-  onFilterConfigChange(field, value) {
-    // create a copy of the state with the field updated
-    const newState = { ...this.state };
-    newState[field] = value;
-
-    // update the filters and CNN layer
-    let { numComponents, lambda, gamma, sigma, windowSize, bias } = newState;
-    newState.filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
-    this.layer = getLayer(newState.filters, bias);
-
+  let channels, channelsMaxPool, channelsAvgPool;
+  // imgArr is generated async after p5 adds canvas and animates
+  if (imgArr) {
     // reevaluate output of layers
-    newState.channels = eval2DArray(this.layer, this.imgArr);
-    newState.channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], [this.imgArr])[0];
-    newState.channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], [this.imgArr])[0];
-
-    this.setState(newState);
+    channels = eval2DArray(layer, imgArr);
+    channelsMaxPool = eval2DArrayMultipleLayers([layer, maxPoolLayer], [imgArr])[0];
+    channelsAvgPool = eval2DArrayMultipleLayers([layer, avgPoolLayer], [imgArr])[0];
   }
 
-  onDraw(imgArr) {
-    // save for updates to config to use
-    this.imgArr = imgArr;
+  const onChange = useCallback((field, value) => setState(state => ({ ...state, [field]: value })), []);
+  const onUpdate = useCallback(imgArr => setState(state => ({ ...state, imgArr })), []);
 
-    // reevaluate output of layers
-    const channels = eval2DArray(this.layer, this.imgArr);
-    const channelsMaxPool = eval2DArrayMultipleLayers([this.layer, this.maxPoolLayer], [this.imgArr])[0];
-    const channelsAvgPool = eval2DArrayMultipleLayers([this.layer, this.avgPoolLayer], [this.imgArr])[0];
-
-    this.setState({
-      channels,
-      channelsMaxPool,
-      channelsAvgPool,
-    });
-  }
-
-  render() {
-    const { numComponents, lambda, gamma, sigma, windowSize, bias, filters, channels, channelsMaxPool, channelsAvgPool } = this.state;
-
-    return (
-      <div>
-        <h2>Gabor Explorer</h2>
-        <Grid container justify="center" spacing={4}>
-          <Grid item xs={3}>
-            <h3>Filter Builder</h3>
-            <Grid container spacing={4}>
-              <Grid item xs={8}>
-                <GaborFiltersControls
-                  numComponents={numComponents}
-                  lambda={lambda}
-                  gamma={gamma}
-                  sigma={sigma}
-                  windowSize={windowSize}
-                  bias={bias}
-                  onChange={this.onFilterConfigChange}
-                 />
-              </Grid>
-              <Grid item xs={4} className="bordered-canvas">
-                <GaborFilters filters={filters} scale={80} />
-              </Grid>
+  return (
+    <div>
+      <h2>Gabor Explorer</h2>
+      <Grid container justify="center" spacing={4}>
+        <Grid item xs={3}>
+          <h3>Filter Builder</h3>
+          <Grid container spacing={4}>
+            <Grid item xs={8}>
+              <GaborFiltersControls
+                numComponents={numComponents}
+                lambda={lambda}
+                gamma={gamma}
+                sigma={sigma}
+                windowSize={windowSize}
+                bias={bias}
+                onChange={onChange}
+               />
+            </Grid>
+            <Grid item xs={4} className="bordered-canvas">
+              <GaborFilters filters={filters} scale={80} />
             </Grid>
           </Grid>
-          <Grid item xs={3}>
-            <h3>Test Input</h3>
-            <GaborDrawingInput scale={6} onDraw={this.onDraw} />
-          </Grid>
-          { !!channels ?
-            <Grid item xs={3} className="bordered-canvas">
-              <h3>Activations</h3>
-              <Grid container spacing={1}>
-                <Grid item xs={4}>
-                  <Array2DViewList scale={4} imgArrs={channels} />
-                  <h4>Conv2D</h4>
-                </Grid>
-                <Grid item xs={4}>
-                  <Array2DViewList scale={12} imgArrs={channelsMaxPool} />
-                  <h4>Max Pool</h4>
-                </Grid>
-                <Grid item xs={4}>
-                  <Array2DViewList scale={12} imgArrs={channelsAvgPool} />
-                  <h4>Avg Pool</h4>
-                </Grid>
-              </Grid>
-            </Grid>
-            : null
-          }
         </Grid>
-      </div>
-    );
-  }
+        <Grid item xs={3}>
+          <h3>Test Input</h3>
+          <GaborDrawingInput scale={6} onUpdate={onUpdate} />
+        </Grid>
+        { !!channels ?
+          <Grid item xs={3} className="bordered-canvas">
+            <h3>Activations</h3>
+            <Grid container spacing={1}>
+              <Grid item xs={4}>
+                <Array2DViewList scale={4} imgArrs={channels} />
+                <h4>Conv2D</h4>
+              </Grid>
+              <Grid item xs={4}>
+                <Array2DViewList scale={12} imgArrs={channelsMaxPool} />
+                <h4>Max Pool</h4>
+              </Grid>
+              <Grid item xs={4}>
+                <Array2DViewList scale={12} imgArrs={channelsAvgPool} />
+                <h4>Avg Pool</h4>
+              </Grid>
+            </Grid>
+          </Grid>
+          : null
+        }
+      </Grid>
+    </div>
+  );
 }
