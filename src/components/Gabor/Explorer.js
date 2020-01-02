@@ -70,7 +70,7 @@ export default function GaborExplorer(props) {
           </Grid>
         </Grid>
         <Grid item xs={3}>
-          <h3>Test Input</h3>
+          <h3>Test Drawing</h3>
           <GaborDrawingInput scale={6} onUpdate={onUpdate} />
         </Grid>
         { !!channels ?
