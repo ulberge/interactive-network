@@ -176,7 +176,7 @@ export function getArraySketch() {
         return;
       }
 
-      p.scale = scale;
+      p._scale = scale;
       const h = imgArr.length * scale;
       const w = imgArr[0].length * scale;
       if (h !== p.height || w !== p.width) {
@@ -184,7 +184,7 @@ export function getArraySketch() {
       }
 
       p.clear();
-      p.strokeWeight(p.scale * gridWeight);
+      p.strokeWeight(p._scale * gridWeight);
 
       // normalize to max value (positive or negative)
       // let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
@@ -198,7 +198,7 @@ export function getArraySketch() {
           } else {
             p.fill(255, 0, 0, -v / 4);
           }
-          p.rect(x * p.scale, y * p.scale, p.scale, p.scale);
+          p.rect(x * p._scale, y * p._scale, p._scale, p._scale);
         }
       }
     }
@@ -215,7 +215,7 @@ export function getArraySketch() {
 /**
  * Returns an empty p5 sketch
  */
-export function getEmptySketch(shape, scale) {
+export function getEmptySketch(shape=null, scale=1) {
   return (p) => {
     p.setup = () => {
       p.pixelDensity(1);

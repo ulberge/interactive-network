@@ -11,6 +11,7 @@ import './index.css';
 import * as serviceWorker from './serviceWorker';
 
 import GaborExplorer from './components/Gabor/Explorer';
+import DrawSketchANet from './components/Draw/SketchANet';
 
 const theme = createMuiTheme({
   palette: {
@@ -26,6 +27,11 @@ ReactDOM.render(
         name="Gabor Explorer"
         path="/gabor"
         component={GaborExplorer}
+      />
+      <Route
+        name="DrawSketchANet"
+        path="/draw"
+        component={DrawSketchANet}
       />
       <Redirect path="*" to="/gabor" />
     </Router>

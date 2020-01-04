@@ -5,7 +5,8 @@ import GaborFilters from './Filters';
 import GaborFiltersControls from './FiltersControls';
 import GaborDrawingInput from './DrawingInput';
 import Array2DViewList from '../UI/Array2DViewList';
-import { getLayer, getGaborFilters, eval2DArray, eval2DArrayMultipleLayers } from '../../js/helpers';
+import { getGaborFilters } from '../../js/gabor';
+import { getLayer, eval2DArray, eval2DArrayMultipleLayers } from '../../js/tfhelpers';
 
 // Set to cpu to avoid high cost of syncing gpu to cpu (and there
 // is little gain from using gpu on such a small network)

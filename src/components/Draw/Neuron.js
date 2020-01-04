@@ -15,15 +15,16 @@ const DrawNeuron = props => {
   useEffect(() => {
     // run once
     if (!drawer.current && imgRef.current && imgDisplayRef.current) {
-      const pRef = new p5(getEmptySketch(), imgRef);
-      const pDisplayRef = new p5(getArraySketch(), imgDisplayRef);
+      const pRef = new p5(getEmptySketch(props.shape), imgRef.current);
+      const pDisplayRef = new p5(getArraySketch(), imgDisplayRef.current);
       drawer.current = new Drawer(pRef, pDisplayRef);
     }
     // run every time
     if (drawer.current) {
-      const { layers, layerIndex, neuronIndex, shape, displayScale, strokeWeight, speed } = props;
+      const { layers, layerIndex, neuronIndex, displayScale, strokeWeight, speed } = props;
       // draw what maximizes the neuron at the given shape using the given stroke weight and speed
-      drawer.draw(layers, layerIndex, neuronIndex, shape, displayScale, strokeWeight, speed);
+      drawer.current.configure(layers, layerIndex, neuronIndex, displayScale, strokeWeight, speed);
+      drawer.current.start();
     }
   }, [props]);
 
@@ -36,7 +37,7 @@ const DrawNeuron = props => {
 };
 
 DrawNeuron.propTypes = {
-  layers: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)))).isRequired,
+  layers: PropTypes.arrayOf(PropTypes.object).isRequired,
   layerIndex: PropTypes.number.isRequired,
   neuronIndex: PropTypes.number.isRequired,
   strokeWeight: PropTypes.number.isRequired,
