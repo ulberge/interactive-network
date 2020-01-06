@@ -12,6 +12,7 @@ import * as serviceWorker from './serviceWorker';
 
 import GaborExplorer from './components/Gabor/Explorer';
 import DrawSketchANet from './components/Draw/SketchANet';
+import DrawSmartCanvas from './components/Draw/SmartCanvas';
 
 const theme = createMuiTheme({
   palette: {
@@ -33,7 +34,12 @@ ReactDOM.render(
         path="/draw"
         component={DrawSketchANet}
       />
-      <Redirect path="*" to="/gabor" />
+      <Route
+        name="Smart Canvas"
+        path="/smartcanvas"
+        component={DrawSmartCanvas}
+      />
+      <Redirect path="*" to="/smartcanvas" />
     </Router>
   </ThemeProvider>),
   document.getElementById('root')

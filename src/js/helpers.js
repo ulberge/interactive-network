@@ -74,3 +74,80 @@ export const getImgArrFromPixels = (pixels, width) => {
 export function delay(timer) {
   return new Promise(resolve => setTimeout(() => resolve(), timer));
 }
+
+// Return the list of pixels within N steps (including diagonal steps as 1 step) from the given pixel within bounds
+export function getPixelsWithinDistance(pixel, N, bounds) {
+  const { x: cx, y: cy } = pixel;
+  const [ sx, sy, ex, ey ] = bounds;
+  console.log(cx, cy, sx, sy, ex, ey, cy - N, cy + N, cx - N, cx + N);
+  const neighbors = [];
+  for (let y = cy - N; y <= (cy + N); y += 1) {
+    if (y < sy || y >= ey) {
+      continue;
+    }
+    for (let x = cx - N; x <= (cx + N); x += 1) {
+      if (x < sx || x >= ex) {
+        continue;
+      }
+
+      neighbors.push({ x, y });
+    }
+  }
+  return neighbors;
+}
+
+// Return a unique list of pixels within N steps (including diagonal steps as 1 step) from the supplied pixels within bounds
+export function getUniqueNeighbors(pixels, N, bounds) {
+  const allNeighbors = new Set([]);
+
+  pixels.forEach(p => {
+    // add the pixel itself
+    allNeighbors.add(p.x + '_' + p.y);
+
+    // get matrix of pixels in area that are within bounds
+    const neighbors = getPixelsWithinDistance(p, N, bounds);
+    neighbors.forEach(n => allNeighbors.add(n.x + '_' + n.y));
+  });
+
+  const allNeighborsFormatted = [];
+  allNeighbors.forEach(v => {
+    const xy = v.split('_');
+    allNeighborsFormatted.push({ x: parseInt(xy[0]), y: parseInt(xy[1]) });
+  });
+  return allNeighborsFormatted;
+}
+
+// Returns new copy of array after:
+// start with point, flood fill by switching all values matching old value at point with newVal
+export function floodFill(arr2D, start, newVal) {
+  const newArr2D = deepCopy(arr2D);
+
+  if (!arr2D || arr2D.length === 0 || !start) {
+    return newArr2D;
+  }
+
+  const bounds = [0, 0, arr2D[0].length, arr2D.length];
+  const { x, y } = start;
+  const matchVal = newArr2D[y][x];
+
+  if (matchVal === newVal) {
+    return newArr2D;
+  }
+
+  const floodFillRecursive = pixel => {
+    console.log([pixel], 1, bounds);
+    const neighbors = getUniqueNeighbors([pixel], 1, bounds);
+    neighbors.forEach(n => {
+      const { x, y } = n;
+      if (newArr2D[y][x] === matchVal) {
+        // replace and spread
+        newArr2D[y][x] = newVal;
+        floodFillRecursive(n);
+      }
+    })
+  };
+
+  floodFillRecursive(start);
+
+  return newArr2D;
+}
