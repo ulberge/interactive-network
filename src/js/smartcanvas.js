@@ -1,18 +1,42 @@
 import p5 from 'p5';
-import { getEmpty2DArray, deepCopy, getUniqueNeighbors, floodFill } from './helpers';
+import { getEmpty2DArray, deepCopy, getUniqueNeighbors, getPixelsWithinDistance, floodFill, getApproximateCrossings } from './helpers';
 
-export const CONSTANTS = {
-  ANGLES: [
-    0, Math.PI / 2, // 0, 90 degrees: horiz (--), vert (|)
-    Math.PI / 4, 3 * Math.PI / 4, // 45, 135 degrees: diag (/), diag (\)
-    Math.PI / 8, 3 * Math.PI / 8, 5 * Math.PI / 8, 7 * Math.PI / 8, // 22.5, 67.5, 112.5, 157.5 degrees
-    Math.PI / 16, 3 * Math.PI / 16, 5 * Math.PI / 16, 7 * Math.PI / 16, 9 * Math.PI / 16, 11 * Math.PI / 16, 13 * Math.PI / 16, 15 * Math.PI / 16,
-    Math.PI / 32, 3 * Math.PI / 32, 5 * Math.PI / 32, 7 * Math.PI / 32, 9 * Math.PI / 32, 11 * Math.PI / 32, 13 * Math.PI / 32, 15 * Math.PI / 32, 17 * Math.PI / 32, 19 * Math.PI / 32, 21 * Math.PI / 32, 23 * Math.PI / 32, 25 * Math.PI / 32, 27 * Math.PI / 32, 29 * Math.PI / 32, 31 * Math.PI / 32
-  ]
-};
+const LINE_ANGLES = [
+  0, Math.PI / 2, // 0, 90 degrees: horiz (--), vert (|)
+  Math.PI / 4, 3 * Math.PI / 4, // 45, 135 degrees: diag (/), diag (\)
+  Math.PI / 8, 3 * Math.PI / 8, 5 * Math.PI / 8, 7 * Math.PI / 8, // 22.5, 67.5, 112.5, 157.5 degrees
+];
+const LINE_VECTORS = LINE_ANGLES.map(angle => new p5.Vector.fromAngle(angle));
 
-const numAngles = 8;
-const LINE_ANGLES = CONSTANTS.ANGLES.slice(0, numAngles).map(angle => new p5.Vector.fromAngle(angle));
+const LINE_END_ANGLES = [
+  0, Math.PI / 2, Math.PI, Math.PI * 1.5,
+  Math.PI / 4, 3 * Math.PI / 4, 5 * Math.PI / 4, 7 * Math.PI / 4,
+  Math.PI / 8, 3 * Math.PI / 8, 5 * Math.PI / 8, 7 * Math.PI / 8,
+  9 * Math.PI / 8, 11 * Math.PI / 8, 13 * Math.PI / 8, 15 * Math.PI / 8,
+];
+const LINE_END_VECTORS = LINE_END_ANGLES.map(angle => new p5.Vector.fromAngle(angle));
+
+export function getCornersRef() {
+  const ref = {};
+  let count = 0;
+  LINE_END_VECTORS.forEach((v0, i) => LINE_END_VECTORS.forEach((v1, j) => {
+    // ignore self and reflection
+    const angleBetween = Math.abs(v0.angleBetween(v1));
+    if (i !== j && Math.abs(angleBetween - Math.PI) > 0.0001) {
+      const key = i < j ? (i + '_' + j) : (j + '_' + i);
+      if (!(key in ref)) {
+        ref[key] = count;
+        count++;
+      }
+    }
+  }));
+  return ref;
+}
+
+// Should be every combination of line ends accept with themselves or reflection
+// Create map with lower index as first part of key and higher as second, value is the index
+const CORNERS_REF = getCornersRef();
+const NUM_CORNERS = Object.keys(CORNERS_REF).length;
 
 const getNumArray = (start, end) => {
   const arr = [];
@@ -31,19 +55,21 @@ class LineInfo {
       const refs = {};
 
       // add line channels
-      refs.lines = { start: 0, end: numAngles };
-      for (let i = 0; i < numAngles; i += 1) {
+      refs.lines = { start: 0, end: LINE_ANGLES.length };
+      for (let i = 0; i < LINE_ANGLES.length; i += 1) {
         this.channels.push(getEmpty2DArray(h, w, 0));
       }
 
       // add line end channel
-      refs.lineEnd = { start: this.channels.length, end: this.channels.length + 1 };
+      refs.lineEnds = { start: this.channels.length, end: this.channels.length + LINE_END_ANGLES.length };
+      for (let i = 0; i < LINE_END_ANGLES.length; i += 1) {
+        this.channels.push(getEmpty2DArray(h, w, 0));
+      }
       this.channels.push(getEmpty2DArray(h, w, 0));
 
       // add corner channels
-      const numCorners = 4;
-      refs.corners = { start: this.channels.length, end: this.channels.length + numCorners };
-      for (let i = 0; i < numCorners; i += 1) {
+      refs.corners = { start: this.channels.length, end: this.channels.length + NUM_CORNERS };
+      for (let i = 0; i < NUM_CORNERS; i += 1) {
         this.channels.push(getEmpty2DArray(h, w, 0));
       }
 
@@ -66,6 +92,11 @@ class LineInfo {
     return this.channels.map(channel => channel[y][x]);
   }
 
+  getChannelAt(pos, channelIndex) {
+    const { x, y } = pos;
+    return this.channels[channelIndex][y][x];
+  }
+
   setChannelAt(pos, channelIndex, v) {
     const { x, y } = pos;
     this.channels[channelIndex][y][x] = v;
@@ -82,6 +113,7 @@ export class SmartCanvas {
     this.lineInfo = new LineInfo(w, h);
     this.bounds = [0, 0, w, h];
     this.r = 1;
+    this.cornerTolerance = Math.PI / 32;
   }
 
   // Return the line type that has the minimum diff in angle from the line between start and end
@@ -89,7 +121,7 @@ export class SmartCanvas {
     const lineBetween = end.copy().sub(start);
     let minAngle = Infinity;
     let minAngleIndex = -1;
-    LINE_ANGLES.forEach((angle, i) => {
+    LINE_VECTORS.forEach((angle, i) => {
       const angleBetween = Math.min(Math.abs(angle.angleBetween(lineBetween)), Math.abs(angle.copy().mult(-1).angleBetween(lineBetween)));
       if (angleBetween < minAngle) {
         minAngle = angleBetween;
@@ -99,45 +131,78 @@ export class SmartCanvas {
     return minAngleIndex;
   }
 
-  // interpolated between start and end at the step provided, recording unique pixels crossed
-  static getApproximateCrossings(start, end, stepSize=0.5) {
-    const diff = end.copy().sub(start);
-    const step = diff.copy().normalize().mult(stepSize);
-    const numSteps = Math.floor(diff.mag() / stepSize);
-
-    const curr = start.copy();
-    // add first
-    let prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
-    const pixels = [prev];
-
-    // main loop
-    for (let i = 0; i < numSteps; i += 1) {
-      curr.add(step);
-
-      if (Math.floor(curr.x) !== prev.x || Math.floor(curr.y) !== prev.y) {
-        // new square!
-        prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
-        pixels.push(prev);
+  // Return type of line end for start and end of line
+  static getLineEndType(start, end) {
+    const v = end.copy().sub(start);
+    let minAngle = Infinity;
+    let minAngleIndex = -1;
+    LINE_END_VECTORS.forEach((angle, i) => {
+      const angleBetween = Math.abs(angle.angleBetween(v));
+      if (angleBetween < minAngle) {
+        minAngle = angleBetween;
+        minAngleIndex = i;
       }
-    }
+    });
 
-    // add last (if new)
-    if (Math.floor(end.x) !== prev.x || Math.floor(end.y) !== prev.y) {
-      pixels.push({ x: Math.floor(end.x), y: Math.floor(end.y) });
-    }
+    return minAngleIndex;
+  }
 
-    return pixels;
+  // Return the type of corner formed by two line ends
+  static getCornerType(lineEndType0, lineEndType1) {
+    const key = lineEndType0 < lineEndType1 ? (lineEndType0 + '_' + lineEndType1) : (lineEndType1 + '_' + lineEndType0);
+    if (!(key in CORNERS_REF)) {
+      return -1;
+    }
+    return CORNERS_REF[key];
   }
 
   // Return the pixels that are dirty given the start and end point of a new line segment, in order
   static getDirty(start, end) {
-    const pixels = SmartCanvas.getApproximateCrossings(start, end, 0.2);
-    return pixels;
+    return getApproximateCrossings(start, end, 0.2);
+  }
+
+  // Return the line end positions and types nearby the position provided
+  getLineEndNeighborsNear(pixel) {
+    const posExpanded = getPixelsWithinDistance(pixel, this.r, this.bounds);
+    const lineEndNeighbors = [];
+    posExpanded.forEach(n => {
+      const { start, end } = this.lineInfo.refs.lineEnds;
+      const channels = this.lineInfo.getChannelsAt(n).slice(start, end);
+      channels.forEach((c, i) => {
+        if (c === 1) {
+          lineEndNeighbors.push({ pos: n, type: i });
+        }
+      });
+    });
+    return lineEndNeighbors;
+  }
+
+  // Return the line types (int) at the position
+  getLineTypesAt(pixel) {
+    const channels = this.lineInfo.getChannelsAt(pixel);
+    const lineTypes = [];
+    channels.forEach((channel, i) => {
+      if (channel === 1) {
+        lineTypes.push(i);
+      }
+    });
+    return lineTypes;
+  }
+
+  isEmptyAt(pixel) {
+    const channels = this.lineInfo.getChannelsAt(pixel);
+    const nonEmptyChannels = channels.filter(v => v !== 0);
+    return nonEmptyChannels.length === 0;
   }
 
   // Given a new line segment specified by start and end {x,y} coordinates,
   // create a copy of the current lineInfo with the addition and return it
   getTestLineInfo(start, end) {
+    // special case for lines that are all in one pixel?
+    if (start.x === end.x && start.y === end.y) {
+      console.log('Warning: line begins and ends in same pixel, could cause bad behavior');
+    }
+
     const testLineInfo = LineInfo.copy(this.lineInfo);
 
     // calculate the angle of the line formed by the start and end
@@ -147,56 +212,62 @@ export class SmartCanvas {
     const dirtyPixels = SmartCanvas.getDirty(start, end);
     const startPixel = dirtyPixels[0];
     const endPixel = dirtyPixels[dirtyPixels.length - 1];
-    let otherPixels = [];
-    if (dirtyPixels.length > 2) {
-      otherPixels = dirtyPixels.slice(1, dirtyPixels.length - 1);
-    }
 
-    // calc lineEnds
-    // for start and end, if pixel has 0 for all line channels, set lineEnd channel to 1, else 0
-    const isStartEmpty = testLineInfo.getChannelsAt(startPixel).filter(v => v !== 0).length === 0;
-    testLineInfo.setChannelAt(startPixel, testLineInfo.refs.lineEnd.start, isStartEmpty ? 1 : 0);
-
-    const isEndEmpty = testLineInfo.getChannelsAt(endPixel).filter(v => v !== 0).length === 0;
-    testLineInfo.setChannelAt(endPixel, testLineInfo.refs.lineEnd.start, isEndEmpty ? 1 : 0);
-
-    // for all other dirty pixels, set lineEnd to 0, since it now has another line crossing
-    otherPixels.forEach(pixel => testLineInfo.setChannelAt(pixel, testLineInfo.refs.lineEnd.start, 0));
-
-    // calc lines
-    // set channel for line type to 1 for all dirty pixels
-    dirtyPixels.forEach(pixel => testLineInfo.setChannelAt(pixel, lineType, 1));
-
-    // calc corners (L)
-    // corners should check start and end pixels and all adjacent pixels in a given search radius
-    // this will connect line ends that are less than N pixels from each other, but will also match
-    // pixels up to N+1.
+    // get neighbors within radius this.r
     const dirtyPixelsExpanded = getUniqueNeighbors(dirtyPixels, this.r, this.bounds);
+    const startExpanded = getPixelsWithinDistance(startPixel, this.r, this.bounds);
+    const endExpanded = getPixelsWithinDistance(endPixel, this.r, this.bounds);
 
-    // flood fill all corners within N pixels of dirty pixels with 0
+    // CLEANUP
+    // remove any lineEnds, corners within radius of new line since a new line has destroyed them
     dirtyPixelsExpanded.forEach(pixel => {
-      testLineInfo.refs.corners.all.forEach(channelIndex => testLineInfo.floodFillChannelAt(pixel, channelIndex, 0));
+      const toClear = [ ...testLineInfo.refs.lineEnds.all, ...testLineInfo.refs.corners.all ];
+      toClear.forEach(channelIndex => {
+        if (testLineInfo.getChannelAt(pixel, channelIndex) === 1) {
+          testLineInfo.floodFillChannelAt(pixel, channelIndex, 0);
+        }
+      });
     });
 
-    // if pixels within N pixels of start or end positions were previously line ends, and the angle between the two lines in
-    // the pixel is close to 90 degrees, than set to 1
-    // const startPixelExpanded = getUniqueNeighbors([startPixel], this.r, this.bounds);
+    // LINE ENDS (i)
+    // End of a line with no other object within a tolerance
+    const startNeighborsWithLine = startExpanded.filter(pixel => !this.isEmptyAt(pixel));
+    if (startNeighborsWithLine.length === 0) {
+      // is line end, get type of line end pointing towards start
+      const lineEndType = SmartCanvas.getLineEndType(end, start);
+      testLineInfo.setChannelAt(startPixel, testLineInfo.refs.lineEnds.start + lineEndType, 1);
+    }
+    const endNeighborsWithLine = endExpanded.filter(pixel => !this.isEmptyAt(pixel));
+    if (endNeighborsWithLine.length === 0) {
+      // is line end, get type of line end pointing towards start
+      const lineEndType = SmartCanvas.getLineEndType(start, end);
+      testLineInfo.setChannelAt(endPixel, testLineInfo.refs.lineEnds.start + lineEndType, 1);
+    }
 
-    // const startChannelsPrev = this.lineInfo.getChannelsAt(startPixel);
-    // const startLineEndPrev = startChannelsPrev[this.lineInfo.refs.lineEnd.start];
-    // if (startLineEndPrev === 1) {
-    //   // get current line indices, should be 2
-    //   const lineChannels = testLineInfo.getChannelsAt(startPixel).slice(testLineInfo.refs.lines.start, testLineInfo.refs.lines.end);
-    //   const lineChannelIndices = [];
-    //   lineChannels.forEach((channel, i) => {
-    //     if (channel === 1) {
-    //       lineChannelIndices.push(i);
-    //     }
-    //   });
-    // }
-    // const endChannelsPrev = this.lineInfo.getChannelsAt(endPixel);
-    // const endLineEndPrev = this.lineInfo.getChannelsAt(endPixel)[testLineInfo.refs.lineEnd.start];
+    // LINES (|)
+    // All dirty pixels now have this type of line
+    dirtyPixels.forEach(pixel => testLineInfo.setChannelAt(pixel, lineType, 1));
 
+    // CORNERS (L)
+    // Exactly two line ends meet within a tolerance
+    const startLineEndNeighbors = this.getLineEndNeighborsNear(startPixel);
+    if (startLineEndNeighbors.length === 1) {
+      // start is corner!
+      const prevStartLineEndType = startLineEndNeighbors[0].type;
+      const startLineEndType = SmartCanvas.getLineEndType(end, start);
+      const cornerType = SmartCanvas.getCornerType(prevStartLineEndType, startLineEndType);
+      testLineInfo.setChannelAt(startPixel, testLineInfo.refs.corners.start + cornerType, 1);
+    }
+    const endLineEndNeighbors = this.getLineEndNeighborsNear(endPixel);
+    if (endLineEndNeighbors.length === 1) {
+      // end is corner!
+      const prevEndLineEndType = endLineEndNeighbors[0].type;
+      const endLineEndType = SmartCanvas.getLineEndType(start, end);
+      const cornerType = SmartCanvas.getCornerType(prevEndLineEndType, endLineEndType);
+      if (cornerType !== -1) {
+        testLineInfo.setChannelAt(endPixel, testLineInfo.refs.corners.start + cornerType, 1);
+      }
+    }
 
     // calc T-intersections (T)
 

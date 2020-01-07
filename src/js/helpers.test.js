@@ -1,49 +1,125 @@
-import { getPixelsWithinDistance, getUniqueNeighbors, floodFill } from './helpers';
+import { getPixelsWithinDistance, getUniqueNeighbors, floodFill, getApproximateCrossings, getEmpty2DArray } from './helpers';
+import p5 from 'p5';
 
-// it('correctly gets pixels within distance: getPixelsWithinDistance', () => {
-//   const pixels = getPixelsWithinDistance({ x: 3, y: 4 }, 2, [0, 0, 10, 10]);
+const getPixelsAs2DArray = pixels => {
+  const pixelArr2D = getEmpty2DArray(8, 8, 0);
+  pixels.forEach(pixel => pixelArr2D[pixel.y][pixel.x] = 1);
+  return pixelArr2D;
+}
 
-//   expect(pixels.length).toBe(25);
-// });
+it('correctly gets pixels within distance: getPixelsWithinDistance', () => {
+  const pixels = getPixelsWithinDistance({ x: 3, y: 4 }, 2, [0, 0, 8, 8]);
 
-// it('correctly gets pixels within distance with lower bound encounter: getPixelsWithinDistance', () => {
-//   const pixels = getPixelsWithinDistance({ x: 3, y: 4 }, 3, [2, 2, 10, 10]);
+  const expectedResult = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
 
-//   expect(pixels.length).toBe(30);
-// });
+it('correctly gets pixels within distance with lower bound encounter: getPixelsWithinDistance', () => {
+  const pixels = getPixelsWithinDistance({ x: 0, y: 1 }, 2, [0, 0, 8, 8]);
 
-// it('correctly gets pixels within distance with upper bound encounter: getPixelsWithinDistance', () => {
-//   const pixels = getPixelsWithinDistance({ x: 3, y: 4 }, 3, [0, 0, 6, 6]);
+  const expectedResult = [
+    [1, 1, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
 
-//   expect(pixels.length).toBe(30);
-// });
+it('correctly gets pixels within distance with upper bound encounter: getPixelsWithinDistance', () => {
+  const pixels = getPixelsWithinDistance({ x: 6, y: 7 }, 2, [0, 0, 8, 8]);
 
-// it('correctly gets pixels within distance with both bound encounter: getPixelsWithinDistance', () => {
-//   const pixels = getPixelsWithinDistance({ x: 1, y: 1 }, 2, [0, 0, 3, 3]);
+  const expectedResult = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 0, 1, 1, 1, 1],
+  ];
+  console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
 
-//   expect(pixels.length).toBe(9);
-// });
+it('correctly gets unique pixels within distance: getUniqueNeighbors', () => {
+  const pixels = getUniqueNeighbors([{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 2, y: 2 }], 1, [0, 0, 8, 8]);
 
-// it('correctly gets unique pixels within distance: getUniqueNeighbors', () => {
-//   const pixels = getUniqueNeighbors([{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 2, y: 2 }], 1, [0, 0, 5, 5]);
+  const expectedResult = [
+    [1, 1, 1, 1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 0, 0, 0, 0],
+    [0, 1, 1, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
 
-//   expect(pixels.length).toBe(15);
-// });
+it('correctly gets unique pixels within distance when bounds encountered: getUniqueNeighbors', () => {
+  const pixels = getUniqueNeighbors([{ x: 0, y: 0 }, { x: 7, y: 7 }], 1, [0, 0, 8, 8]);
 
-// it('correctly gets unique pixels within distance when bounds encountered: getUniqueNeighbors', () => {
-//   const pixels = getUniqueNeighbors([{ x: 0, y: 0 }, { x: 4, y: 4 }], 1, [0, 0, 5, 5]);
+  const expectedResult = [
+    [1, 1, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 1],
+    [0, 0, 0, 0, 0, 0, 1, 1],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
 
-//   expect(pixels.length).toBe(8);
-// });
-
-// it('correctly gets unique pixels within distance when bounds encountered: getUniqueNeighbors', () => {
-//   const pixels = getUniqueNeighbors([{ x: 4, y: 3 }], 1, [0, 0, 8, 7]);
-//   console.log(pixels);
-//   expect(pixels.length).toBe(8);
-// });
+it('correctly flood fills one pixel: floodFill', () => {
+  const input = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  const expectedResult = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  floodFill(input, { x: 1, y: 6 }, 0);
+  // console.table(result);
+  expect(input).toEqual(expectedResult);
+});
 
 it('correctly flood fills: floodFill', () => {
-  const arr2D = [
+  const input = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 1, 1, 0, 1, 0],
@@ -51,17 +127,91 @@ it('correctly flood fills: floodFill', () => {
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
-  ]
-  const newArr2D = floodFill(arr2D, { x: 3, y: 3 }, 0);
-  console.table(newArr2D);
-  expect(newArr2D[2][2]).toBe(0);
-  expect(newArr2D[2][3]).toBe(0);
-  expect(newArr2D[2][4]).toBe(0);
-  expect(newArr2D[2][6]).toBe(0);
-  expect(newArr2D[3][3]).toBe(0);
-  expect(newArr2D[3][4]).toBe(0);
-  expect(newArr2D[3][5]).toBe(0);
-  expect(newArr2D[5][1]).toBe(1);
+  ];
+  const expectedResult = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  floodFill(input, { x: 3, y: 3 }, 0);
+  // console.table(result);
+  expect(input).toEqual(expectedResult);
 });
 
+it('correctly gets pixels of line type between two points: getApproximateCrossings', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(3, 3);
+  const result = getApproximateCrossings(p0, p1, 1);
 
+  const expectedResult = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(result));
+  expect(getPixelsAs2DArray(result)).toEqual(expectedResult);
+});
+
+it('correctly gets pixels of line type between two points (non-integers): getApproximateCrossings', () => {
+  const p0 = new p5.Vector(0.1, 0.6);
+  const p1 = new p5.Vector(2.1, 2.2);
+  const result = getApproximateCrossings(p0, p1, 0.1);
+
+  const expectedResult = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(result));
+  expect(getPixelsAs2DArray(result)).toEqual(expectedResult);
+});
+
+it('does not go past the end point: getApproximateCrossings', () => {
+  const p0 = new p5.Vector(0.5, 0.5);
+  const p1 = new p5.Vector(1.8, 1.9);
+  const pixels = getApproximateCrossings(p0, p1, 1.2);
+  const expectedResult = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});
+
+it('captures small crossings when low step size: getApproximateCrossings', () => {
+  const p0 = new p5.Vector(0.9, 0.9);
+  const p1 = new p5.Vector(1.09, 1.1);
+  const pixels = getApproximateCrossings(p0, p1, 0.009);
+  const expectedResult = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  // console.table(getPixelsAs2DArray(pixels));
+  expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
+});

@@ -20,8 +20,54 @@ export function choose(arr) {
   }
 }
 
-export function deepCopy(arr) {
-  return JSON.parse(JSON.stringify(arr));
+// copy 2d array
+export function deepCopy(a) {
+  if (a.length === 0) {
+    return [];
+  }
+
+  return a.map(row => row.slice(0));
+
+  // speed test
+  // (function testSpeed() {
+  //   const deepCopy = a => {
+  //     if (a.length === 0) {
+  //       return [];
+  //     }
+
+  //     // return a.map(row => row.slice(0));
+  //     return a.slice(0);
+  //     // const b = [];
+  //     // let i = a.length;
+  //     // while (i--) {
+  //     //   let c = [];
+  //     //   let j = a[i].length;
+  //     //   while (j--) {
+  //     //     c[j] = a[i][j];
+  //     //   }
+  //     //   b[i] = c;
+  //     //   b[i] = a[i].slice(0);
+  //     // }
+  //     // return b;
+  //   };
+
+  //   const rows = 800;
+  //   const cols = 600;
+  //   const arr = new Array(rows);
+  //   for (let i = 0; i < rows; i += 1) {
+  //     arr[i] = new Array(cols);
+  //     for (let j = 0; j < cols; j += 1) {
+  //       arr[i][j] = 1;
+  //     }
+  //   }
+  //   console.time('timer');
+  //   JSON.parse(JSON.stringify(arr));
+  //   for (let i = 0; i < 100; i++) {
+  //     deepCopy(arr);
+  //     // JSON.parse(JSON.stringify(arr));
+  //   }
+  //   console.timeEnd('timer');
+  // })();
 }
 
 // normalize 3D array based on max positive value
@@ -79,7 +125,6 @@ export function delay(timer) {
 export function getPixelsWithinDistance(pixel, N, bounds) {
   const { x: cx, y: cy } = pixel;
   const [ sx, sy, ex, ey ] = bounds;
-  console.log(cx, cy, sx, sy, ex, ey, cy - N, cy + N, cx - N, cx + N);
   const neighbors = [];
   for (let y = cy - N; y <= (cy + N); y += 1) {
     if (y < sy || y >= ey) {
@@ -117,37 +162,64 @@ export function getUniqueNeighbors(pixels, N, bounds) {
   return allNeighborsFormatted;
 }
 
-// Returns new copy of array after:
-// start with point, flood fill by switching all values matching old value at point with newVal
+// Modifies arr2D in place: start with point, flood fill by switching all values matching old value at point with newVal
 export function floodFill(arr2D, start, newVal) {
-  const newArr2D = deepCopy(arr2D);
-
   if (!arr2D || arr2D.length === 0 || !start) {
-    return newArr2D;
+    return;
   }
 
   const bounds = [0, 0, arr2D[0].length, arr2D.length];
   const { x, y } = start;
-  const matchVal = newArr2D[y][x];
+  const matchVal = arr2D[y][x];
 
   if (matchVal === newVal) {
-    return newArr2D;
+    return;
   }
 
   const floodFillRecursive = pixel => {
-    console.log([pixel], 1, bounds);
-    const neighbors = getUniqueNeighbors([pixel], 1, bounds);
+    // replace this pixel
+    const { x, y } = pixel;
+    arr2D[y][x] = newVal;
+
+    // spread to other pixels that have matching value
+    const neighbors = getPixelsWithinDistance(pixel, 1, bounds);
     neighbors.forEach(n => {
       const { x, y } = n;
-      if (newArr2D[y][x] === matchVal) {
-        // replace and spread
-        newArr2D[y][x] = newVal;
+      if (arr2D[y][x] === matchVal) {
         floodFillRecursive(n);
       }
     })
   };
 
   floodFillRecursive(start);
+}
 
-  return newArr2D;
+// interpolated between start and end at the step provided, recording unique pixels crossed
+export function getApproximateCrossings(start, end, stepSize=0.5) {
+  const diff = end.copy().sub(start);
+  const step = diff.copy().normalize().mult(stepSize);
+  const numSteps = Math.floor(diff.mag() / stepSize);
+
+  const curr = start.copy();
+  // add first
+  let prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
+  const pixels = [prev];
+
+  // main loop
+  for (let i = 0; i < numSteps; i += 1) {
+    curr.add(step);
+
+    if (Math.floor(curr.x) !== prev.x || Math.floor(curr.y) !== prev.y) {
+      // new square!
+      prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
+      pixels.push(prev);
+    }
+  }
+
+  // add last (if new)
+  if (Math.floor(end.x) !== prev.x || Math.floor(end.y) !== prev.y) {
+    pixels.push({ x: Math.floor(end.x), y: Math.floor(end.y) });
+  }
+
+  return pixels;
 }

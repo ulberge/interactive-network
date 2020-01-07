@@ -15,6 +15,8 @@ const DrawSmartCanvas = memo(function GaborDrawingInput(props) {
   const onNewMark = useCallback(newMark => setState(state => ({ ...state, marks: [...state.marks, newMark] })), []);
   const clear = useCallback(newMark => setState(state => ({ ...state, marks: [] })), []);
 
+  // on new marks, test new mars?
+
   return (
     <Grid container spacing={1} style={{ position: 'relative' }}>
       <Grid item className="bordered-canvas" style={{ margin: '0 auto' }}>

@@ -1,280 +1,673 @@
-import { SmartCanvas } from './smartcanvas';
+import { SmartCanvas, getCornersRef } from './smartcanvas';
+import { getEmpty2DArray } from './helpers';
 import p5 from 'p5';
 
-// it('correctly gets line type between two points: getLineType', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(1, 2);
-//   const lineType = SmartCanvas.getLineType(p0, p1);
-//   expect(lineType).toBe(1);
-// });
+const getAllLines = lineInfo => {
+  const allLines = getEmpty2DArray(8, 8);
+  lineInfo.refs.lines.all.forEach(i => lineInfo.channels[i].forEach((row, y) => row.forEach((v, x) => allLines[y][x] += v)));
+  return allLines;
+}
 
-// it('correctly gets line type between two points: getLineType', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(2, 1);
-//   const lineType = SmartCanvas.getLineType(p0, p1);
-//   expect(lineType).toBe(0);
-// });
+const getAllLineEnds = lineInfo => {
+  const allEnds = getEmpty2DArray(8, 8);
+  lineInfo.refs.lineEnds.all.forEach(i => lineInfo.channels[i].forEach((row, y) => row.forEach((v, x) => allEnds[y][x] += v)));
+  return allEnds;
+}
 
-// it('correctly gets line type between two points: getLineType', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(-2, 1);
-//   const lineType = SmartCanvas.getLineType(p0, p1);
-//   expect(lineType).toBe(0);
-// });
+const getAllLineEndIds = lineInfo => {
+  const endIds = getEmpty2DArray(8, 8);
+  lineInfo.refs.lineEnds.all.forEach(i => lineInfo.channels[i].forEach((row, y) => row.forEach((v, x) => {
+    if (v !== 0) {
+      endIds[y][x] = i - lineInfo.refs.lineEnds.start;
+    }
+  })));
+  return endIds;
+}
 
-// it('correctly gets line type between two points: getLineType', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(-2, -2);
-//   const lineType = SmartCanvas.getLineType(p0, p1);
-//   expect(lineType).toBe(2);
-// });
+const getAllCorners = lineInfo => {
+  const allCorners = getEmpty2DArray(8, 8);
+  lineInfo.refs.corners.all.forEach(i => lineInfo.channels[i].forEach((row, y) => row.forEach((v, x) => allCorners[y][x] += v)));
+  return allCorners;
+}
 
-// it('correctly gets line type between two points: getLineType', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(2, 2);
-//   const lineType = SmartCanvas.getLineType(p0, p1);
-//   expect(lineType).toBe(2);
-// });
+const getAllCornerIds = lineInfo => {
+  const allCorners = getEmpty2DArray(8, 8);
+  lineInfo.refs.corners.all.forEach(i => lineInfo.channels[i].forEach((row, y) => row.forEach((v, x) => {
+    if (v !== 0) {
+      allCorners[y][x] = i - lineInfo.refs.corners.start;
+    }
+  })));
+  return allCorners;
+}
 
-// it('correctly gets pixels of line type between two points: getApproximateCrossings', () => {
-//   const p0 = new p5.Vector(1, 1);
-//   const p1 = new p5.Vector(3, 3);
-//   const pixels = SmartCanvas.getApproximateCrossings(p0, p1, 1);
-//   expect(pixels[0].x).toBe(1);
-//   expect(pixels[0].y).toBe(1);
-//   expect(pixels[1].x).toBe(2);
-//   expect(pixels[1].y).toBe(2);
-//   expect(pixels[2].x).toBe(3);
-//   expect(pixels[2].y).toBe(3);
-// });
+const debugLineInfo = lineInfo => {
+  console.table(getAllLines(lineInfo));
+  console.table(getAllLineEnds(lineInfo));
+  console.table(getAllLineEndIds(lineInfo));
+  console.table(getAllCorners(lineInfo));
+  console.table(getAllCornerIds(lineInfo));
+}
 
-// it('correctly gets pixels of line type between two points: getApproximateCrossings', () => {
-//   const p0 = new p5.Vector(0.1, 0.6);
-//   const p1 = new p5.Vector(2.1, 2.2);
-//   const pixels = SmartCanvas.getApproximateCrossings(p0, p1, 0.1);
-//   expect(pixels[0].x).toBe(0);
-//   expect(pixels[0].y).toBe(0);
-//   expect(pixels[1].x).toBe(0);
-//   expect(pixels[1].y).toBe(1);
-//   expect(pixels[2].x).toBe(1);
-//   expect(pixels[2].y).toBe(1);
-//   expect(pixels[3].x).toBe(1);
-//   expect(pixels[3].y).toBe(2);
-//   expect(pixels[4].x).toBe(2);
-//   expect(pixels[4].y).toBe(2);
-// });
+it('correctly gets line type between two points: getLineType', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(1, 2);
+  const lineType = SmartCanvas.getLineType(p0, p1);
+  expect(lineType).toBe(1);
+});
 
-// it('does not go past the end point: getApproximateCrossings', () => {
-//   const p0 = new p5.Vector(0.5, 0.5);
-//   const p1 = new p5.Vector(1.8, 1.9);
-//   const pixels = SmartCanvas.getApproximateCrossings(p0, p1, 1.2);
-//   expect(pixels[0].x).toBe(0);
-//   expect(pixels[0].y).toBe(0);
-//   expect(pixels[1].x).toBe(1);
-//   expect(pixels[1].y).toBe(1);
-// });
+it('correctly gets line type between two points: getLineType', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(2, 1);
+  const lineType = SmartCanvas.getLineType(p0, p1);
+  expect(lineType).toBe(0);
+});
 
-// it('captures small crossings when low step size: getApproximateCrossings', () => {
-//   const p0 = new p5.Vector(0.9, 0.9);
-//   const p1 = new p5.Vector(1.09, 1.1);
-//   const pixels = SmartCanvas.getApproximateCrossings(p0, p1, 0.009);
-//   expect(pixels[0].x).toBe(0);
-//   expect(pixels[0].y).toBe(0);
-//   expect(pixels[1].x).toBe(0);
-//   expect(pixels[1].y).toBe(1);
-//   expect(pixels[2].x).toBe(1);
-//   expect(pixels[2].y).toBe(1);
-// });
+it('correctly gets line type between two points: getLineType', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(-2, 1);
+  const lineType = SmartCanvas.getLineType(p0, p1);
+  expect(lineType).toBe(0);
+});
 
-// it('checks smart canvas is created without crashing and has a line info with channels set to 0: SmartCanvas', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const lineInfo = smartCanvas.lineInfo;
-//   expect(lineInfo.channels[0][0][0]).toBe(0);
-//   expect(lineInfo.channels[0][7][7]).toBe(0);
-// });
+it('correctly gets line type between two points: getLineType', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(-2, -2);
+  const lineType = SmartCanvas.getLineType(p0, p1);
+  expect(lineType).toBe(2);
+});
 
-// it('updates line channels correctly with vertical line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const start = new p5.Vector(0.5, 0.5);
-//   const end = new p5.Vector(0.5, 1.9);
-//   const lineInfo = smartCanvas.getTestLineInfo(start, end);
-//   expect(lineInfo.channels[0][0][0]).toBe(0);
-//   expect(lineInfo.channels[0][7][7]).toBe(0);
-//   expect(lineInfo.channels[1][0][0]).toBe(1);
-//   expect(lineInfo.channels[1][1][0]).toBe(1);
-//   expect(lineInfo.channels[1][0][1]).toBe(0);
-//   expect(lineInfo.channels[1][1][1]).toBe(0);
-//   expect(lineInfo.channels[1][2][1]).toBe(0);
-// });
+it('correctly gets line type between two points: getLineType', () => {
+  const p0 = new p5.Vector(1, 1);
+  const p1 = new p5.Vector(2, 2);
+  const lineType = SmartCanvas.getLineType(p0, p1);
+  expect(lineType).toBe(2);
+});
 
-// it('updates line channels correctly with horizontal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const start = new p5.Vector(2.5, 4.5);
-//   const end = new p5.Vector(3.6, 4.5);
-//   const lineInfo = smartCanvas.getTestLineInfo(start, end);
-//   expect(lineInfo.channels[0][4][2]).toBe(1);
-//   expect(lineInfo.channels[0][4][3]).toBe(1);
-//   expect(lineInfo.channels[0][4][1]).toBe(0);
-//   expect(lineInfo.channels[0][4][5]).toBe(0);
-//   expect(lineInfo.channels[0][3][2]).toBe(0);
-//   expect(lineInfo.channels[0][3][3]).toBe(0);
-//   expect(lineInfo.channels[0][5][2]).toBe(0);
-//   expect(lineInfo.channels[0][5][3]).toBe(0);
-// });
+it('checks smart canvas is created without crashing and has a line info with channels set to 0: SmartCanvas', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const lineInfo = smartCanvas.lineInfo;
+  expect(lineInfo.channels[0][0][0]).toBe(0);
+  expect(lineInfo.channels[0][7][7]).toBe(0);
+});
 
-// it('updates line channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const start = new p5.Vector(5.4, 5.5);
-//   const end = new p5.Vector(6.3, 6.2);
-//   const lineInfo = smartCanvas.getTestLineInfo(start, end);
-//   expect(lineInfo.channels[2][5][5]).toBe(1);
-//   expect(lineInfo.channels[2][5][6]).toBe(1);
-//   expect(lineInfo.channels[2][6][6]).toBe(1);
-//   expect(lineInfo.channels[2][6][5]).toBe(0);
-// });
+it('updates line channels correctly with vertical line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(0.5, 0.5);
+  const end = new p5.Vector(0.5, 1.9);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  expect(lineInfo.channels[0][0][0]).toBe(0);
+  expect(lineInfo.channels[0][7][7]).toBe(0);
+  expect(lineInfo.channels[1][0][0]).toBe(1);
+  expect(lineInfo.channels[1][1][0]).toBe(1);
+  expect(lineInfo.channels[1][0][1]).toBe(0);
+  expect(lineInfo.channels[1][1][1]).toBe(0);
+  expect(lineInfo.channels[1][2][1]).toBe(0);
+});
 
-// it('updates line end channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const start = new p5.Vector(5.4, 5.5);
-//   const end = new p5.Vector(6.3, 6.2);
-//   const lineInfo = smartCanvas.getTestLineInfo(start, end);
-//   const channel = lineInfo.channels[lineInfo.refs.lineEnd.start];
-//   expect(channel[5][5]).toBe(1);
-//   expect(channel[5][6]).toBe(0);
-//   expect(channel[6][6]).toBe(1);
-//   expect(channel[6][5]).toBe(0);
-// });
+it('updates line channels correctly with horizontal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(2.5, 4.5);
+  const end = new p5.Vector(3.6, 4.5);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  expect(lineInfo.channels[0][4][2]).toBe(1);
+  expect(lineInfo.channels[0][4][3]).toBe(1);
+  expect(lineInfo.channels[0][4][1]).toBe(0);
+  expect(lineInfo.channels[0][4][5]).toBe(0);
+  expect(lineInfo.channels[0][3][2]).toBe(0);
+  expect(lineInfo.channels[0][3][3]).toBe(0);
+  expect(lineInfo.channels[0][5][2]).toBe(0);
+  expect(lineInfo.channels[0][5][3]).toBe(0);
+});
 
-// it('updates line end channels correctly with diagonal line of length of more than 2 at non-corner coordinates: getTestLineInfo', () => {
-//   const smartCanvas = new SmartCanvas(8, 8);
-//   const start = new p5.Vector(4.4, 4.5);
-//   const end = new p5.Vector(6.3, 6.2);
-//   const lineInfo = smartCanvas.getTestLineInfo(start, end);
-//   const channel = lineInfo.channels[lineInfo.refs.lineEnd.start];
-//   expect(channel[4][4]).toBe(1);
-//   expect(channel[5][5]).toBe(0);
-//   expect(channel[5][6]).toBe(0);
-//   expect(channel[6][6]).toBe(1);
-//   expect(channel[6][5]).toBe(0);
-// });
+it('updates line channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(5.4, 5.5);
+  const end = new p5.Vector(6.3, 6.2);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  expect(lineInfo.channels[2][5][5]).toBe(1);
+  expect(lineInfo.channels[2][5][6]).toBe(1);
+  expect(lineInfo.channels[2][6][6]).toBe(1);
+  expect(lineInfo.channels[2][6][5]).toBe(0);
+});
 
-it('updates line and line end channels correctly with multiple lines: getTestLineInfo', () => {
+it('updates line end channels correctly with horizontal line: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(5.4, 5.5);
+  const end = new p5.Vector(6.5, 5.5);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const channel0 = lineInfo.channels[lineInfo.refs.lineEnds.start];
+  const channel1 = lineInfo.channels[lineInfo.refs.lineEnds.start + 2];
+  expect(channel0[5][6]).toBe(1);
+  expect(channel0[5][5]).toBe(0);
+  expect(channel0[5][7]).toBe(0);
+  expect(channel1[5][5]).toBe(1);
+  expect(channel1[5][6]).toBe(0);
+});
+
+it('updates line end channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(5.4, 5.5);
+  const end = new p5.Vector(6.3, 6.2);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  // lineInfo.refs.lineEnds.all.forEach(i => {
+  //   console.log(i - lineInfo.refs.lineEnds.start);
+  //   console.table(lineInfo.channels[i])
+  // });
+  const channel0 = lineInfo.channels[lineInfo.refs.lineEnds.start + 4];
+  const channel1 = lineInfo.channels[lineInfo.refs.lineEnds.start + 6];
+  expect(channel0[6][6]).toBe(1);
+  expect(channel0[5][5]).toBe(0);
+  expect(channel0[5][7]).toBe(0);
+  expect(channel1[5][5]).toBe(1);
+  expect(channel1[6][6]).toBe(0);
+});
+
+it('updates line end channels correctly with diagonal line of length of more than 2 at non-corner coordinates: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+  const start = new p5.Vector(4.4, 4.5);
+  const end = new p5.Vector(6.3, 6.2);
+  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  // lineInfo.refs.lineEnds.all.forEach(i => {
+  //   console.log(i - lineInfo.refs.lineEnds.start);
+  //   console.table(lineInfo.channels[i])
+  // });
+  const channel0 = lineInfo.channels[lineInfo.refs.lineEnds.start + 4];
+  const channel1 = lineInfo.channels[lineInfo.refs.lineEnds.start + 6];
+  expect(channel0[6][6]).toBe(1);
+  expect(channel0[5][5]).toBe(0);
+  expect(channel0[5][7]).toBe(0);
+  expect(channel1[4][4]).toBe(1);
+  expect(channel1[6][6]).toBe(0);
+});
+
+it('leaves all line ends with criss cross with enough distance : getTestLineInfo', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
-  const end0 = new p5.Vector(6.3, 6.3);
+  const end0 = new p5.Vector(7.3, 7.3);
   const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+
+  const expectedAllLines0 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+  ];
+  expect(getAllLines(lineInfo0)).toEqual(expectedAllLines0);
+
+  const expectedAllLineEnds0 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+  ];
+  expect(getAllLineEnds(lineInfo0)).toEqual(expectedAllLineEnds0);
+
+  const expectedAllLineEndIds0 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, 6, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, 4],
+  ];
+  expect(getAllLineEndIds(lineInfo0)).toEqual(expectedAllLineEndIds0);
 
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
-  // console.table(lineInfo0.channels[2]);
-  // console.table(lineInfo0.channels[lineInfo0.refs.lineEnd.start]);
+  // make second update (diag line)
+  const start1 = new p5.Vector(3.2, 7.2);
+  const end1 = new p5.Vector(7.2, 3.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfo1);
+
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 1, 1],
+    [0, 0, 0, 0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 1, 2, 0, 0],
+    [0, 0, 0, 1, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
+
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
+
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, 6, null, null, null, 7],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, 5, null, null, null, 4],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
+});
+
+it('does not add line end near existing line: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(7.3, 7.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(4.2, 6.2);
   const end1 = new p5.Vector(7.2, 3.2);
   const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
 
-  // console.table(lineInfo1.channels[3]);
-  // console.table(lineInfo1.channels[lineInfo1.refs.lineEnd.start]);
+  // debugLineInfo(lineInfo1);
 
-  // update the lineInfo with this new lineInfo
-  smartCanvas.lineInfo = lineInfo1;
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 1, 1],
+    [0, 0, 0, 0, 1, 1, 1, 0],
+    [0, 0, 0, 0, 1, 2, 0, 0],
+    [0, 0, 0, 0, 1, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
 
-  // make third update (horizontal line)
-  const start2 = new p5.Vector(2.2, 5.5);
-  const end2 = new p5.Vector(7.3, 5.5);
-  const lineInfo2 = smartCanvas.getTestLineInfo(start2, end2);
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
 
-  // console.table(lineInfo2.channels[0]);
-  // console.table(lineInfo2.channels[lineInfo2.refs.lineEnd.start]);
-
-  const diagChannel0 = lineInfo2.channels[2];
-  expect(diagChannel0[3][3]).toBe(1);
-  expect(diagChannel0[4][4]).toBe(1);
-  expect(diagChannel0[4][5]).toBe(0);
-  expect(diagChannel0[5][5]).toBe(1);
-  expect(diagChannel0[6][6]).toBe(1);
-
-  const diagChannel1 = lineInfo2.channels[3];
-  // console.table(diagChannel1);
-  expect(diagChannel1[6][4]).toBe(1);
-  expect(diagChannel1[5][4]).toBe(1);
-  expect(diagChannel1[6][5]).toBe(0);
-  expect(diagChannel1[5][5]).toBe(1);
-  expect(diagChannel1[4][5]).toBe(1);
-  expect(diagChannel1[4][6]).toBe(1);
-  expect(diagChannel1[3][6]).toBe(1);
-  expect(diagChannel1[3][7]).toBe(1);
-
-  const horChannel = lineInfo2.channels[0];
-  // console.table(horChannel);
-  expect(horChannel[5][2]).toBe(1);
-  expect(horChannel[5][5]).toBe(1);
-  expect(horChannel[6][6]).toBe(0);
-  expect(horChannel[5][7]).toBe(1);
-
-  const lineEndChannel = lineInfo2.channels[lineInfo2.refs.lineEnd.start];
-  expect(lineEndChannel[3][3]).toBe(1);
-  expect(lineEndChannel[6][6]).toBe(1);
-  expect(lineEndChannel[6][4]).toBe(1);
-  expect(lineEndChannel[3][7]).toBe(1);
-  expect(lineEndChannel[5][2]).toBe(1);
-  expect(lineEndChannel[5][7]).toBe(1);
-  expect(lineEndChannel[5][5]).toBe(0);
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, 6, null, null, null, 7],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, 4],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-// test very short changes
+it('removes end point when line passes nearby: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(6.3, 6.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
+
+  // make second update (diag line)
+  const start1 = new p5.Vector(2.2, 1.2);
+  const end1 = new p5.Vector(2.2, 5.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfwo1);
+
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 1, 1, 0, 0, 0, 0],
+    [0, 0, 1, 0, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
+
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
+
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, 3, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, 1, null, null, null, null, null],
+    [null, null, null, null, null, null, 4, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
+});
+
+it('cancels end point and old end point when new end point on top of existing end point: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(6.3, 6.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
+
+  // make second update (diag line)
+  const start1 = new p5.Vector(1.2, 3.2);
+  const end1 = new p5.Vector(3.2, 3.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfo1);
+
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 2, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
+
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
+
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, 2, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, 4, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
+});
+
+it('cancels end point and old end point when new end point near existing end point: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(6.3, 6.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
+
+  // make second update (diag line)
+  const start1 = new p5.Vector(1.2, 2.2);
+  const end1 = new p5.Vector(2.2, 2.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfo1);
+
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 0, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
+
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
+
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, 2, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, 4, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
+});
+
 it('updates line and line end channels correctly with multiple very short lines: getTestLineInfo', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
-  const start0 = new p5.Vector(3.3, 3.3);
-  const end0 = new p5.Vector(3.7, 3.7);
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(3.7, 3.8);
   const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
-
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
-  // console.table(lineInfo0.channels[2]);
-  // console.table(lineInfo0.channels[lineInfo0.refs.lineEnd.start]);
-
   // make second update (diag line)
-  const start1 = new p5.Vector(3.7, 3.3);
-  const end1 = new p5.Vector(3.3, 3.7);
+  const start1 = new p5.Vector(3.7, 3.2);
+  const end1 = new p5.Vector(3.2, 3.7);
   const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
 
-  // console.table(lineInfo1.channels[3]);
-  // console.table(lineInfo1.channels[lineInfo1.refs.lineEnd.start]);
+  // debugLineInfo(lineInfo1);
 
+  const expectedAllLines1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 2, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLines(lineInfo1)).toEqual(expectedAllLines1);
+
+  const expectedAllLineEnds1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllLineEnds(lineInfo1)).toEqual(expectedAllLineEnds1);
+
+  const expectedAllLineEndIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
+});
+
+it('adds a corner for two line ends on top of each other: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(6.3, 6.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
   // update the lineInfo with this new lineInfo
-  smartCanvas.lineInfo = lineInfo1;
+  smartCanvas.lineInfo = lineInfo0;
 
-  // make third update (horizontal line)
-  const start2 = new p5.Vector(3.3, 3.5);
-  const end2 = new p5.Vector(3.7, 3.5);
-  const lineInfo2 = smartCanvas.getTestLineInfo(start2, end2);
+  // make second update (diag line)
+  const start1 = new p5.Vector(1.2, 3.2);
+  const end1 = new p5.Vector(3.2, 3.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
 
-  // console.table(lineInfo2.channels[0]);
-  // console.table(lineInfo2.channels[lineInfo2.refs.lineEnd.start]);
+  // debugLineInfo(lineInfo1);
 
-  const diagChannel0 = lineInfo2.channels[2];
-  expect(diagChannel0[3][3]).toBe(1);
-  expect(diagChannel0[4][3]).toBe(0);
+  const expectedAllCorners1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllCorners(lineInfo1)).toEqual(expectedAllCorners1);
 
-  const diagChannel1 = lineInfo2.channels[3];
-  // console.table(diagChannel1);
-  expect(diagChannel1[3][3]).toBe(1);
-  expect(diagChannel1[3][4]).toBe(0);
+  const expectedAllCornerIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, 4, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllCornerIds(lineInfo1)).toEqual(expectedAllCornerIds1);
+});
 
-  const horChannel = lineInfo2.channels[0];
-  // console.table(horChannel);
-  expect(horChannel[3][3]).toBe(1);
-  expect(horChannel[3][2]).toBe(0);
+it('adds no corner for continuing line: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
 
-  const lineEndChannel = lineInfo2.channels[lineInfo2.refs.lineEnd.start];
-  expect(lineEndChannel[3][3]).toBe(0);
-  expect(lineEndChannel[3][4]).toBe(0);
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(4.3, 4.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
+
+  // make second update (diag line)
+  const start1 = new p5.Vector(4.3, 4.3);
+  const end1 = new p5.Vector(5.2, 5.2);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfo1);
+
+  const expectedAllCorners1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllCorners(lineInfo1)).toEqual(expectedAllCorners1);
+
+  const expectedAllCornerIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllCornerIds(lineInfo1)).toEqual(expectedAllCornerIds1);
+});
+
+it('adds no corner for line joining almost straight on: getTestLineInfo', () => {
+  const smartCanvas = new SmartCanvas(8, 8);
+
+  // make first update (diag line)
+  const start0 = new p5.Vector(3.4, 3.4);
+  const end0 = new p5.Vector(4.3, 4.3);
+  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  // update the lineInfo with this new lineInfo
+  smartCanvas.lineInfo = lineInfo0;
+
+  // make second update (diag line)
+  const start1 = new p5.Vector(5.2, 5.25);
+  const end1 = new p5.Vector(4.3, 4.3);
+  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+
+  // debugLineInfo(lineInfo1);
+
+  const expectedAllCorners1 = [
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  expect(getAllCorners(lineInfo1)).toEqual(expectedAllCorners1);
+
+  const expectedAllCornerIds1 = [
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+    [null, null, null, null, null, null, null, null],
+  ];
+  expect(getAllCornerIds(lineInfo1)).toEqual(expectedAllCornerIds1);
+});
+
+it('correctly gets corners reference map: getCornersRef', () => {
+  const cornersRef = getCornersRef();
+  expect(Object.keys(cornersRef).length).toBe(112);
 });
