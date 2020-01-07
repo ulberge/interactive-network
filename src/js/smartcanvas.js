@@ -81,7 +81,7 @@ class LineInfo {
 
   static copy(lineInfo) {
     const copy = new this();
-    copy.channels = deepCopy(lineInfo.channels);
+    copy.channels = lineInfo.channels.map(channel => deepCopy(channel));
     // map storing locations of channels by name
     copy.refs = lineInfo.refs;
     return copy;

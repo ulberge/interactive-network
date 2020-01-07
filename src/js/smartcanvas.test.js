@@ -556,7 +556,7 @@ it('adds a corner for two line ends on top of each other: getTestLineInfo', () =
   const end1 = new p5.Vector(3.2, 3.2);
   const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
 
-  // debugLineInfo(lineInfo1);
+  debugLineInfo(lineInfo1);
 
   const expectedAllCorners1 = [
     [0, 0, 0, 0, 0, 0, 0, 0],

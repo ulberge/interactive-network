@@ -21,12 +21,13 @@ export function choose(arr) {
 }
 
 // copy 2d array
-export function deepCopy(a) {
-  if (a.length === 0) {
+export function deepCopy(arr2D) {
+  if (arr2D.length === 0) {
     return [];
   }
 
-  return a.map(row => row.slice(0));
+  return arr2D.map(row => row.slice(0));
+  // return JSON.parse(JSON.stringify(arr2D));
 
   // speed test
   // (function testSpeed() {
