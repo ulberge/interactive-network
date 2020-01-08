@@ -27,7 +27,7 @@ export default function GaborExplorer(props) {
   // the TensorFlow layer is created using the filters
   const { filters, layer } = useMemo(() => {
     const filters = getGaborFilters(2 ** numComponents, lambda, gamma, sigma * lambda, windowSize);
-    const layer = getLayer(filters, bias);
+    const layer = getLayer(filters.map(filter => [filter]), bias);
     return { filters, layer };
   }, [numComponents, lambda, gamma, sigma, windowSize, bias]);
 

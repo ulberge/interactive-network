@@ -161,7 +161,7 @@ export function getEditableSketch(config) {
 /**
  * Returns a p5 sketch that can draw a 2D array
  */
-export function getArraySketch() {
+export function getArraySketch(withColors=false, normalize=false) {
   const gridWeight = 0.08;
 
   return (p) => {
@@ -170,7 +170,11 @@ export function getArraySketch() {
      * @param {Number[][]} imgArr - 2D array to initialize canvas (values between [-1, 1])
      * @param {Number} scale - Scale to draw the canvas
      */
-    p.customDraw = (imgArr, scale) => {
+    p.customDraw = (imgArr, scale=1) => {
+      if (!imgArr) {
+        return;
+      }
+
       if (!p._setupDone) {
         setTimeout(() => p.customDraw(imgArr, scale), 10);
         return;
@@ -187,17 +191,44 @@ export function getArraySketch() {
       p.strokeWeight(p._scale * gridWeight);
 
       // normalize to max value (positive or negative)
-      // let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
+      let imgArr_c = imgArr;
+      if (normalize) {
+        let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
+        imgArr_c = imgArr.map(row => row.map(v => v / max));
+      }
 
-      for (let y = 0; y < imgArr.length; y += 1) {
-        for (let x = 0; x < imgArr[0].length; x += 1) {
+      const colorMap = {};
+
+      for (let y = 0; y < imgArr_c.length; y += 1) {
+        for (let x = 0; x < imgArr_c[0].length; x += 1) {
           // const v = (imgArr[y][x] / max) * 255;
-          const v = imgArr[y][x] * 255;
-          if (v >= 0) {
-            p.fill(0, 0, 0, v);
+          const v = imgArr_c[y][x] * 255;
+          if (withColors) {
+            const key = Math.floor(v);
+            if (!(key in colorMap)) {
+              const colors = ['#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075'];
+              if (Object.keys(colorMap).length < colors.length) {
+                colorMap[key] = p.color(colors[Object.keys(colorMap).length]);
+              } else {
+                colorMap[key] = p.color(Math.random() * 155, Math.random() * 155, Math.random() * 155);
+              }
+              // colorMap[key] = p.color(Math.random() * 155, Math.random() * 155, Math.random() * 155);
+            }
+            const c = colorMap[key];
+            if (v >= 0) {
+              p.fill(c);
+            } else {
+              // p.fill(255, 0, 0, -v / 4);
+              p.fill(255, 255, 255, 255);
+            }
           } else {
-            p.fill(255, 0, 0, -v / 4);
+            if (v >= 0) {
+              p.fill(0, 0, 0, v);
+            } else {
+              p.fill(255, 0, 0, -v / 4);
+            }
           }
+
           p.rect(x * p._scale, y * p._scale, p._scale, p._scale);
         }
       }

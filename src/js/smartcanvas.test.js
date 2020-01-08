@@ -1,4 +1,4 @@
-import { SmartCanvas, getCornersRef } from './smartcanvas';
+import SmartCanvas, { getCornersRef } from './smartcanvas';
 import { getEmpty2DArray } from './helpers';
 import p5 from 'p5';
 
@@ -90,11 +90,11 @@ it('checks smart canvas is created without crashing and has a line info with cha
   expect(lineInfo.channels[0][7][7]).toBe(0);
 });
 
-it('updates line channels correctly with vertical line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+it('updates line channels correctly with vertical line of length of around 1 at non-corner coordinates: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(0.5, 0.5);
   const end = new p5.Vector(0.5, 1.9);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   expect(lineInfo.channels[0][0][0]).toBe(0);
   expect(lineInfo.channels[0][7][7]).toBe(0);
   expect(lineInfo.channels[1][0][0]).toBe(1);
@@ -104,11 +104,11 @@ it('updates line channels correctly with vertical line of length of around 1 at 
   expect(lineInfo.channels[1][2][1]).toBe(0);
 });
 
-it('updates line channels correctly with horizontal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+it('updates line channels correctly with horizontal line of length of around 1 at non-corner coordinates: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(2.5, 4.5);
   const end = new p5.Vector(3.6, 4.5);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   expect(lineInfo.channels[0][4][2]).toBe(1);
   expect(lineInfo.channels[0][4][3]).toBe(1);
   expect(lineInfo.channels[0][4][1]).toBe(0);
@@ -119,22 +119,22 @@ it('updates line channels correctly with horizontal line of length of around 1 a
   expect(lineInfo.channels[0][5][3]).toBe(0);
 });
 
-it('updates line channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+it('updates line channels correctly with diagonal line of length of around 1 at non-corner coordinates: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(5.4, 5.5);
   const end = new p5.Vector(6.3, 6.2);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   expect(lineInfo.channels[2][5][5]).toBe(1);
   expect(lineInfo.channels[2][5][6]).toBe(1);
   expect(lineInfo.channels[2][6][6]).toBe(1);
   expect(lineInfo.channels[2][6][5]).toBe(0);
 });
 
-it('updates line end channels correctly with horizontal line: getTestLineInfo', () => {
+it('updates line end channels correctly with horizontal line: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(5.4, 5.5);
   const end = new p5.Vector(6.5, 5.5);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   const channel0 = lineInfo.channels[lineInfo.refs.lineEnds.start];
   const channel1 = lineInfo.channels[lineInfo.refs.lineEnds.start + 2];
   expect(channel0[5][6]).toBe(1);
@@ -144,11 +144,11 @@ it('updates line end channels correctly with horizontal line: getTestLineInfo', 
   expect(channel1[5][6]).toBe(0);
 });
 
-it('updates line end channels correctly with diagonal line of length of around 1 at non-corner coordinates: getTestLineInfo', () => {
+it('updates line end channels correctly with diagonal line of length of around 1 at non-corner coordinates: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(5.4, 5.5);
   const end = new p5.Vector(6.3, 6.2);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   // lineInfo.refs.lineEnds.all.forEach(i => {
   //   console.log(i - lineInfo.refs.lineEnds.start);
   //   console.table(lineInfo.channels[i])
@@ -162,11 +162,11 @@ it('updates line end channels correctly with diagonal line of length of around 1
   expect(channel1[6][6]).toBe(0);
 });
 
-it('updates line end channels correctly with diagonal line of length of more than 2 at non-corner coordinates: getTestLineInfo', () => {
+it('updates line end channels correctly with diagonal line of length of more than 2 at non-corner coordinates: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
   const start = new p5.Vector(4.4, 4.5);
   const end = new p5.Vector(6.3, 6.2);
-  const lineInfo = smartCanvas.getTestLineInfo(start, end);
+  const lineInfo = smartCanvas.testSegment(start, end, true);
   // lineInfo.refs.lineEnds.all.forEach(i => {
   //   console.log(i - lineInfo.refs.lineEnds.start);
   //   console.table(lineInfo.channels[i])
@@ -180,13 +180,13 @@ it('updates line end channels correctly with diagonal line of length of more tha
   expect(channel1[6][6]).toBe(0);
 });
 
-it('leaves all line ends with criss cross with enough distance : getTestLineInfo', () => {
+it('leaves all line ends with criss cross with enough distance : testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(7.3, 7.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
 
   const expectedAllLines0 = [
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -230,7 +230,8 @@ it('leaves all line ends with criss cross with enough distance : getTestLineInfo
   // make second update (diag line)
   const start1 = new p5.Vector(3.2, 7.2);
   const end1 = new p5.Vector(7.2, 3.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -271,20 +272,23 @@ it('leaves all line ends with criss cross with enough distance : getTestLineInfo
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('does not add line end near existing line: getTestLineInfo', () => {
+it('does not add line end near existing line: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(7.3, 7.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
+
+  // debugLineInfo(lineInfo0);
 
   // make second update (diag line)
   const start1 = new p5.Vector(4.2, 6.2);
   const end1 = new p5.Vector(7.2, 3.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -325,20 +329,21 @@ it('does not add line end near existing line: getTestLineInfo', () => {
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('removes end point when line passes nearby: getTestLineInfo', () => {
+it('removes end point when line passes nearby: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(6.3, 6.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(2.2, 1.2);
   const end1 = new p5.Vector(2.2, 5.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfwo1);
 
@@ -379,22 +384,23 @@ it('removes end point when line passes nearby: getTestLineInfo', () => {
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('cancels end point and old end point when new end point on top of existing end point: getTestLineInfo', () => {
+it('cancels end point and old end point when new end point on top of existing end point: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(6.3, 6.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(1.2, 3.2);
   const end1 = new p5.Vector(3.2, 3.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
-  // debugLineInfo(lineInfo1);
+  debugLineInfo(lineInfo1);
 
   const expectedAllLines1 = [
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -433,20 +439,21 @@ it('cancels end point and old end point when new end point on top of existing en
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('cancels end point and old end point when new end point near existing end point: getTestLineInfo', () => {
+it('cancels end point and old end point when new end point near existing end point: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(6.3, 6.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(1.2, 2.2);
   const end1 = new p5.Vector(2.2, 2.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -487,20 +494,21 @@ it('cancels end point and old end point when new end point near existing end poi
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('updates line and line end channels correctly with multiple very short lines: getTestLineInfo', () => {
+it('updates line and line end channels correctly with multiple very short lines: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(3.7, 3.8);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(3.7, 3.2);
   const end1 = new p5.Vector(3.2, 3.7);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -541,22 +549,23 @@ it('updates line and line end channels correctly with multiple very short lines:
   expect(getAllLineEndIds(lineInfo1)).toEqual(expectedAllLineEndIds1);
 });
 
-it('adds a corner for two line ends on top of each other: getTestLineInfo', () => {
+it('adds a corner for two line ends on top of each other: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(6.3, 6.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(1.2, 3.2);
   const end1 = new p5.Vector(3.2, 3.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
-  debugLineInfo(lineInfo1);
+  // debugLineInfo(lineInfo1);
 
   const expectedAllCorners1 = [
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -583,20 +592,21 @@ it('adds a corner for two line ends on top of each other: getTestLineInfo', () =
   expect(getAllCornerIds(lineInfo1)).toEqual(expectedAllCornerIds1);
 });
 
-it('adds no corner for continuing line: getTestLineInfo', () => {
+it('adds no corner for continuing line: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(4.3, 4.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(4.3, 4.3);
   const end1 = new p5.Vector(5.2, 5.2);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -625,20 +635,21 @@ it('adds no corner for continuing line: getTestLineInfo', () => {
   expect(getAllCornerIds(lineInfo1)).toEqual(expectedAllCornerIds1);
 });
 
-it('adds no corner for line joining almost straight on: getTestLineInfo', () => {
+it('adds no corner for line joining almost straight on: testSegment', () => {
   const smartCanvas = new SmartCanvas(8, 8);
 
   // make first update (diag line)
   const start0 = new p5.Vector(3.4, 3.4);
   const end0 = new p5.Vector(4.3, 4.3);
-  const lineInfo0 = smartCanvas.getTestLineInfo(start0, end0);
+  const lineInfo0 = smartCanvas.testSegment(start0, end0, true);
   // update the lineInfo with this new lineInfo
   smartCanvas.lineInfo = lineInfo0;
 
   // make second update (diag line)
   const start1 = new p5.Vector(5.2, 5.25);
   const end1 = new p5.Vector(4.3, 4.3);
-  const lineInfo1 = smartCanvas.getTestLineInfo(start1, end1);
+  smartCanvas.setupStroke();
+  const lineInfo1 = smartCanvas.testSegment(start1, end1, true);
 
   // debugLineInfo(lineInfo1);
 
@@ -670,4 +681,14 @@ it('adds no corner for line joining almost straight on: getTestLineInfo', () => 
 it('correctly gets corners reference map: getCornersRef', () => {
   const cornersRef = getCornersRef();
   expect(Object.keys(cornersRef).length).toBe(112);
+});
+
+it('correctly gets corners reference map: pixelListContains', () => {
+  const pixels = [{x: 1, y: 1}, {x: 2, y: 3}];
+  const pixel = {x: 2, y: 3};
+  const pixel2 = {x: 2, y: 4};
+  const result = SmartCanvas.pixelListContains(pixels, pixel);
+  expect(result).toBe(true);
+  const result2 = SmartCanvas.pixelListContains(pixels, pixel2);
+  expect(result2).toBe(false);
 });

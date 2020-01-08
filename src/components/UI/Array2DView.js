@@ -10,7 +10,7 @@ const Array2DView = props => {
   useEffect(() => {
     // run once
     if (!pRef.current && imgRef.current) {
-      pRef.current = new p5(getArraySketch(), imgRef.current);
+      pRef.current = new p5(getArraySketch(props.withColor, props.normalize), imgRef.current);
     }
 
     // run every time
@@ -25,8 +25,10 @@ const Array2DView = props => {
 };
 
 Array2DView.propTypes = {
-  imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)).isRequired,
-  scale: PropTypes.number.isRequired,
+  imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+  scale: PropTypes.number,
+  normalize: PropTypes.bool,
+  withColor: PropTypes.bool,
 };
 
 export default Array2DView;

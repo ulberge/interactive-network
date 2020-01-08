@@ -26,12 +26,12 @@ const EditableCanvas = props => {
 EditableCanvas.propTypes = {
   shape: PropTypes.arrayOf(PropTypes.number).isRequired,
   marks: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
-  strokeWeight: PropTypes.number.isRequired,
-  scale: PropTypes.number.isRequired,
-  offset: PropTypes.number.isRequired,
-  rotation: PropTypes.number.isRequired,
-  onNewMark: PropTypes.func.isRequired,
-  onRender: PropTypes.func.isRequired,
+  strokeWeight: PropTypes.number,
+  scale: PropTypes.number,
+  offset: PropTypes.number,
+  rotation: PropTypes.number,
+  onNewMark: PropTypes.func,
+  onRender: PropTypes.func,
 };
 
 export default EditableCanvas;
