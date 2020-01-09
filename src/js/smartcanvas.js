@@ -265,8 +265,11 @@ export default class SmartCanvas {
     // assuming p is a point at the end of a line segment
     const pixels = getPixelsWithinDistance(p, this.r, this.bounds);
     const lineEndNeighbors = [];
+
+    // console.log('Check corners', p);
     for (let neighbor of pixels) {
       const lineEndChannels = this.lineInfo.getChannelsAt(neighbor).slice(this.lineInfo.refs.lineEnds.start, this.lineInfo.refs.lineEnds.end);
+      // console.log(this.lineInfo.getChannelsAt(neighbor).slice(0, this.lineInfo.refs.lineEnds.end));
       for (let i = 0; i < lineEndChannels.length; i += 1) {
         if (lineEndChannels[i] === 1) {
           lineEndNeighbors.push({ pos: neighbor, type: i });
@@ -391,7 +394,7 @@ export default class SmartCanvas {
         testLineInfo.setChannelAt(pixel, channelIndex, 0);
       }
     }
-    if (isFirst) {
+    if (isFirst || true) {
       // potentially add corner at start
       const lineEndType = SmartCanvas.getLineEndType(end, start);
       const cornerType = this.getCornerType(startPixel, lineEndType);

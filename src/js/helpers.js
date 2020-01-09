@@ -20,6 +20,10 @@ export function choose(arr) {
   }
 }
 
+export function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
 // copy 2d array
 export function deepCopy(arr2D) {
   if (arr2D.length === 0) {

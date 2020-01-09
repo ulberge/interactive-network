@@ -2,17 +2,22 @@
 export default class Boid {
   constructor(diameter=1) {
     this.diameter = diameter;
-    this.isDrawing = false;
+    this.isDrawing = true;
     this.prevPos = null;
     this.pos = null;
     this.vel = null;
   }
 
   reset() {
-    this.isDrawing = false;
+    this.isDrawing = true;
     this.prevPos = null;
     this.pos = null;
     this.vel = null;
+  }
+
+  move(pos) {
+    this.prevPos = pos;
+    this.pos = pos;
   }
 
   // Update the position and velocity of the boid
@@ -30,7 +35,7 @@ export default class Boid {
       p.stroke(0);
       p.strokeWeight(this.diameter);
       p.noFill();
-      p.line(this.pos.x, this.pos.y, this.pos.x - this.vel.x, this.pos.y - this.vel.y);
+      p.line(this.prevPos.x, this.prevPos.y, this.pos.x, this.pos.y);
 
       p.pop();
     }
@@ -52,7 +57,7 @@ export default class Boid {
     p.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
 
     // Draw velocity
-    const length = 10;
+    const length = 3;
     p.stroke(0, 255, 0, 150);
     p.line(this.pos.x, this.pos.y, this.pos.x + (this.vel.x * length), this.pos.y + (this.vel.y * length));
 
