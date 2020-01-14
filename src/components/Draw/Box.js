@@ -3,7 +3,7 @@ import p5 from 'p5';
 import { getEmptySketch, getArraySketch } from '../../js/sketches';
 import { Drawer } from '../../js/draw';
 import SmartCanvas from '../../js/smartcanvas';
-import { getTest1 } from '../../js/box';
+import { getTest3 } from '../../js/box';
 import Array2DViewList from '../UI/Array2DViewList';
 import ClearIcon from '@material-ui/icons/Clear';
 import IconButton from '@material-ui/core/IconButton';
@@ -12,10 +12,10 @@ const w = 21;
 const h = 21;
 const canvasScale = 4;
 // const scale = 8;
-const getScore = getTest1();
 
 const filterSize = 9;
 const drawLocation = [10, 10];
+const getScore = getTest3();
 
 const DrawBox = props => {
   // sketch at 1:1 scale
@@ -44,7 +44,7 @@ const DrawBox = props => {
       console.log('make drawer!');
       const smartCanvas = new SmartCanvas(w, h);
       const center = [drawLocation[0] * canvasScale, drawLocation[1] * canvasScale];
-      const padding = 1 * canvasScale;
+      const padding = 4 * canvasScale;
       const halfBoundSize = (filterSize * canvasScale / 2) + padding;
       const bounds = {
         sx: center[0] - halfBoundSize,
@@ -52,7 +52,7 @@ const DrawBox = props => {
         ex: center[0] + halfBoundSize,
         ey: center[1] + halfBoundSize,
       };
-      drawerRef.current = new Drawer(smartCanvas, getScore, pRef.current, pDisplayRef.current, 3, 1, 1000, canvasScale, bounds);
+      drawerRef.current = new Drawer(smartCanvas, getScore, pRef.current, pDisplayRef.current, 3, 1, 0, canvasScale, bounds);
       drawerRef.current.start(() => {
         // record this.p
         const imgArr = drawerRef.current.getCurrentImage();

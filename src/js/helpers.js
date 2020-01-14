@@ -1,3 +1,5 @@
+import p5 from 'p5';
+
 // make array add up to 1
 export function normalize(arr) {
   let sum = arr.reduce((a, b) => a + b, 0);
@@ -140,7 +142,7 @@ export function getPixelsWithinDistance(pixel, N, bounds) {
         continue;
       }
 
-      neighbors.push({ x, y });
+      neighbors.push(new p5.Vector(x, y));
     }
   }
   return neighbors;
@@ -162,7 +164,7 @@ export function getUniqueNeighbors(pixels, N, bounds) {
   const allNeighborsFormatted = [];
   allNeighbors.forEach(v => {
     const xy = v.split('_');
-    allNeighborsFormatted.push({ x: parseInt(xy[0]), y: parseInt(xy[1]) });
+    allNeighborsFormatted.push(new p5.Vector(parseInt(xy[0]), parseInt(xy[1])));
   });
   return allNeighborsFormatted;
 }
@@ -207,7 +209,7 @@ export function getApproximateCrossings(start, end, stepSize=0.5) {
 
   const curr = start.copy();
   // add first
-  let prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
+  let prev = new p5.Vector(Math.floor(curr.x), Math.floor(curr.y));
   const pixels = [prev];
 
   // main loop
@@ -216,14 +218,14 @@ export function getApproximateCrossings(start, end, stepSize=0.5) {
 
     if (Math.floor(curr.x) !== prev.x || Math.floor(curr.y) !== prev.y) {
       // new square!
-      prev = { x: Math.floor(curr.x), y: Math.floor(curr.y) };
+      prev = new p5.Vector(Math.floor(curr.x), Math.floor(curr.y));
       pixels.push(prev);
     }
   }
 
   // add last (if new)
   if (Math.floor(end.x) !== prev.x || Math.floor(end.y) !== prev.y) {
-    pixels.push({ x: Math.floor(end.x), y: Math.floor(end.y) });
+    pixels.push(new p5.Vector(Math.floor(end.x), Math.floor(end.y)));
   }
 
   return pixels;

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import EditableCanvas from '../UI/EditableCanvas';
@@ -10,16 +10,20 @@ import DebounceSlider from '../UI/DebounceSlider';
 
 // Some default marks
 const defaultMarks = [
-  [[5.2, 5.4],[11.7, 11.1]],
+  [[5.2, 5.4],[11.7, 5.4]],
   [[5.2, 5.6],[5.2, 13.0]],
   [[5.1, 16.4],[15.2, 16.4]],
   [[18.2, 3.7],[15.2, 7.4]],
 ];
 
+const drawingSettings = JSON.parse(localStorage.getItem('drawing_settings')) || {
+  strokeWeight: 2,
+};
+
 const GaborDrawingInput = memo(function GaborDrawingInput(props) {
   const [ state, setState ] = useState({
     marks: deepCopy(defaultMarks),
-    strokeWeight: 1,
+    ...drawingSettings,
     offset: 0,
     rotation: 0,
   });
@@ -29,11 +33,18 @@ const GaborDrawingInput = memo(function GaborDrawingInput(props) {
   const reset = useCallback(newMark => setState(state => ({ ...state, marks: deepCopy(defaultMarks) })), []);
   const clear = useCallback(newMark => setState(state => ({ ...state, marks: [] })), []);
 
+  useEffect(() => {
+    // save values
+    localStorage.setItem('drawing_settings', JSON.stringify({
+      strokeWeight: state.strokeWeight,
+    }));
+  }, [state.strokeWeight]);
+
   return (
     <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
       <Grid item className="bordered-canvas" style={{ margin: '0 auto' }}>
         <EditableCanvas
-          shape={[21, 21]}
+          shape={[41, 41]}
           marks={state.marks}
           strokeWeight={state.strokeWeight}
           scale={props.scale}
@@ -61,10 +72,10 @@ const GaborDrawingInput = memo(function GaborDrawingInput(props) {
                 track={false}
                 aria-labelledby="stroke width"
                 valueLabelDisplay="auto"
-                marks={[{ value: 0.1, label: '0.1'}, { value: 3, label: '3'}]}
+                marks={[{ value: 0.1, label: '0.1'}, { value: 5, label: '5'}]}
                 step={0.1}
                 min={0.1}
-                max={3}
+                max={5}
                 onChange={value => onChange('strokeWeight', value)}
               />
             </div>

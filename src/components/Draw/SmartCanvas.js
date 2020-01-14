@@ -2,7 +2,6 @@ import React, { useState, useCallback, useRef, memo } from 'react';
 import Grid from '@material-ui/core/Grid';
 import EditableCanvas from '../UI/EditableCanvas';
 import Array2DView from '../UI/Array2DView';
-import Array2DViewList from '../UI/Array2DViewList';
 import SmartCanvas from '../../js/smartcanvas';
 import { getTest0 } from '../../js/box';
 
@@ -25,6 +24,7 @@ const DrawSmartCanvas = memo(function GaborDrawingInput(props) {
   const onNewMark = useCallback(newMark => {
     const scaledMark = newMark.map(pt => [pt[0] / canvasScale, pt[1] / canvasScale]);
     smartCanvasRef.current.addStroke(scaledMark);
+    smartCanvasRef.current.lineInfo.print();
     const score = getScore(smartCanvasRef.current.lineInfo);
     console.log(score);
 
@@ -53,25 +53,25 @@ const DrawSmartCanvas = memo(function GaborDrawingInput(props) {
       </Grid>
       <Grid item className="bordered-canvas" xs={4}>
         <Grid container spacing={4}>
-          <Grid item xs={6}>
+          {/*<Grid item xs={6}>
             <Array2DView imgArr={state.debug.lines} scale={scale} />
-          </Grid>
+          </Grid>*/}
           <Grid item xs={6}>
             <Array2DView imgArr={state.debug.lineIds} scale={scale} withColor={true} />
           </Grid>
         </Grid>
         <Grid container spacing={4}>
-          <Grid item xs={6}>
+          {/*<Grid item xs={6}>
             <Array2DView imgArr={state.debug.lineEnds} scale={scale} />
-          </Grid>
+          </Grid>*/}
           <Grid item xs={6}>
             <Array2DView imgArr={state.debug.lineEndIds} scale={scale} withColor={true} />
           </Grid>
         </Grid>
         <Grid container spacing={4}>
-          <Grid item xs={6}>
+          {/*<Grid item xs={6}>
             <Array2DView imgArr={state.debug.corners} scale={scale} />
-          </Grid>
+          </Grid>*/}
           <Grid item xs={6}>
             <Array2DView imgArr={state.debug.cornerIds} scale={scale} withColor={true} />
           </Grid>

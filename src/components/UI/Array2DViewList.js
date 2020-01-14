@@ -5,13 +5,13 @@ import Array2DView from './Array2DView';
 
 const Array2DViewList = props => {
   return (
-    <Grid container spacing={2} style={{ position: 'relative' }}>
+    <Grid container spacing={1} style={{ position: 'relative', margin: 'auto' }}>
       { props.imgArrs.map((imgArr, i) => {
         return (
-          <Grid item key={i} style={{ margin: 'auto' }}>
-            <Grid container alignItems="center" justify="center" spacing={2}>
+          <Grid item key={i}>
+            <Grid container alignItems="center" justify="center" spacing={1}>
               <Grid item>
-                <Array2DView imgArr={imgArr} scale={props.scale} />
+                <Array2DView imgArr={imgArr} scale={props.scale} normalize={props.normalize} />
               </Grid>
             </Grid>
           </Grid>
@@ -23,6 +23,7 @@ const Array2DViewList = props => {
 
 Array2DViewList.propTypes = {
   imgArrs: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
+  normalize: PropTypes.bool,
   scale: PropTypes.number.isRequired,
 };
 

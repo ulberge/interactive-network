@@ -61,6 +61,37 @@ export function evalChannels(layer, channels) {
   return out.tolist();
 }
 
+export function evalChannelsMultipleLayers(layers, channels) {
+  if (!layers || !channels) {
+    return null;
+  }
+
+  // convert from CHW -> NHWC
+  // NHWC - data format
+  // N: batch
+  // H: height (spatial dimension)
+  // W: width (spatial dimension)
+  // C: channel (depth)
+
+  const channels_f = nj.array(channels).transpose(1, 2, 0).tolist();
+  let curr = tf.tensor4d([channels_f]);
+
+  const results = [];
+  for (let layer of layers) {
+    curr = layer.apply(curr);
+    results.push(curr.arraySync());
+  }
+
+  // format output
+  const formattedOutputs = results.map(layerOutputs => layerOutputs.map(output => {
+    output = nj.array(output);
+    output = output.transpose(2, 0, 1);
+    return output.tolist();
+  }));
+
+  return formattedOutputs;
+}
+
 export function getLayer(filters, bias=0, strides=1, name='conv') {
 
   // data format in: [out, in, h, w]
@@ -74,7 +105,8 @@ export function getLayer(filters, bias=0, strides=1, name='conv') {
     filters: filters.length,
     kernelSize: filters[0][0].length,
     strides: strides,
-    padding: 'valid',
+    // padding: 'valid',
+    padding: 'same',
     weights: weightsTensor,
     activation: 'relu',
     name: name,

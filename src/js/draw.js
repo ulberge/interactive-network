@@ -28,10 +28,10 @@ export class Drawer {
     this.segmentLength = 1.5 * canvasScale;
     const approxNumTriesStart = 64;
     this.startLineRate = (this.bounds.ex - this.bounds.sx) * (this.bounds.ey - this.bounds.sy) / approxNumTriesStart; // 1 == a line at every pixel, 2 == lines at about every 2 pixels
-    this.minStartTries = 3;
+    this.minStartTries = 5;
     this.countStartFails = 0;
-    this.numTries = 32;
-    this.minNextSegmentTries = 3;
+    this.numTries = 64;
+    this.minNextSegmentTries = 20;
     this.countNextSegmentFails = 0;
     this.prevScore = 0;
   }
@@ -130,7 +130,7 @@ export class Drawer {
           continue;
         }
 
-        startParams.push({ start, vel });
+        startParams.push({ start, vel, end });
         lineInfos.push(lineInfo);
         scores.push(score);
       }
@@ -151,6 +151,16 @@ export class Drawer {
 
     this.boid.move(start);
     this.update(vel, lineInfo, score);
+
+    // debug
+    for (let i = 0; i < startParams.length; i += 1) {
+      const { start, end } = startParams[i];
+      this.pDisplay.push();
+      this.pDisplay.scale(this.displayScale);
+      this.pDisplay.stroke(500 * scores[i], 0, 0);
+      this.pDisplay.line(start.x, start.y, end.x, end.y);
+      this.pDisplay.pop();
+    }
 
     return true;
   }
@@ -185,7 +195,7 @@ export class Drawer {
       }
 
       const score = this.getScore(lineInfo) - this.prevScore;
-      debug.push([vel.heading(), score]);
+      debug.push([vel, score]);
       if (score <= 0) {
         continue;
       }
@@ -198,6 +208,17 @@ export class Drawer {
     // console.log(debug);
 
     if (scores.length === 0) {
+      // debug
+      // for (let i = 0; i < debug.length; i += 1) {
+      //   const [ vel, score ] = debug[i];
+      //   const start = this.boid.prevPos;
+      //   this.pDisplay.push();
+      //   this.pDisplay.scale(this.displayScale);
+      //   this.pDisplay.stroke(500 * score, 0, 0);
+      //   this.pDisplay.strokeWeight((0.1 * score) + 0.1);
+      //   this.pDisplay.line(start.x, start.y, start.x + vel.copy().mult(5).x, start.y + vel.copy().mult(5).y);
+      //   this.pDisplay.pop();
+      // }
       return false; // if no more improvements possible, halt
     }
 
@@ -210,6 +231,18 @@ export class Drawer {
     console.log('Found ' + scores.length + ' starts with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores);
 
     this.update(vel, lineInfo, score);
+
+    // debug
+    for (let i = 0; i < debug.length; i += 1) {
+      const [ vel, score ] = debug[i];
+      const start = this.boid.prevPos;
+      this.pDisplay.push();
+      this.pDisplay.scale(this.displayScale);
+      this.pDisplay.stroke(500 * score, 0, 0);
+      this.pDisplay.strokeWeight(0.1 * score);
+      this.pDisplay.line(start.x, start.y, start.x + vel.copy().mult(5).x, start.y + vel.copy().mult(5).y);
+      this.pDisplay.pop();
+    }
 
     return true;
   }
@@ -258,6 +291,7 @@ export class Drawer {
     }
 
     this.smartCanvas.lineInfo = lineInfo;
+    // lineInfo.print();
     this.prevScore += score;
   }
 

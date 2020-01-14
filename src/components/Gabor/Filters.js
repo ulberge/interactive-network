@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import Array2DView from '../UI/Array2DView';
+import Array2DViewList from '../UI/Array2DViewList';
 
 const GaborFilters = memo(function GaborFilters(props) {
   const { filters, scale } = props;
@@ -13,11 +13,7 @@ const GaborFilters = memo(function GaborFilters(props) {
 
   return (
     <div style={{ textAlign: 'center' }}>
-      { filters.map((filter, i) => (
-        <div key={i} style={{ margin: '4px', display: 'inline-block' }}>
-          <Array2DView imgArr={filter} scale={filterScale} />
-        </div>
-      )) }
+      <Array2DViewList imgArrs={filters} scale={filterScale} />
     </div>
   );
 });

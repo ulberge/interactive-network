@@ -65,7 +65,10 @@ export function getEditableSketch(config) {
             state.marks.push(state.newMark)
           }
           state.wasPressed = true;
-          state.newMark.push(end);
+
+          if ((Math.abs(end[0] - state.newMark[state.newMark.length - 1][0]) + Math.abs(end[1] - state.newMark[state.newMark.length - 1][1])) > 1) {
+            state.newMark.push(end);
+          }
 
           drawOnce(state.marks);
         }
@@ -225,7 +228,7 @@ export function getArraySketch(withColors=false, normalize=false) {
             if (v >= 0) {
               p.fill(0, 0, 0, v);
             } else {
-              p.fill(255, 0, 0, -v / 4);
+              p.fill(255, 0, 0, -v / 2);
             }
           }
 

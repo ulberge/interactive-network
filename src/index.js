@@ -45,7 +45,7 @@ ReactDOM.render(
         path="/drawbox"
         component={DrawBox}
       />
-      <Redirect path="*" to="/drawbox" />
+      <Redirect path="*" to="/gabor" />
     </Router>
   </ThemeProvider>),
   document.getElementById('root')

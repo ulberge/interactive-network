@@ -6,7 +6,7 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
   return (
     <div style={{ width: '180px' }}>
       <div>
-        <div>Number of Components</div>
+        <div>Angles</div>
         <DebounceSlider
           defaultValue={props.numComponents}
           track={false}
@@ -19,7 +19,7 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
         />
       </div>
       <div>
-        <div>Window Size</div>
+        <div>Size</div>
         <DebounceSlider
           defaultValue={props.windowSize}
           track={false}
@@ -32,45 +32,45 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
           onChange={value => props.onChange('windowSize', value)}
         />
       </div>
-      <div>
+      {/*<div>
         <div>Gamma (length)</div>
         <DebounceSlider
           defaultValue={props.gamma}
           track={false}
           aria-labelledby="gamma"
           valueLabelDisplay="auto"
-          marks={[{ value: 0.1, label: '0.1'}, { value: 4, label: '4'}]}
+          marks={[{ value: 0.1, label: '0.1'}, { value: 8, label: '8'}]}
           step={0.1}
           min={0.1}
-          max={4}
+          max={8}
           onChange={value => props.onChange('gamma', value)}
         />
-      </div>
+      </div>*/}
       <div>
-        <div>Lambda (width)</div>
+        <div>Width</div>
         <DebounceSlider
           defaultValue={props.lambda}
           track={false}
           aria-labelledby="lambda"
           valueLabelDisplay="auto"
-          marks={[{ value: 1.1, label: '1.1'}, { value: 8, label: '8'}]}
+          marks={[{ value: 1.1, label: '1.1'}, { value: 16, label: '16'}]}
           step={0.1}
           min={1.1}
-          max={8}
+          max={16}
           onChange={value => props.onChange('lambda', value)}
         />
       </div>
       <div>
-        <div>Sigma (size of Gaussian)</div>
+        <div>Spread</div>
         <DebounceSlider
           defaultValue={props.sigma}
           track={false}
           aria-labelledby="sigma"
           valueLabelDisplay="auto"
-          marks={[{ value: 0.1, label: '0.1'}, { value: 2, label: '2'}]}
+          marks={[{ value: 0.1, label: '0.1'}, { value: 8, label: '8'}]}
           step={0.1}
           min={0.1}
-          max={2}
+          max={8}
           onChange={value => props.onChange('sigma', value)}
         />
       </div>
@@ -81,10 +81,10 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
           track={false}
           aria-labelledby="bias"
           valueLabelDisplay="auto"
-          marks={[{ value: -5, label: '-5'}, { value: 0, label: '0'}, { value: 5, label: '5'}]}
+          marks={[{ value: -15, label: '-15'}, { value: 0, label: '0'}, { value: 15, label: '15'}]}
           step={0.1}
-          min={-5}
-          max={5}
+          min={-15}
+          max={15}
           onChange={value => props.onChange('bias', value)}
         />
       </div>
