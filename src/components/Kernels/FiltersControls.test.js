@@ -8,7 +8,6 @@ it('renders without crashing', () => {
     <GaborFiltersControls
       numComponents={3}
       lambda={4}
-      gamma={2}
       sigma={1.1}
       windowSize={5}
       bias={1}

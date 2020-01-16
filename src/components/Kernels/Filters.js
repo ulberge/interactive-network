@@ -13,7 +13,7 @@ const GaborFilters = memo(function GaborFilters(props) {
 
   return (
     <div style={{ textAlign: 'center' }}>
-      <Array2DViewList imgArrs={filters} scale={filterScale} />
+      <Array2DViewList imgArrs={filters} scale={filterScale} normalize={true} />
     </div>
   );
 });

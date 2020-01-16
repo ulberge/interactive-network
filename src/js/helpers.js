@@ -124,6 +124,35 @@ export const getImgArrFromPixels = (pixels, width) => {
   return imgArr;
 }
 
+export function getImgArrFromPixelsSelection(pixels, width, selection) {
+  const [ minX, minY, maxX, maxY ] = selection;
+  const rowWidth = maxX - minX + 1;
+  const imgArr = [];
+  let row = [];
+  let colIndex = -1;
+  const rowSelection = pixels.slice(minY * width * 4, (maxY + 1) * width * 4);
+  for (let i = 3; i < rowSelection.length; i += 4) {
+    colIndex += 1;
+    if ((colIndex % width) < minX || (colIndex % width) > maxX) {
+      // skip columns out of bounds
+      continue;
+    }
+
+    row.push(rowSelection[i] / 255);
+    if (row.length === rowWidth) {
+      imgArr.push(row);
+      row = [];
+    }
+  }
+  return imgArr;
+}
+
+export function get2DArraySlice(arr, selection) {
+  const [ sx, sy, ex, ey ] = selection;
+  const slice = arr.slice(sy, ey + 1).map(row => row.slice(sx, ex + 1));
+  return slice;
+}
+
 export function delay(timer) {
   return new Promise(resolve => setTimeout(() => resolve(), timer));
 }

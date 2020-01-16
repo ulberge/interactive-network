@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { getEditableSketch } from '../../js/sketches';
+import { getEditableSketch } from '../../js/sketches/editable';
 
 const EditableCanvas = props => {
   const imgRef = useRef(null);

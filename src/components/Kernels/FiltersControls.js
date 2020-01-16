@@ -32,20 +32,6 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
           onChange={value => props.onChange('windowSize', value)}
         />
       </div>
-      {/*<div>
-        <div>Gamma (length)</div>
-        <DebounceSlider
-          defaultValue={props.gamma}
-          track={false}
-          aria-labelledby="gamma"
-          valueLabelDisplay="auto"
-          marks={[{ value: 0.1, label: '0.1'}, { value: 8, label: '8'}]}
-          step={0.1}
-          min={0.1}
-          max={8}
-          onChange={value => props.onChange('gamma', value)}
-        />
-      </div>*/}
       <div>
         <div>Width</div>
         <DebounceSlider
@@ -95,7 +81,6 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
 GaborFiltersControls.propTypes = {
   numComponents: PropTypes.number.isRequired,
   lambda: PropTypes.number.isRequired,
-  gamma: PropTypes.number.isRequired,
   sigma: PropTypes.number.isRequired,
   windowSize: PropTypes.number.isRequired,
   bias: PropTypes.number.isRequired,

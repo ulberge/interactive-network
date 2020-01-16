@@ -1,16 +1,16 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { getArraySketch } from '../../js/sketches/array';
+import { getChannelSketch } from '../../js/sketches/channel';
 
-const Array2DView = props => {
+const ChannelView = props => {
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
   useEffect(() => {
     // run once
     if (!pRef.current && imgRef.current) {
-      pRef.current = new p5(getArraySketch(props.withColor, props.normalize), imgRef.current);
+      pRef.current = new p5(getChannelSketch(), imgRef.current);
     }
 
     // run every time
@@ -24,11 +24,9 @@ const Array2DView = props => {
   );
 };
 
-Array2DView.propTypes = {
+ChannelView.propTypes = {
   imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   scale: PropTypes.number,
-  normalize: PropTypes.bool,
-  withColor: PropTypes.bool,
 };
 
-export default Array2DView;
+export default ChannelView;

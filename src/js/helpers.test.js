@@ -1,4 +1,4 @@
-import { getPixelsWithinDistance, getUniqueNeighbors, floodFill, getApproximateCrossings, getEmpty2DArray } from './helpers';
+import { getPixelsWithinDistance, getUniqueNeighbors, floodFill, getApproximateCrossings, getEmpty2DArray, get2DArraySlice } from './helpers';
 import p5 from 'p5';
 
 const getPixelsAs2DArray = pixels => {
@@ -215,3 +215,42 @@ it('captures small crossings when low step size: getApproximateCrossings', () =>
   // console.table(getPixelsAs2DArray(pixels));
   expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
 });
+
+it('correctly extracts a slice of middle of array: get2DArraySlice', () => {
+  const arr = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 1, 0, 0, 0, 0],
+    [0, 0, 2, 0, 5, 0, 0, 0],
+    [0, 4, 0, 3, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  const result = get2DArraySlice(arr, [1, 1, 3, 4]);
+  const expectedResult = [
+    [1, 0, 1, 0],
+    [0, 2, 0, 5],
+    [4, 0, 3, 0],
+  ];
+  console.table(result);
+  expect(result).toEqual(expectedResult);
+});
+
+it('correctly extracts a slice of edge at beginning of array: get2DArraySlice', () => {
+  const arr = [
+    [1, 0, 0, 0, 0, 0, 0, 0],
+    [1, 1, 0, 1, 0, 0, 0, 0],
+    [0, 0, 2, 0, 5, 0, 0, 0],
+    [0, 4, 0, 3, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ];
+  const result = get2DArraySlice(arr, [0, 0, 3, 2]);
+  const expectedResult = [
+    [1, 0, 0, 0, 0],
+    [1, 1, 0, 1, 0],
+  ];
+  console.table(result);
+  expect(result).toEqual(expectedResult);
+});
+
+

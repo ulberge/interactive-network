@@ -10,10 +10,10 @@ import DebounceSlider from '../UI/DebounceSlider';
 
 // Some default marks
 const defaultMarks = [
-  [[5.2, 5.4],[11.7, 5.4]],
-  [[5.2, 5.6],[5.2, 13.0]],
-  [[5.1, 16.4],[15.2, 16.4]],
-  [[18.2, 3.7],[15.2, 7.4]],
+  [[15.2, 15.4],[21.7, 15.4]],
+  [[15.2, 15.6],[15.2, 23.0]],
+  [[15.1, 26.4],[25.2, 26.4]],
+  [[28.2, 13.7],[25.2, 17.4]],
 ];
 
 const drawingSettings = JSON.parse(localStorage.getItem('drawing_settings')) || {
@@ -54,7 +54,7 @@ const GaborDrawingInput = memo(function GaborDrawingInput(props) {
           onRender={props.onUpdate}
         />
       </Grid>
-      <Grid item style={{ margin: '0 auto', width: '200px' }}>
+      <Grid item style={{ margin: '0 auto', maxWidth: '200px', minWidth: '160px' }}>
         <Grid container direction="column" justify="center" spacing={1}>
           <Grid item xs style={{ textAlign: 'center' }}>
             <IconButton aria-label="reset" onClick={reset}>

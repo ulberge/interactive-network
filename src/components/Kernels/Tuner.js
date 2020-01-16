@@ -15,18 +15,17 @@ tf.setBackend('cpu');
 const kernelSettings = JSON.parse(localStorage.getItem('kernel_settings')) || {
   numComponents: 2, // power of 2
   lambda: 6.3,
-  gamma: 2.1,
   sigma: 3,
   windowSize: 9,
   bias: -4,
 };
 
-export default function GaborExplorer(props) {
+export default function KernelsTuner(props) {
   const [state, setState] = useState({
     ...kernelSettings,
     imgArr: null
   });
-  const { numComponents, lambda, gamma, sigma, windowSize, bias, imgArr } = state;
+  const { numComponents, lambda, sigma, windowSize, bias, imgArr } = state;
 
   const [filters, setFilters] = useState([]);
   const [layer, setLayer] = useState(null);
@@ -34,7 +33,7 @@ export default function GaborExplorer(props) {
   // the TensorFlow layer is created using the filters
   useEffect(() => {
     async function fetchFilters() {
-      const filters = getKernels(windowSize, 2 ** numComponents, lambda, sigma, gamma);
+      const filters = getKernels(windowSize, 2 ** numComponents, lambda, sigma);
       if (filters && filters.length > 0) {
         setFilters(filters);
         const layer = getLayer(filters.map(filter => [filter]), bias);
@@ -43,14 +42,14 @@ export default function GaborExplorer(props) {
     }
 
     fetchFilters();
-  }, [numComponents, lambda, gamma, sigma, windowSize, bias]);
+  }, [numComponents, lambda, sigma, windowSize, bias]);
 
   useEffect(() => {
     // save values
     localStorage.setItem('kernel_settings', JSON.stringify({
-      numComponents, lambda, gamma, sigma, windowSize, bias
+      numComponents, lambda, sigma, windowSize, bias
     }));
-  }, [numComponents, lambda, gamma, sigma, windowSize, bias]);
+  }, [numComponents, lambda, sigma, windowSize, bias]);
 
   // Set up pooling layers
   const maxPoolLayer = useMemo(() => tf.layers.maxPooling2d({poolSize: 3}), []);
@@ -71,16 +70,14 @@ export default function GaborExplorer(props) {
 
   return (
     <div>
-      <h2>Kernel Tuner</h2>
       <Grid container justify="center" spacing={4}>
         <Grid item xs={6}>
-          <h3>Kernel Controls</h3>
+          <h3>Kernels</h3>
           <Grid container spacing={4}>
             <Grid item xs={4}>
               <GaborFiltersControls
                 numComponents={numComponents}
                 lambda={lambda}
-                gamma={gamma}
                 sigma={sigma}
                 windowSize={windowSize}
                 bias={bias}
@@ -95,13 +92,13 @@ export default function GaborExplorer(props) {
         <Grid item xs={6}>
           <Grid container spacing={4}>
             <Grid item xs={4}>
-              <h3>Test Drawing</h3>
+              <h3>Test</h3>
               <GaborDrawingInput scale={3} onUpdate={onUpdate} />
             </Grid>
             <Grid item xs={8} className="bordered-canvas">
               {/*<h3>Activations</h3>
               { !!channels ? <Array2DViewList scale={1} imgArrs={channels} /> : null }*/}
-              <h3>Pool Activations</h3>
+              <h3>Activations</h3>
               { !!channelsPool ? <Array2DViewList scale={3.5} imgArrs={channelsPool} /> : null }
             </Grid>
           </Grid>
