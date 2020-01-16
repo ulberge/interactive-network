@@ -32,6 +32,24 @@ class LineInfo {
     });
   }
 
+  // Returns two 2D arrays with max id and value
+  getMaxChannels() {
+    const max = getEmpty2DArray(this.h, this.w, -1);
+    const channelIds = getEmpty2DArray(this.h, this.w, -1);
+    this.channels.forEach((channel, chIndex) => channel.forEach((row, rowIndex) => row.forEach((v, colIndex) => {
+      if (v > 0.05 && v > max[rowIndex][colIndex]) {
+        max[rowIndex][colIndex] = v;
+        channelIds[rowIndex][colIndex] = chIndex;
+      }
+    })));
+    return { max, ids: channelIds };
+  }
+
+  getChannelsAt(pos) {
+    const { x, y } = pos;
+    return this.channels.map(channel => channel[y][x]);
+  }
+
   static copy(lineInfo) {
     const copy = new this();
     copy.channels = lineInfo.channels.map(channel => deepCopy(channel));
@@ -72,7 +90,7 @@ export function getNewBounds(bounds, x, y) {
 export class SmartCanvas {
   constructor(shape, onChange) {
     this.shape = shape;
-    this.kernels = getKernels(11, 8, 3.9, 3.5);
+    this.kernels = getKernels(11, 8, 4.3, 3.5);
     this.layer = getLayer(this.kernels.map(kernel => [kernel]));
     this.lineInfo = new LineInfo(shape, this.kernels.length);
     this.onChange = onChange;
@@ -95,7 +113,7 @@ export class SmartCanvas {
       console.log(imgArr.length * imgArr[0].length);
       const channelsInSelection = eval2DArray(this.layer, imgArr);
       this.lineInfo.updateChannels(channelsInSelection, dirtyBoundsExpanded);
-      this.onChange(this.lineInfo.channels);
+      this.onChange(this.lineInfo);
     }
 
     this.dirtyBounds = null;
@@ -108,6 +126,13 @@ export class SmartCanvas {
         const [ w, h ] = this.shape;
         p.createCanvas(w, h);
         p.strokeWeight(2);
+
+        // testing hack
+        setTimeout(() => {
+          p.line(120, 150, 100, 100);
+          this.dirtyBounds = [99, 99, 121, 151];
+          this.update(p);
+        }, 100);
       };
 
       p.draw = () => {

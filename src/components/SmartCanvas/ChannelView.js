@@ -15,7 +15,8 @@ const ChannelView = props => {
 
     // run every time
     if (pRef.current) {
-      pRef.current.customDraw(props.imgArr, props.scale);
+      pRef.current._onSelect = props.onSelect;
+      pRef.current.customDraw(props.ids, props.max, props.scale);
     }
   }, [props]);
 
@@ -25,8 +26,10 @@ const ChannelView = props => {
 };
 
 ChannelView.propTypes = {
-  imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+  ids: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+  max: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   scale: PropTypes.number,
+  onSelect: PropTypes.func,
 };
 
 export default ChannelView;
