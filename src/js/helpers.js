@@ -149,6 +149,11 @@ export function getImgArrFromPixelsSelection(pixels, width, selection) {
 
 export function get2DArraySlice(arr, selection) {
   const [ sx, sy, ex, ey ] = selection;
+
+  if (sx < 0 || sy < 0 || ey >= arr.length || ex >= arr[0].length) {
+    return [];
+  }
+
   const slice = arr.slice(sy, ey + 1).map(row => row.slice(sx, ex + 1));
   return slice;
 }
@@ -258,4 +263,10 @@ export function getApproximateCrossings(start, end, stepSize=0.5) {
   }
 
   return pixels;
+}
+
+// Return a list of { v: value, i: index } with the top N values
+export function getTopValues(arr, N) {
+  const sorted = arr.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
+  return sorted.slice(0, N);
 }

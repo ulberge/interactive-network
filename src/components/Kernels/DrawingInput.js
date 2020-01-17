@@ -1,7 +1,7 @@
 import React, { useState, useCallback, memo, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
-import EditableCanvas from '../UI/EditableCanvas';
+import KernelsEditableCanvas from './EditableCanvas';
 import { deepCopy } from '../../js/helpers';
 import ClearIcon from '@material-ui/icons/Clear';
 import ReplayIcon from '@material-ui/icons/Replay';
@@ -20,7 +20,7 @@ const drawingSettings = JSON.parse(localStorage.getItem('drawing_settings')) || 
   strokeWeight: 2,
 };
 
-const GaborDrawingInput = memo(function GaborDrawingInput(props) {
+const KernelsDrawingInput = memo(function KernelsDrawingInput(props) {
   const [ state, setState ] = useState({
     marks: deepCopy(defaultMarks),
     ...drawingSettings,
@@ -43,7 +43,7 @@ const GaborDrawingInput = memo(function GaborDrawingInput(props) {
   return (
     <Grid container direction="column" spacing={1} style={{ position: 'relative' }}>
       <Grid item className="bordered-canvas" style={{ margin: '0 auto' }}>
-        <EditableCanvas
+        <KernelsEditableCanvas
           shape={[41, 41]}
           marks={state.marks}
           strokeWeight={state.strokeWeight}
@@ -114,9 +114,9 @@ const GaborDrawingInput = memo(function GaborDrawingInput(props) {
   );
 });
 
-GaborDrawingInput.propTypes = {
+KernelsDrawingInput.propTypes = {
   onUpdate: PropTypes.func.isRequired,
   scale: PropTypes.number.isRequired,
 };
 
-export default GaborDrawingInput;
+export default KernelsDrawingInput;

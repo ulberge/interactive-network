@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import p5 from 'p5';
 import { getChannelSketch } from '../../js/sketches/channel';
 
-const ChannelView = props => {
+const SmartCanvasColorCodedView = props => {
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
@@ -15,8 +15,9 @@ const ChannelView = props => {
 
     // run every time
     if (pRef.current) {
-      pRef.current._onSelect = props.onSelect;
-      pRef.current.customDraw(props.ids, props.max, props.scale);
+      const { onSelect, ids, max, kernels, scale } = props;
+      pRef.current._onSelect = onSelect;
+      pRef.current.customDraw(ids, max, kernels, scale);
     }
   }, [props]);
 
@@ -25,11 +26,12 @@ const ChannelView = props => {
   );
 };
 
-ChannelView.propTypes = {
+SmartCanvasColorCodedView.propTypes = {
   ids: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   max: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
+  kernels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))),
   scale: PropTypes.number,
   onSelect: PropTypes.func,
 };
 
-export default ChannelView;
+export default SmartCanvasColorCodedView;

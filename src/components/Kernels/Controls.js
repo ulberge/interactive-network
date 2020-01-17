@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import PropTypes from 'prop-types';
 import DebounceSlider from '../UI/DebounceSlider';
 
-const GaborFiltersControls = memo(function GaborFiltersControls(props) {
+const KernelsControls = memo(function KernelsControls(props) {
   return (
     <div style={{ width: '180px' }}>
       <div>
@@ -60,31 +60,16 @@ const GaborFiltersControls = memo(function GaborFiltersControls(props) {
           onChange={value => props.onChange('sigma', value)}
         />
       </div>
-      <div>
-        <div>Bias</div>
-        <DebounceSlider
-          defaultValue={props.bias}
-          track={false}
-          aria-labelledby="bias"
-          valueLabelDisplay="auto"
-          marks={[{ value: -15, label: '-15'}, { value: 0, label: '0'}, { value: 15, label: '15'}]}
-          step={0.1}
-          min={-15}
-          max={15}
-          onChange={value => props.onChange('bias', value)}
-        />
-      </div>
     </div>
   );
 });
 
-GaborFiltersControls.propTypes = {
+KernelsControls.propTypes = {
   numComponents: PropTypes.number.isRequired,
   lambda: PropTypes.number.isRequired,
   sigma: PropTypes.number.isRequired,
   windowSize: PropTypes.number.isRequired,
-  bias: PropTypes.number.isRequired,
   onChange: PropTypes.func.isRequired
 };
 
-export default GaborFiltersControls;
+export default KernelsControls;

@@ -1,27 +1,28 @@
 import * as d3 from 'd3';
-import { getKernels } from './kernel';
+import { getTopValues } from './helpers';
 
-// Return a list of { v: value, i: index } with the top N values
-function getTopValues(arr, N) {
-  const sorted = arr.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
-  return sorted.slice(0, N);
+function getKernelImgs(kernels, kernelKeys) {
+  const filteredKernels = kernels.map((kernel, i) => ({ kernel, i })).filter(d => kernelKeys.includes(d.i));
+  const kernelsData = [];
+  filteredKernels.forEach(d => {
+    // normalization value
+    let max = Math.max(...d.kernel.map(row => Math.max(...row.map(v => Math.abs(v)))));
+
+    // flatten by adding each pixel to whole list
+    d.kernel.forEach((row, rIndex) => row.forEach((v, colIndex) => {
+      kernelsData.push({ ch: d.i, row: rIndex, col: colIndex, v: v / max });
+    }));
+  });
+  return kernelsData;
 }
 
-const kernels = getKernels(11, 8, 4.3, 3.5);
-const kernelsData = kernels.map((channel, chIndex) => {
-  const kernelData = [];
-  let max = Math.max(...channel.map(row => Math.max(...row.map(v => Math.abs(v)))));
-  channel = channel.map(row => row.map(v => v / max));
-  channel.forEach((row, rIndex) => row.forEach((v, colIndex) => {
-    kernelData.push({ ch: chIndex, row: rIndex, col: colIndex, v });
-  }));
-  return kernelData;
-});
-
 // render chart of top activations (list of channel values at a given position) with their icon on top to the el
-export function renderChart(el, activations) {
-  let data = getTopValues(activations, 10);
+export function renderChart(el, activations, kernels, numKernels) {
+  let data = getTopValues(activations, numKernels);
   data = data.map((d, i) => ({ name: d[0], value: d[1] }));
+
+  const kernelKeys = data.map(d => d.name);
+  const kernelImgs = getKernelImgs(kernels, kernelKeys);
 
   const margin = {top: 4, right: 4, bottom: 50, left: 50};
   const width = el.offsetWidth - margin.left - margin.right;
@@ -60,23 +61,22 @@ export function renderChart(el, activations) {
 
   bars.exit().remove();
 
-  const kernelKeys = data.map(d => d.name);
-  const filteredKernelsData = [];
-  kernelsData.filter((kernel, i) => kernelKeys.includes(i)).forEach(dataList => filteredKernelsData.push(...dataList));
-  const pixels = svg.append('g').selectAll('.pixel').data(filteredKernelsData).enter();
-  const size = x.bandwidth() / 11;
-  pixels.append('rect')
-      .attr('fill', d => {
-        if (d.v >= 0) {
-          return 'rgba(0, 0, 0, ' + (d.v) + ')';
-        } else {
-          return 'rgba(255, 0, 0, ' + (-d.v / 2) + ')';
-        }
-      })
-      .attr('x', d => x(d.ch) + (size * d.col))
-      .attr('y', d => (size * d.row))
-      .attr('height', size)
-      .attr('width', size);
+  if (kernels && kernels.length > 0) {
+    const pixels = svg.append('g').selectAll('.pixel').data(kernelImgs).enter();
+    const size = x.bandwidth() / kernels[0].length;
+    pixels.append('rect')
+        .attr('fill', d => {
+          if (d.v >= 0) {
+            return 'rgba(0, 0, 0, ' + (d.v) + ')';
+          } else {
+            return 'rgba(255, 0, 0, ' + (-d.v / 2) + ')';
+          }
+        })
+        .attr('x', d => x(d.ch) + (size * d.col))
+        .attr('y', d => (size * d.row))
+        .attr('height', size)
+        .attr('width', size);
+  }
 
   svg.append('g')
     .style('font-size', '10px')

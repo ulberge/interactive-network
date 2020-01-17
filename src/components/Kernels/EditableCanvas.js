@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import p5 from 'p5';
 import { getEditableSketch } from '../../js/sketches/editable';
 
-const EditableCanvas = props => {
+const KernelsEditableCanvas = props => {
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
@@ -23,7 +23,7 @@ const EditableCanvas = props => {
   );
 };
 
-EditableCanvas.propTypes = {
+KernelsEditableCanvas.propTypes = {
   shape: PropTypes.arrayOf(PropTypes.number).isRequired,
   marks: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
   strokeWeight: PropTypes.number,
@@ -34,4 +34,4 @@ EditableCanvas.propTypes = {
   onRender: PropTypes.func,
 };
 
-export default EditableCanvas;
+export default KernelsEditableCanvas;
