@@ -1,17 +1,24 @@
 import React from 'react';
 import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 const linkStyle = {
-  color: '#000'
+  color: '#212121',
+  textDecoration: 'none'
+};
+
+const activeStyle = {
+  color: '#000',
+  fontWeight: 'bold'
 };
 
 export default function Header() {
   return (
     <MenuList>
-      <MenuItem><Link to="/kernels" style={linkStyle}>Kernels</Link></MenuItem>
-      <MenuItem><Link to="/smartcanvas" style={linkStyle}>Canvas</Link></MenuItem>
+      <MenuItem><NavLink to="/kernels" activeStyle={activeStyle} style={linkStyle}>Kernels</NavLink></MenuItem>
+      <MenuItem><NavLink to="/smartcanvas" activeStyle={activeStyle} style={linkStyle}>Canvas</NavLink></MenuItem>
+      <MenuItem><NavLink to="/draw" activeStyle={activeStyle} style={linkStyle}>Draw</NavLink></MenuItem>
     </MenuList>
   );
 };

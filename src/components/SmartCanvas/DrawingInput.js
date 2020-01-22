@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { SmartCanvas } from '../../js/smartcanvas';
+import SmartCanvas from '../../js/smartcanvas';
 
 const SmartCanvasDrawingInput = props => {
   const imgRef = useRef(null);

@@ -1,59 +1,87 @@
-import { getImgArrFromPixels, delay, getRandomArbitrary, choose } from './helpers';
+import { delay, getRandomArbitrary, choose2D } from './helpers';
 import Boid from './boid';
 import p5 from 'p5';
 
-export class Drawer {
-  constructor(smartCanvas, getScore, p, pDisplay=null, displayScale=1, strokeWeight=1, speed=100, canvasScale=1, bounds=null) {
-    // stores abstract info
+const settings = {
+  strokeWeight: 2,
+  speed: 10,
+  angleRange: Math.PI * 0.75,
+  // segmentLength: Math.sqrt(2) * 2.01,
+  segmentLength: 3,
+  minStartTries: 3,
+  numTries: 24,
+  minNextSegmentTries: 2,
+};
+
+export default class Drawer {
+  constructor(smartCanvas, pOverlay=null, debug=null) {
+    // canvas + abstract info
     this.smartCanvas = smartCanvas;
-    // Sketch at 1:1 scale
-    this.p = p;
-    // Sketch scaled up for viewing and debugging
-    this.pDisplay = pDisplay;
-    this.displayScale = displayScale;
-    this.speed = speed;
-    this.strokeWeight = strokeWeight;
-    this.canvasScale = canvasScale;
-    this.getScore = getScore;
-    this.boid = new Boid();
+    // debugging sketch
+    this.pOverlay = pOverlay;
+    this.debug = debug;
     this.drawingTimer = null;
+    this.isStep = false;
 
-    this.bounds = bounds;
-    if (!bounds) {
-      this.bounds = { sx: 0, sy: 0, ex: p.width, ey: p.height };
-    }
-
-    this.angleRange = Math.PI * 0.75;
-    // this.segmentLength = Math.sqrt(2) * 2.01 * canvasScale;
-    this.segmentLength = 1.5 * canvasScale;
-    const approxNumTriesStart = 64;
-    this.startLineRate = (this.bounds.ex - this.bounds.sx) * (this.bounds.ey - this.bounds.sy) / approxNumTriesStart; // 1 == a line at every pixel, 2 == lines at about every 2 pixels
-    this.minStartTries = 5;
-    this.countStartFails = 0;
-    this.numTries = 64;
-    this.minNextSegmentTries = 20;
-    this.countNextSegmentFails = 0;
-    this.prevScore = 0;
+    document.addEventListener('keypress', () => {
+      console.log('step');
+      this.start();
+    });
   }
 
   /**
    * Draws the given channels output on the provided canvas
    */
-  async start(callback) {
+  async draw(network, layerIndex, channelIndex, location, callback) {
+    // calc shadow (2D array of activation potential)
+    this.shadow = network.getShadow(layerIndex, channelIndex);
+    this.shadowOffset = network.getShadowOffset(layerIndex, location);
+    this.getScore = channels => network.getScore(channels, layerIndex, channelIndex);
+
+    const { x, y } = this.shadowOffset;
+    const h = this.shadow.length;
+    const w = this.shadow[0].length;
+    this.bounds = [ x, y, w + x, h + y ];
+
+    // initialize new drawer
+    this.boid = new Boid(10);
+    this.callback = callback;
+
+    this.prevScore = 0;
+    this.countStartFails = 0;
+    this.countNextSegmentFails = 0;
+    this.isDone = false;
+
+    this.start();
+  }
+
+  async start() {
+    console.log('start');
+    if (this.isDone) {
+      return;
+    }
+
     if (this.drawingTimer) {
       clearTimeout(this.drawingTimer);
     }
 
-    while (!this.p._setupDone || (this.pDisplay && !this.pDisplay._setupDone)) {
+    // wait until drawing canvases are ready
+    while (!this.smartCanvas.p || !this.smartCanvas.p._setupDone || (this.pOverlay && !this.pOverlay._setupDone)) {
+      console.log('waiting for p5 to be setup');
       await delay(10);
     }
 
     const runDraw = () => {
-      const isDone = this.drawTick();
-      if (!isDone) {
-        this.drawingTimer = setTimeout(runDraw, this.speed);
+      this.isDone = this.drawTick();
+      if (!this.isDone) {
+        if (!this.isStep) {
+          // auto update, do not wait for user keypress
+          this.drawingTimer = setTimeout(runDraw, settings.speed);
+        }
       } else {
-        setTimeout(callback, 0); // wrap in setTimeout in case async is depended on (can fail on first attempt)
+        if (this.callback) {
+          setTimeout(this.callback, 0); // wrap in setTimeout in case async is depended on (can fail on first attempt)
+        }
       }
     }
 
@@ -68,11 +96,12 @@ export class Drawer {
 
   // Draw one step of animation, returns true if done
   drawTick() {
+    console.log('drawTick');
     if (this.boid.pos === null) {
-      const hasMoreStarts = this.findStart();
+      const hasMoreStarts = this.getNewLine();
       if (!hasMoreStarts) {
         this.countStartFails++;
-        if (this.countStartFails >= this.minStartTries) {
+        if (this.countStartFails >= settings.minStartTries) {
           this.countStartFails = 0;
           return true;
         }
@@ -80,10 +109,10 @@ export class Drawer {
         this.countStartFails = 0;
       }
     } else {
-      const hasNextSegment = this.findNextSegment();
+      const hasNextSegment = this.getNextSegment();
       if (!hasNextSegment) {
         this.countNextSegmentFails++;
-        if (this.countNextSegmentFails >= this.minNextSegmentTries) {
+        if (this.countNextSegmentFails >= settings.minNextSegmentTries) {
           this.countNextSegmentFails = 0;
           this.boid.pos = null;
         }
@@ -95,155 +124,126 @@ export class Drawer {
     return false;
   }
 
+  testSegment(start, end) {
+    const result = this.smartCanvas.testSegment(start, end);
+    if (!result) {
+      return null;
+    }
+
+    const { lineInfo } = result;
+    const channelsSelection = lineInfo.getChannelsInSelection(this.bounds);
+    const score = this.getScore(channelsSelection) - this.prevScore;
+
+    return score;
+  }
+
   // get pos of new line
   // test random lines and choose one with probability equal to quality
-  findStart() {
-    this.smartCanvas.setupStroke();
+  getNewLine() {
+    const numStarts = 4;
+    const numAngles = 4;
+    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (numStarts * numAngles) + ' times.');
 
-    // make a list of options and evalutate them
-    const startParams = [];
-    const lineInfos = [];
+    const options = [];
     const scores = [];
-    let count = 0;
-    for (let y = this.bounds.sy; y < this.bounds.ey; y++) {
-      for (let x = this.bounds.sx; x < this.bounds.ex; x++) {
-        if (Math.random() > (1 / this.startLineRate)) {
-          continue; // skip at a certain rate
-        }
-        count++;
+    const { x: offX, y: offY } = this.shadowOffset;
+    const offset = new p5.Vector(offX, offY);
+    for (let i = 0; i < numStarts; i += 1) {
+      const { x, y } = choose2D(this.shadow);
+      const start = new p5.Vector(x, y).add(offset);
 
-        // make a random line segment
-        const start = new p5.Vector(x, y);
-        const vel = p5.Vector.random2D().setMag(this.segmentLength);
+      for (let j = 0; j < numAngles; j += 1) {
+        const vel = p5.Vector.random2D().setMag(settings.segmentLength);
         const end = start.copy().add(vel);
-        if (!this.isWithinBounds(end)) {
-          continue;
-        }
+        const score = this.testSegment(start, end);
 
-        const lineInfo = this.smartCanvas.testSegment(start.copy().mult(1 / this.canvasScale), end.copy().mult(1 / this.canvasScale), true);
-        if (!lineInfo) {
-          continue;
-        }
-
-        const score = this.getScore(lineInfo) - this.prevScore;
-        if (score <= 0) {
-          continue;
-        }
-
-        startParams.push({ start, vel, end });
-        lineInfos.push(lineInfo);
+        options.push({ start, vel, end });
         scores.push(score);
       }
     }
-    console.log('Try #' + (this.countStartFails + 1) + ' to find start. Attempting ' + count + ' times.');
 
-    if (scores.length === 0) {
+    if (scores.filter(s => s > 0.2).length === 0) {
       return false; // if no more improvements possible, halt
     }
 
-
     const optionIndex = Drawer.chooseScore(scores);
-    const { vel, start } = startParams[optionIndex];
-    const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
-
-    console.log('Found ' + scores.length + ' starts with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores);
-
+    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores);
+    const { start, end, vel } = options[optionIndex];
     this.boid.move(start);
-    this.update(vel, lineInfo, score);
-
-    // debug
-    for (let i = 0; i < startParams.length; i += 1) {
-      const { start, end } = startParams[i];
-      this.pDisplay.push();
-      this.pDisplay.scale(this.displayScale);
-      this.pDisplay.stroke(500 * scores[i], 0, 0);
-      this.pDisplay.line(start.x, start.y, end.x, end.y);
-      this.pDisplay.pop();
-    }
+    this.update(start, end, vel, score);
 
     return true;
   }
 
-  findNextSegment() {
+  getNextSegment() {
+    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.numTries + ' times.');
     // choose a random line segment from the current position
     // make a list of options and evalutate them
-    const vels = [];
-    const lineInfos = [];
+    const startParams = [];
+    // const lineInfos = [];
     const scores = [];
+    const debugOptions = [];
 
     // try angles center at angle segments
-    const startAngle = this.boid.vel.copy().rotate(-this.angleRange);
-    const angleDelta = (this.angleRange * 2) / (this.numTries - 1);
-    const debug = []
-    for (let i = 0; i < this.numTries; i += 1) {
+    const startAngle = this.boid.vel.copy().rotate(-settings.angleRange);
+    const angleDelta = (settings.angleRange * 2) / (settings.numTries - 1);
+
+    for (let i = 0; i < settings.numTries; i += 1) {
       const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
       const angle = (angleDelta * i) + angleNoise;
       const vel = startAngle.copy().rotate(angle);
-      // console.log((360 * angle) / (Math.PI * 2));
-      // console.log(vel.heading());
-      // const vel = this.boid.vel.copy().rotate(angleDelta);
-      const start = this.boid.pos;
+      const start = this.boid.pos.copy();
       const end = this.boid.pos.copy().add(vel);
+
+      const debugOption = { start, end };
+      debugOptions.push(debugOption);
       if (!this.isWithinBounds(end)) {
         continue;
       }
+      debugOption.withinBounds = true;
 
-      const lineInfo = this.smartCanvas.testSegment(start.copy().mult(1 / this.canvasScale), end.copy().mult(1 / this.canvasScale));
-      if (!lineInfo) {
+      const result = this.smartCanvas.testSegment(start, end);
+      if (!result) {
         continue;
       }
 
-      const score = this.getScore(lineInfo) - this.prevScore;
-      debug.push([vel, score]);
-      if (score <= 0) {
-        continue;
-      }
+      const { lineInfo, imgArr, oldImgArr, max, ids, channelsDebug } = result;
+      debugOption.imgArr = imgArr;
+      debugOption.oldImgArr = oldImgArr;
+      debugOption.max = max;
+      debugOption.ids = ids;
+      debugOption.channelsDebug = channelsDebug;
+      // debugOption.lineInfo = lineInfo;
 
-      vels.push(vel);
-      lineInfos.push(lineInfo);
+      const channelsSelection = lineInfo.getChannelsInSelection(this.bounds);
+      const score = this.getScore(channelsSelection) - this.prevScore;
+      debugOption.score = score;
+
+      startParams.push({ start, vel, end });
+      // lineInfos.push(lineInfo);
       scores.push(score);
     }
-    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + this.numTries + ' times.');
-    // console.log(debug);
+    if (this.debug && this.debug.ongetNextSegment) {
+      console.log('test debug', debugOptions);
+      this.debug.ongetNextSegment(debugOptions);
+    }
 
-    if (scores.length === 0) {
-      // debug
-      // for (let i = 0; i < debug.length; i += 1) {
-      //   const [ vel, score ] = debug[i];
-      //   const start = this.boid.prevPos;
-      //   this.pDisplay.push();
-      //   this.pDisplay.scale(this.displayScale);
-      //   this.pDisplay.stroke(500 * score, 0, 0);
-      //   this.pDisplay.strokeWeight((0.1 * score) + 0.1);
-      //   this.pDisplay.line(start.x, start.y, start.x + vel.copy().mult(5).x, start.y + vel.copy().mult(5).y);
-      //   this.pDisplay.pop();
-      // }
+    if (scores.filter(s => s > 0.1).length === 0) {
       return false; // if no more improvements possible, halt
     }
 
     const optionIndex = Drawer.chooseScore(scores);
 
-    const vel = vels[optionIndex];
-    const lineInfo = lineInfos[optionIndex];
+    const { start, end, vel } = startParams[optionIndex];
+    // const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
+    console.log('update', optionIndex, start, end, vel, score, scores);
 
     console.log('Found ' + scores.length + ' starts with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores);
 
-    this.update(vel, lineInfo, score);
-
-    // debug
-    for (let i = 0; i < debug.length; i += 1) {
-      const [ vel, score ] = debug[i];
-      const start = this.boid.prevPos;
-      this.pDisplay.push();
-      this.pDisplay.scale(this.displayScale);
-      this.pDisplay.stroke(500 * score, 0, 0);
-      this.pDisplay.strokeWeight(0.1 * score);
-      this.pDisplay.line(start.x, start.y, start.x + vel.copy().mult(5).x, start.y + vel.copy().mult(5).y);
-      this.pDisplay.pop();
-    }
-
+    this.update(start, end, vel, score);
     return true;
   }
 
@@ -257,52 +257,65 @@ export class Drawer {
 
     // sort the scores, but keep indices
     const sortedScores = scores.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
-    const highScore = sortedScores[0][1];
 
-    // select from one of the better scores
-    const topScores = sortedScores.filter(el => (highScore * 0.5) - el[1]);
+    // return top index
+    return sortedScores[0][0];
+    // const highScore = sortedScores[0][1];
 
-    // randomly choose one of the better scores with probability equal to amount
-    const randomWeightedtopScoreIndex = choose(topScores.map(el => el[1]));
+    // // select from one of the better scores
+    // const topScores = sortedScores.filter(el => (highScore * 0.5) - el[1]);
 
-    const chosenTopScore = topScores[randomWeightedtopScoreIndex];
-    const scoreIndex = chosenTopScore[0];
-    return scoreIndex;
+    // // randomly choose one of the better scores with probability equal to amount
+    // const randomWeightedtopScoreIndex = choose(topScores.map(el => el[1]));
+
+    // const chosenTopScore = topScores[randomWeightedtopScoreIndex];
+    // const scoreIndex = chosenTopScore[0];
+    // return scoreIndex;
   }
 
-  update(vel, lineInfo, score) {
+  // Returns inclusive bounds centered at location inside shape
+  // canvasShape: [w,h] of canvas
+  // boundsShape: [w,h] of bounds centered at location
+  // location: center of bounds
+  static getLegalBounds(canvasShape, boundsShape, location) {
+    // center the shadow at the location
+    // crop to legal bounds
+    const padX = Math.floor(boundsShape[0] / 2);
+    const padY = Math.floor(boundsShape[1] / 2);
+    const { x, y } = location;
+    const sx = Math.max(0, x - padX);
+    const sy = Math.max(0, y - padY);
+    const ex = Math.min(canvasShape[0] - 1, x + padX);
+    const ey = Math.min(canvasShape[1] - 1, y + padY);
+
+    return [ sx, sy, ex, ey ];
+  }
+
+  update(start, end, vel, score) {
     this.boid.run(vel);
-    this.boid.draw(this.p);
 
     // draw display version scaled up
-    if (this.pDisplay) {
-      const imgArr = this.getCurrentImage();
-      this.pDisplay.customDraw(imgArr, this.displayScale);
-      this.pDisplay.push();
-      this.pDisplay.scale(this.displayScale);
-      this.boid.drawBoid(this.pDisplay);
-
-      this.pDisplay.push();
-      this.pDisplay.stroke(255, 0, 0);
-      this.pDisplay.rect(this.bounds.sx, this.bounds.sy, this.bounds.ex - this.bounds.sx, this.bounds.ey - this.bounds.sy);
-      this.pDisplay.pop();
-
-      this.pDisplay.pop();
+    if (this.pOverlay) {
+      this.pOverlay.clear();
+      this.pOverlay.push();
+      this.pOverlay.noFill();
+      this.pOverlay.stroke(255, 0, 0);
+      const [ sx, sy, ex, ey ] = this.bounds;
+      this.pOverlay.rect(sx, sy, ex - sx, ey - sy);
+      this.pOverlay.pop();
+      this.pOverlay.stroke(0);
+      this.boid.drawBoid(this.pOverlay);
     }
 
-    this.smartCanvas.lineInfo = lineInfo;
-    // lineInfo.print();
+    // this.smartCanvas.lineInfo = lineInfo;
+    this.smartCanvas.addSegment(start, end);
+    this.smartCanvas.update();
     this.prevScore += score;
   }
 
-  getCurrentImage() {
-    this.p.loadPixels();
-    const imgArr = getImgArrFromPixels(this.p.pixels, this.p.width);
-    return imgArr;
-  }
-
   isWithinBounds(v) {
-    if (v.x >= 0 && v.y >= 0 && v.x < this.p.width && v.y < this.p.height) {
+    const [ sx, sy, ex, ey ] = this.bounds;
+    if (v.x >= sx && v.y >= sy && v.x < ex && v.y < ey) {
       return true;
     }
     return false;

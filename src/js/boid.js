@@ -16,8 +16,8 @@ export default class Boid {
   }
 
   move(pos) {
-    this.prevPos = pos;
-    this.pos = pos;
+    this.prevPos = pos.copy();
+    this.pos = pos.copy();
   }
 
   // Update the position and velocity of the boid
@@ -45,20 +45,16 @@ export default class Boid {
   drawBoid(p) {
     p.push();
     p.noFill();
-    p.strokeWeight(0.5);
+    p.strokeWeight(1);
     p.ellipseMode(p.CENTER);
 
     // Draw "boid" outline
-    p.stroke(0, 0, 0, 150);
-    p.ellipse(this.pos.x, this.pos.y, 5, 5);
-
-    // Draw pencil tip
-    p.stroke(255, 0, 0, 150);
+    p.stroke(0, 0, 0, 210);
     p.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
 
     // Draw velocity
-    const length = 3;
-    p.stroke(0, 255, 0, 150);
+    const length = 0.5 * this.diameter;
+    p.stroke(0, 0, 0, 210);
     p.line(this.pos.x, this.pos.y, this.pos.x + (this.vel.x * length), this.pos.y + (this.vel.y * length));
 
     p.pop();

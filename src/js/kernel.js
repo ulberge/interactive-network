@@ -129,66 +129,66 @@ function getLs(windowSize, angle, numKernels, lambda, sigma) {
   return kernels;
 }
 
-function getTs(windowSize, angle, numKernels, lambda, sigma) {
-  const rotationDelta = 2 * Math.PI / numKernels; // divide 180 degrees in number
-  const halfWindowSize = Math.floor(windowSize / 2);
-  const kernels = [];
-  for (let i = 0; i < numKernels; i += 1) {
-    const theta = i * rotationDelta; // angle of this cos wave
-    const a = Math.sin(theta + (Math.PI / 2));
-    const b = Math.cos(theta + (Math.PI / 2));
+// function getTs(windowSize, angle, numKernels, lambda, sigma) {
+//   const rotationDelta = 2 * Math.PI / numKernels; // divide 180 degrees in number
+//   const halfWindowSize = Math.floor(windowSize / 2);
+//   const kernels = [];
+//   for (let i = 0; i < numKernels; i += 1) {
+//     const theta = i * rotationDelta; // angle of this cos wave
+//     const a = Math.sin(theta + (Math.PI / 2));
+//     const b = Math.cos(theta + (Math.PI / 2));
 
-    // Create two line ends at 90 degrees to each other and merge at diagonal between them
-    const kernelLine = getLine(windowSize, theta, lambda, sigma);
-    const kernelLineEnd = getLineEnd(windowSize, theta - angle, lambda, sigma);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
-    for (let y = 0; y < windowSize; y += 1) {
-      const yCentered = y - halfWindowSize;
-      for (let x = 0; x < windowSize; x += 1) {
-        const xCentered = x - halfWindowSize;
-        const c = (a * xCentered) - (b * yCentered); // pos in rotation space
-        if (c < 0.00001) { // rounding error at 0
-          // use line
-          kernel[y][x] = kernelLine[y][x];
-        } else {
-          // use most extreme towards T line
-          const zMax = Math.max(kernelLine[y][x], kernelLineEnd[y][x]);
-          const zMin = Math.min(kernelLine[y][x], kernelLineEnd[y][x]);
-          kernel[y][x] = zMax > 0 ? zMax : zMin;
-        }
-      }
-    }
+//     // Create two line ends at 90 degrees to each other and merge at diagonal between them
+//     const kernelLine = getLine(windowSize, theta, lambda, sigma);
+//     const kernelLineEnd = getLineEnd(windowSize, theta - angle, lambda, sigma);
+//     const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+//     for (let y = 0; y < windowSize; y += 1) {
+//       const yCentered = y - halfWindowSize;
+//       for (let x = 0; x < windowSize; x += 1) {
+//         const xCentered = x - halfWindowSize;
+//         const c = (a * xCentered) - (b * yCentered); // pos in rotation space
+//         if (c < 0.00001) { // rounding error at 0
+//           // use line
+//           kernel[y][x] = kernelLine[y][x];
+//         } else {
+//           // use most extreme towards T line
+//           const zMax = Math.max(kernelLine[y][x], kernelLineEnd[y][x]);
+//           const zMin = Math.min(kernelLine[y][x], kernelLineEnd[y][x]);
+//           kernel[y][x] = zMax > 0 ? zMax : zMin;
+//         }
+//       }
+//     }
 
-    kernels.push(kernel);
-  }
+//     kernels.push(kernel);
+//   }
 
-  return kernels;
-}
+//   return kernels;
+// }
 
-function getXs(windowSize, angle, numKernels, lambda, sigma) {
-  const rotationDelta = (Math.PI / 2) / numKernels; // divide 90 degrees in number
-  const kernels = [];
-  for (let i = 0; i < numKernels; i += 1) {
-    const theta = i * rotationDelta; // angle of this cos wave
+// function getXs(windowSize, angle, numKernels, lambda, sigma) {
+//   const rotationDelta = (Math.PI / 2) / numKernels; // divide 90 degrees in number
+//   const kernels = [];
+//   for (let i = 0; i < numKernels; i += 1) {
+//     const theta = i * rotationDelta; // angle of this cos wave
 
-    // Create two line ends at 90 degrees to each other and merge at diagonal between them
-    const kernelLine0 = getLine(windowSize, theta, lambda, sigma);
-    const kernelLine1 = getLine(windowSize, theta - angle, lambda, sigma);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
-    for (let y = 0; y < windowSize; y += 1) {
-      for (let x = 0; x < windowSize; x += 1) {
-        // use most extreme
-        const zMax = Math.max(kernelLine0[y][x], kernelLine1[y][x]);
-        const zMin = Math.min(kernelLine0[y][x], kernelLine1[y][x]);
-        kernel[y][x] = zMax > 0 ? zMax : zMin;
-      }
-    }
+//     // Create two line ends at 90 degrees to each other and merge at diagonal between them
+//     const kernelLine0 = getLine(windowSize, theta, lambda, sigma);
+//     const kernelLine1 = getLine(windowSize, theta - angle, lambda, sigma);
+//     const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+//     for (let y = 0; y < windowSize; y += 1) {
+//       for (let x = 0; x < windowSize; x += 1) {
+//         // use most extreme
+//         const zMax = Math.max(kernelLine0[y][x], kernelLine1[y][x]);
+//         const zMin = Math.min(kernelLine0[y][x], kernelLine1[y][x]);
+//         kernel[y][x] = zMax > 0 ? zMax : zMin;
+//       }
+//     }
 
-    kernels.push(kernel);
-  }
+//     kernels.push(kernel);
+//   }
 
-  return kernels;
-}
+//   return kernels;
+// }
 
 // function getYs(windowSize, angle, numKernels, lambda, sigma) {
 //   const rotationDelta = 2 * Math.PI / numKernels; // divide 360 degrees in number
@@ -288,13 +288,13 @@ export function getKernels(windowSize, numComponents, lambda, sigma) {
   // kernels.push(...getLs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
 
 
-  kernels.push(...getTs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
+  // kernels.push(...getTs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
   // kernels.push(...getTs(windowSize, Math.PI * 0.75, numComponents * 2, lambda, sigma));
   // kernels.push(...getTs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
 
   // kernels.push(...getYs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
 
-  kernels.push(...getXs(windowSize, Math.PI * 0.5, numComponents / 2, lambda, sigma));
+  // kernels.push(...getXs(windowSize, Math.PI * 0.5, numComponents / 2, lambda, sigma));
   // kernels.push(...getXs(windowSize, Math.PI * 0.25, numComponents, lambda, sigma));
 
   // points, small circles, blank, dense intersection, round corners, pinched round corners

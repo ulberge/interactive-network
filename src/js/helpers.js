@@ -22,6 +22,22 @@ export function choose(arr) {
   }
 }
 
+export function choose2D(arr2D) {
+  const w = arr2D[0].length;
+  const arr_f = arr2D.flat();
+  const arr_n = normalize(arr_f);
+  const selector = Math.random();
+  let cursor = 0;
+  for (let i = 0; i < arr_n.length; i += 1) {
+    cursor += arr_n[i];
+    if (selector <= cursor) {
+      const y = Math.floor(i / w);
+      const x = i % w;
+      return { x, y };
+    }
+  }
+}
+
 export function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -107,6 +123,18 @@ export function getEmpty2DArray(rows, columns, defaultValue = null) {
     }
   }
   return arr;
+}
+
+export const getImgArrFromP = (p) => {
+  p.loadPixels();
+  const { pixels, width } = p;
+  return getImgArrFromPixels(pixels, width);
+}
+
+export const getImgArrFromPSelection = (p, selection) => {
+  p.loadPixels();
+  const { pixels, width } = p;
+  return getImgArrFromPixelsSelection(pixels, width, selection);
 }
 
 // Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
@@ -269,4 +297,17 @@ export function getApproximateCrossings(start, end, stepSize=0.5) {
 export function getTopValues(arr, N) {
   const sorted = arr.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
   return sorted.slice(0, N);
+}
+
+
+export function max2D(arr2D) {
+  let max = -Infinity;
+  arr2D.forEach(row => row.forEach(v => v > max ? max = v : null));
+  return max;
+}
+
+export function sum2D(arr2D) {
+  let sum = 0;
+  arr2D.forEach(row => row.forEach(v => sum += v));
+  return sum;
 }

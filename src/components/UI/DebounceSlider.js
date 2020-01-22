@@ -6,7 +6,7 @@ import { debounce } from 'lodash';
 // This slider manages its own state and notifies listeners to changes through onChange after debounce
 const DebounceSlider = memo(function DebounceSlider(props) {
   const [value, setValue] = useState(props.defaultValue);
-  const onChange = useCallback(debounce(props.onChange, props.timer || 0), []);
+  const onChange = useCallback(debounce(props.onChange, props.timer || 0), [props]);
 
   return (
     <Slider

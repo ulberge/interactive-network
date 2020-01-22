@@ -1,4 +1,4 @@
-import { getPixelsWithinDistance, getUniqueNeighbors, floodFill, getApproximateCrossings, getEmpty2DArray, get2DArraySlice } from './helpers';
+import { getPixelsWithinDistance, getUniqueNeighbors, floodFill, getApproximateCrossings, getEmpty2DArray, get2DArraySlice, choose2D } from './helpers';
 import p5 from 'p5';
 
 const getPixelsAs2DArray = pixels => {
@@ -54,7 +54,7 @@ it('correctly gets pixels within distance with upper bound encounter: getPixelsW
     [0, 0, 0, 0, 1, 1, 1, 1],
     [0, 0, 0, 0, 1, 1, 1, 1],
   ];
-  console.table(getPixelsAs2DArray(pixels));
+  // console.table(getPixelsAs2DArray(pixels));
   expect(getPixelsAs2DArray(pixels)).toEqual(expectedResult);
 });
 
@@ -227,11 +227,12 @@ it('correctly extracts a slice of middle of array: get2DArraySlice', () => {
   ];
   const result = get2DArraySlice(arr, [1, 1, 3, 4]);
   const expectedResult = [
-    [1, 0, 1, 0],
-    [0, 2, 0, 5],
-    [4, 0, 3, 0],
+    [1, 0, 1],
+    [0, 2, 0],
+    [4, 0, 3],
+    [0, 0, 0],
   ];
-  console.table(result);
+  // console.table(result);
   expect(result).toEqual(expectedResult);
 });
 
@@ -244,13 +245,25 @@ it('correctly extracts a slice of edge at beginning of array: get2DArraySlice', 
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
   ];
-  const result = get2DArraySlice(arr, [0, 0, 3, 2]);
+  const result = get2DArraySlice(arr, [0, 0, 3, 1]);
   const expectedResult = [
-    [1, 0, 0, 0, 0],
-    [1, 1, 0, 1, 0],
+    [1, 0, 0, 0],
+    [1, 1, 0, 1],
   ];
-  console.table(result);
+  // console.log('id: 1');
+  // console.table(result);
   expect(result).toEqual(expectedResult);
 });
 
+it('correctly picks a place with probability: choose2D', () => {
+  const arr = [
+    [0, 0, 0],
+    [0, 0.5, 0],
+    [0, 1, 0],
+  ];
+  const result = choose2D(arr);
+  const { x, y } = result;
+  expect(x).toEqual(1);
+  expect([1, 2]).toContain(y);
+});
 

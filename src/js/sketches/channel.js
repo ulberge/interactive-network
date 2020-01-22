@@ -129,7 +129,7 @@ export function getChannelSketch() {
 
       // protection from attempting to draw before p5 is setup
       if (!p._setupDone) {
-        setTimeout(() => p.customDraw(ids, scale), 10);
+        setTimeout(() => p.customDraw(ids, max, kernels, scale), 10);
         return;
       }
 

@@ -9,6 +9,8 @@ import grey from '@material-ui/core/colors/grey';
 import Layout from '../Page/Layout';
 import KernelsMainView from '../Kernels/MainView';
 import SmartCanvasMainView from '../SmartCanvas/MainView';
+import DrawMainView from '../Draw/MainView';
+
 import { getKernels } from '../../js/kernel';
 import { getLayer } from '../../js/tfhelpers';
 
@@ -67,12 +69,14 @@ export default function App() {
             <Route
               name="Smart Canvas"
               path="/smartcanvas"
-              render={() => <SmartCanvasMainView
-                              kernels={kernels}
-                              firstLayer={firstLayer}
-                            />}
+              render={() => <SmartCanvasMainView kernels={kernels} firstLayer={firstLayer} />}
             />
-            <Redirect path="*" to="/kernels" />
+            <Route
+              name="Draw"
+              path="/draw"
+              render={() => <DrawMainView firstLayer={firstLayer} kernels={kernels} />}
+            />
+            <Redirect path="*" to="/draw" />
           </Switch>
         </Layout>
       </Router>
