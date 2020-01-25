@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import SmartCanvasKernelOverlay from './KernelOverlay';
-import { getTopValues, get2DArraySlice } from '../../js/helpers';
+import { getTopValues, slice2D } from '../../js/helpers';
 
 const SmartCanvasKernelOverlays = props => {
   const { kernels, imgArr, pt, acts, numKernels, scale } = props;
@@ -19,8 +19,8 @@ const SmartCanvasKernelOverlays = props => {
 
   // get section of imgArr at pt
   const { x, y } = pt;
-  const bounds = [ x - halfKernelSize, y - halfKernelSize, x + halfKernelSize, y + halfKernelSize ];
-  const imgArrSlice = get2DArraySlice(imgArr, bounds);
+  const bounds = [ x - halfKernelSize, y - halfKernelSize, x + halfKernelSize + 1, y + halfKernelSize + 1 ];
+  const imgArrSlice = slice2D(imgArr, bounds);
 
   if (!imgArrSlice) {
     return null;

@@ -1,16 +1,17 @@
-import { delay, getRandomArbitrary, choose2D } from './helpers';
-import Boid from './boid';
+import { delay, getRandomArbitrary, choose2D } from '../helpers';
+import Boid from '../boid';
 import p5 from 'p5';
+import Tester from './tester';
 
 const settings = {
   strokeWeight: 2,
   speed: 10,
   angleRange: Math.PI * 0.75,
   // segmentLength: Math.sqrt(2) * 2.01,
-  segmentLength: 3,
-  minStartTries: 3,
+  segmentLength: 4,
+  minStartTries: 4,
   numTries: 24,
-  minNextSegmentTries: 2,
+  minNextSegmentTries: 4,
 };
 
 export default class Drawer {
@@ -33,15 +34,17 @@ export default class Drawer {
    * Draws the given channels output on the provided canvas
    */
   async draw(network, layerIndex, channelIndex, location, callback) {
-    // calc shadow (2D array of activation potential)
+    // calc shadow (2D array of activation potential) which is the size of the theoretical receptive field
     this.shadow = network.getShadow(layerIndex, channelIndex);
-    this.shadowOffset = network.getShadowOffset(layerIndex, location);
-    this.getScore = channels => network.getScore(channels, layerIndex, channelIndex);
-
-    const { x, y } = this.shadowOffset;
+    const { x, y } = network.getShadowOffset(layerIndex, location); // uses stride size to convert location to original coordinates
+    this.shadowOffset = new p5.Vector(x, y);
     const h = this.shadow.length;
     const w = this.shadow[0].length;
     this.bounds = [ x, y, w + x, h + y ];
+    console.log('draw', location, this.bounds);
+
+    // TODO: limit # of channels by passing channel filter
+    this.getScore = lineInfo => network.getScore(lineInfo.channels, layerIndex, channelIndex);
 
     // initialize new drawer
     this.boid = new Boid(10);
@@ -53,6 +56,12 @@ export default class Drawer {
     this.isDone = false;
 
     this.start();
+  }
+
+  getTester() {
+    const lineInfoCropped = this.smartCanvas.lineInfo.copy(this.bounds);
+    const tester = new Tester(this.smartCanvas.p, lineInfoCropped, this.bounds, this.getScore);
+    return tester;
   }
 
   async start() {
@@ -124,41 +133,38 @@ export default class Drawer {
     return false;
   }
 
-  testSegment(start, end) {
-    const result = this.smartCanvas.testSegment(start, end);
-    if (!result) {
-      return null;
-    }
-
-    const { lineInfo } = result;
-    const channelsSelection = lineInfo.getChannelsInSelection(this.bounds);
-    const score = this.getScore(channelsSelection) - this.prevScore;
-
-    return score;
-  }
-
   // get pos of new line
   // test random lines and choose one with probability equal to quality
   getNewLine() {
+    const tester = this.getTester();
+
     const numStarts = 4;
     const numAngles = 4;
     console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (numStarts * numAngles) + ' times.');
 
     const options = [];
     const scores = [];
-    const { x: offX, y: offY } = this.shadowOffset;
-    const offset = new p5.Vector(offX, offY);
     for (let i = 0; i < numStarts; i += 1) {
       const { x, y } = choose2D(this.shadow);
-      const start = new p5.Vector(x, y).add(offset);
-
+      // add random so it is not always at corner of pixel
+      // add offset so that start and end are relative to origin
+      const start = new p5.Vector(x + Math.random(), y + Math.random()).add(this.shadowOffset);
       for (let j = 0; j < numAngles; j += 1) {
         const vel = p5.Vector.random2D().setMag(settings.segmentLength);
         const end = start.copy().add(vel);
-        const score = this.testSegment(start, end);
 
+        if (!this.isWithinBounds(start) || !this.isWithinBounds(end)) {
+          continue;
+        }
+
+        const result = tester.testSegment(start, end);
+        if (!result) {
+          continue;
+        }
+
+        const { score } = result;
         options.push({ start, vel, end });
-        scores.push(score);
+        scores.push(score - this.prevScore);
       }
     }
 
@@ -178,11 +184,12 @@ export default class Drawer {
   }
 
   getNextSegment() {
+    const tester = this.getTester();
+
     console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.numTries + ' times.');
     // choose a random line segment from the current position
     // make a list of options and evalutate them
-    const startParams = [];
-    // const lineInfos = [];
+    const options = [];
     const scores = [];
     const debugOptions = [];
 
@@ -197,37 +204,27 @@ export default class Drawer {
       const start = this.boid.pos.copy();
       const end = this.boid.pos.copy().add(vel);
 
-      const debugOption = { start, end };
-      debugOptions.push(debugOption);
-      if (!this.isWithinBounds(end)) {
+      if (!this.isWithinBounds(start) || !this.isWithinBounds(end)) {
         continue;
       }
-      debugOption.withinBounds = true;
 
-      const result = this.smartCanvas.testSegment(start, end);
+      let debugOption = { start, end };
+      debugOptions.push(debugOption);
+      const result = tester.testSegment(start, end);
       if (!result) {
         continue;
       }
 
-      const { lineInfo, imgArr, oldImgArr, max, ids, channelsDebug } = result;
-      debugOption.imgArr = imgArr;
-      debugOption.oldImgArr = oldImgArr;
-      debugOption.max = max;
-      debugOption.ids = ids;
-      debugOption.channelsDebug = channelsDebug;
-      // debugOption.lineInfo = lineInfo;
+      const { score } = result;
+      debugOptions[debugOptions.length - 1] = { ...debugOption, ...result };
 
-      const channelsSelection = lineInfo.getChannelsInSelection(this.bounds);
-      const score = this.getScore(channelsSelection) - this.prevScore;
-      debugOption.score = score;
-
-      startParams.push({ start, vel, end });
-      // lineInfos.push(lineInfo);
-      scores.push(score);
+      options.push({ start, vel, end });
+      scores.push(score - this.prevScore);
     }
-    if (this.debug && this.debug.ongetNextSegment) {
-      console.log('test debug', debugOptions);
-      this.debug.ongetNextSegment(debugOptions);
+
+    if (this.debug && this.debug.onGetNextSegment) {
+      // console.log('test debug', debugOptions);
+      this.debug.onGetNextSegment(debugOptions);
     }
 
     if (scores.filter(s => s > 0.1).length === 0) {
@@ -236,11 +233,10 @@ export default class Drawer {
 
     const optionIndex = Drawer.chooseScore(scores);
 
-    const { start, end, vel } = startParams[optionIndex];
+    const { start, end, vel } = options[optionIndex];
     // const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
-    console.log('update', optionIndex, start, end, vel, score, scores);
-
+    // console.log('update', optionIndex, start, end, vel, score, scores);
     console.log('Found ' + scores.length + ' starts with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores);
 
     this.update(start, end, vel, score);
@@ -273,25 +269,8 @@ export default class Drawer {
     // return scoreIndex;
   }
 
-  // Returns inclusive bounds centered at location inside shape
-  // canvasShape: [w,h] of canvas
-  // boundsShape: [w,h] of bounds centered at location
-  // location: center of bounds
-  static getLegalBounds(canvasShape, boundsShape, location) {
-    // center the shadow at the location
-    // crop to legal bounds
-    const padX = Math.floor(boundsShape[0] / 2);
-    const padY = Math.floor(boundsShape[1] / 2);
-    const { x, y } = location;
-    const sx = Math.max(0, x - padX);
-    const sy = Math.max(0, y - padY);
-    const ex = Math.min(canvasShape[0] - 1, x + padX);
-    const ey = Math.min(canvasShape[1] - 1, y + padY);
-
-    return [ sx, sy, ex, ey ];
-  }
-
   update(start, end, vel, score) {
+    console.log('New high score', this.prevScore + score, score);
     this.boid.run(vel);
 
     // draw display version scaled up

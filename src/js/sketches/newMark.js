@@ -13,11 +13,12 @@ export function getSketch() {
           let c;
           if (v - vOld > 20) {
             c = p.color('#e6194b');
+            c.setAlpha(v);
           } else {
             c = p.color('#000');
+            c.setAlpha(vOld);
           }
 
-          c.setAlpha(v);
           p.fill(c);
           p.rect(x * scale, y * scale, scale, scale);
         }

@@ -34,8 +34,8 @@ export function getSketch() {
     }
 
     // normalize
-    let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
-    imgArr = imgArr.map(row => row.map(v => v / max));
+    // let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
+    // imgArr = imgArr.map(row => row.map(v => v / max));
 
     const pixelScale = scale / imgArr.length;
 
@@ -45,7 +45,7 @@ export function getSketch() {
     p.noStroke();
     for (let y = 0; y < imgArr.length; y += 1) {
       for (let x = 0; x < imgArr[0].length; x += 1) {
-        let v = imgArr[y][x] * 255;
+        let v = imgArr[y][x] * 255 * 4;
         if (v > 0) {
           p.fill(0, 0, 0, v * intensity);
           p.rect(x * pixelScale, y * pixelScale, pixelScale, pixelScale);

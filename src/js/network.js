@@ -91,7 +91,8 @@ export default class Network {
     return result.tolist()[channelIndex];
   }
 
-  // Given an area shape (w, h) in a channel at a given layer, backprop its activation to find where it is connected to
+  // Deconvolve the channel in this layer to see what it is selecting for
+  // Returns a 2D array with a  "shadow" of this channel and the size of the theoretical receptive field
   getShadow(layerIndex, channelIndex) {
     const padding = Math.floor(this.layersInfo[layerIndex].kernelSize / 2); // half kernel size
     const numfilters = this.layersInfo[layerIndex].filters.length; // number of filters in this layer
@@ -123,6 +124,10 @@ export default class Network {
     return { x: x * xOffset, y: y * yOffset };
   }
 
+  // Get an array of 2D arrays of 0's the size of the kernels at this layer and
+  // with length equal to the number of channels at this layer
+  // Add a 1 at the center of the channel we care about
+  // This fn is used to kick off a deconvolution showing what this channel is selecting for
   static getInitShadowArray(padding, numfilters, channelIndex) {
     // expand the 2D area for backprop by padding
     const wInit = 1 + (2 * padding);

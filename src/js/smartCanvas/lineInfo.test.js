@@ -1,29 +1,72 @@
-import { getNewBounds, LineInfo } from './smartcanvas';
+import LineInfo from './lineInfo';
 
-it('correctly get bounds when no bounds provided: getNewBounds', () => {
-  const result = getNewBounds(null, 3, 4);
-  expect(result).toEqual([ 3, 4, 3, 4 ]);
+function getKernels(num) {
+  const kernel = [[0]];
+  const kernelsMock = [];
+  for (let i = 0; i < num; i += 1) {
+    kernelsMock.push(kernel);
+  }
+  return kernelsMock;
+}
 
-  const result2 = getNewBounds([], 3, 4);
-  expect(result2).toEqual([ 3, 4, 3, 4 ]);
+it('creates a LineInfo', () => {
+  const lineInfo = LineInfo.create(getKernels(2), [ 6, 6 ]);
+
+  expect(lineInfo.channels.length).toBe(2);
+
+  expect(lineInfo.channels[0].length).toBe(6);
+  expect(lineInfo.channels[0][0].length).toBe(6);
+
+  expect(lineInfo.max.length).toBe(6);
+  expect(lineInfo.max[0].length).toBe(6);
+  expect(lineInfo.ids.length).toBe(6);
+  expect(lineInfo.ids[0].length).toBe(6);
 });
 
-it('does not expand bounds when point inside provided: getNewBounds', () => {
-  const bounds = [ 1, 2, 4, 5 ];
-  const result = getNewBounds(bounds, 3, 4);
-  expect(result).toEqual(bounds);
+it('copies a LineInfo with indices filter', () => {
+  const lineInfo = LineInfo.create(getKernels(3), [ 6, 6 ]);
+
+  lineInfo.channels[0][0][0] = 3;
+  lineInfo.channels[0][5][5] = 3;
+  lineInfo.channels[1][2][2] = 5;
+  lineInfo.channels[2][4][4] = 7;
+
+  const newLineInfo = lineInfo.copy([2, 2, 6, 6], [0, 2]);
+
+  expect(lineInfo.channels.length).toBe(3);
+  expect(newLineInfo.channels.length).toBe(2);
+
+  const expectedChannel = [
+    [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 3]],
+    [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 7, 0], [0, 0, 0, 0]],
+  ];
+  expect(newLineInfo.channels).toEqual(expectedChannel);
+
+  const expectedMax = [
+    [0.05, 0.05, 0.05, 0.05], [0.05, 0.05, 0.05, 0.05], [0.05, 0.05, 7, 0.05], [0.05, 0.05, 0.05, 3],
+  ];
+  const expectedIds = [
+    [-1, -1, -1, -1], [-1, -1, -1, -1], [-1, -1, 1, -1], [-1, -1, -1, 0],
+  ];
+  // console.table(newLineInfo.max);
+  // console.table(expectedMax);
+  // console.table(newLineInfo.ids);
+  // console.table(expectedIds);
+  expect(newLineInfo.max).toEqual(expectedMax);
+  expect(newLineInfo.ids).toEqual(expectedIds);
 });
 
-it('correctly expands bounds when points outside provided: getNewBounds', () => {
-  const bounds = [ 1, 2, 4, 5 ];
-  const result = getNewBounds(bounds, 5, 7);
-  expect(result).toEqual([ 1, 2, 5, 7 ]);
-});
 
-it('correctly expands bounds when points outside provided: getNewBounds', () => {
-  const bounds = [ 1, 2, 4, 5 ];
-  const result = getNewBounds(bounds, 0, 0);
-  expect(result).toEqual([ 0, 0, 4, 5 ]);
+it('copies a LineInfo with no indices provided', () => {
+  const lineInfo = LineInfo.create(getKernels(3), [ 6, 6 ]);
+  lineInfo.channels[0][0][0] = 3;
+  lineInfo.channels[0][5][5] = 3;
+  lineInfo.channels[1][2][2] = 5;
+  lineInfo.channels[2][4][4] = 7;
+  const newLineInfo = lineInfo.copy([2, 2, 6, 6]);
+
+  expect(lineInfo.channels.length).toBe(3);
+  expect(newLineInfo.channels.length).toBe(3);
 });
 
 it('gets correct pos and neg diff between channel stacks with no bounds applied: LineInfo.diff', () => {
@@ -150,4 +193,3 @@ it('gets correct pos and neg diff between channel stacks with filter applied: Li
   expect(maxNeg).toEqual(expectedMaxNeg);
   expect(idsNeg).toEqual(expectedIdsNeg);
 });
-

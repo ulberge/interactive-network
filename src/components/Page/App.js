@@ -69,12 +69,12 @@ export default function App() {
             <Route
               name="Smart Canvas"
               path="/smartcanvas"
-              render={() => <SmartCanvasMainView kernels={kernels} firstLayer={firstLayer} />}
+              render={() => <SmartCanvasMainView kernels={kernels} />}
             />
             <Route
               name="Draw"
               path="/draw"
-              render={() => <DrawMainView firstLayer={firstLayer} kernels={kernels} />}
+              render={() => <DrawMainView kernels={kernels} />}
             />
             <Redirect path="*" to="/draw" />
           </Switch>

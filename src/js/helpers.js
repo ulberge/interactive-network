@@ -132,9 +132,13 @@ export const getImgArrFromP = (p) => {
 }
 
 export const getImgArrFromPSelection = (p, selection) => {
-  p.loadPixels();
-  const { pixels, width } = p;
-  return getImgArrFromPixelsSelection(pixels, width, selection);
+  const [ w, h ] = getBoundsShape(selection);
+  const g = p.createGraphics(w, h);
+  const [ minX, minY, maxX, maxY ] = selection;
+  const toCopy = p.get(minX, minY, maxX, maxY);
+  g.image(toCopy, 0, 0);
+  g.loadPixels();
+  return getImgArrFromPixels(g.pixels, w);
 }
 
 // Given a pixel array (from a graphics object, ie. transparent background) and the shape, return the image
@@ -152,38 +156,155 @@ export const getImgArrFromPixels = (pixels, width) => {
   return imgArr;
 }
 
-export function getImgArrFromPixelsSelection(pixels, width, selection) {
-  const [ minX, minY, maxX, maxY ] = selection;
-  const rowWidth = maxX - minX + 1;
-  const imgArr = [];
-  let row = [];
-  let colIndex = -1;
-  const rowSelection = pixels.slice(minY * width * 4, (maxY + 1) * width * 4);
-  for (let i = 3; i < rowSelection.length; i += 4) {
-    colIndex += 1;
-    if ((colIndex % width) < minX || (colIndex % width) > maxX) {
-      // skip columns out of bounds
-      continue;
-    }
+// export function getImgArrFromPixelsSelection(pixels, width, selection) {
+//   const [ minX, minY, maxX, maxY ] = selection;
+//   const rowWidth = maxX - minX;
+//   const imgArr = [];
+//   let row = [];
+//   let colIndex = -1;
+//   const rowSelection = pixels.slice(minY * width * 4, maxY * width * 4);
+//   debugger;
+//   for (let i = 3; i < rowSelection.length; i += 4) {
+//     colIndex += 1;
+//     if ((colIndex % width) < minX || (colIndex % width) > maxX) {
+//       // skip columns out of bounds
+//       continue;
+//     }
 
-    row.push(rowSelection[i] / 255);
-    if (row.length === rowWidth) {
-      imgArr.push(row);
-      row = [];
-    }
-  }
-  return imgArr;
-}
+//     row.push(rowSelection[i] / 255);
+//     if (row.length === rowWidth) {
+//       imgArr.push(row);
+//       row = [];
+//     }
+//   }
+//   return imgArr;
+// }
 
 export function get2DArraySlice(arr, selection) {
-  const [ sx, sy, ex, ey ] = selection;
+  if (!arr || arr.length === 0 || arr[0].length === 0 || !selection) {
+    return arr;
+  }
+  let [ minX, minY, maxX, maxY ] = selection;
+  minX = Math.max(0, minX);
+  minY = Math.max(0, minY);
+  maxX = Math.min(arr[0].length, maxX);
+  maxY = Math.min(arr.length, maxY);
 
-  if (sx < 0 || sy < 0 || ey >= arr.length || ex >= arr[0].length) {
-    return [];
+  const slice = arr.slice(minY, maxY).map(row => row.slice(minX, maxX));
+  return slice;
+}
+
+export function slice2D(arr2D, selection) {
+  if (!arr2D || arr2D.length === 0 || arr2D[0].length === 0 || !selection) {
+    return arr2D.slice().map(row => row.slice());
+  }
+  let [ minX, minY, maxX, maxY ] = selection;
+  minX = Math.max(0, minX);
+  minY = Math.max(0, minY);
+  maxX = Math.min(arr2D[0].length, maxX);
+  maxY = Math.min(arr2D.length, maxY);
+
+  const slice = arr2D.slice(minY, maxY).map(row => row.slice(minX, maxX));
+  return slice;
+}
+
+// Eat away padding amount from 2D array
+export function erode2D(arr2D, padding) {
+  if (!arr2D || arr2D.length === 0 || arr2D[0].length === 0 || !padding) {
+    return arr2D.slice().map(row => row.slice());
   }
 
-  const slice = arr.slice(sy, ey + 1).map(row => row.slice(sx, ex + 1));
+  const slice = arr2D.slice(padding, arr2D.length - padding).map(row => row.slice(padding, row.length - padding));
   return slice;
+}
+
+// Eat away padding amount from 2D array
+export function dilateBounds(selection, padding) {
+  if (!selection || selection.length === 0 || !padding) {
+    return selection;
+  }
+  let [ minX, minY, maxX, maxY ] = selection;
+
+  return [ minX - padding, minY - padding, maxX + padding, maxY + padding ];
+}
+
+// splice in place
+export function splice2D(arr2D, insert2D, offset) {
+  if (!arr2D || arr2D.length === 0 || arr2D[0].length === 0 ||
+      !insert2D || insert2D.length === 0 || insert2D[0].length === 0) {
+    return arr2D;
+  }
+
+  if (!offset) {
+    offset = { x: 0, y: 0 };
+  } else if (offset.y >= arr2D.length || offset.x >= arr2D[0].length) {
+    return arr2D;
+  }
+
+  const yStart = Math.max(0, offset.y); // ignore below 0 offset
+  const yEnd = Math.min(arr2D.length, offset.y + insert2D.length); // dont go past end
+  const xStart = Math.max(0, offset.x); // ignore below 0 offset
+  const sliceStart = offset.x < 0 ? (-offset.x) : 0; // if negative offset, trim that, else start from beginning
+  const sliceEnd = sliceStart + (arr2D[0].length - xStart); // cap length at arr2D length
+  for (let y = yStart; y < yEnd; y += 1) {
+    // get the in bounds part of corresponding row of the insert array
+    const rowToSplice = insert2D[y - offset.y].slice(sliceStart, sliceEnd);
+    arr2D[y].splice(xStart, rowToSplice.length, ...rowToSplice);
+  }
+
+  return arr2D;
+}
+
+export function getLineBounds(start, end, padding=0) {
+  const { x: sx, y: sy } = start;
+  const { x: ex, y: ey } = end;
+  let minX = Math.min(sx, ex) - padding;
+  let minY = Math.min(sy, ey) - padding;
+  let maxX = Math.max(sx, ex) + padding + 1;
+  let maxY = Math.max(sy, ey) + padding + 1;
+
+  return [ minX, minY, maxX, maxY ].map(v => Math.floor(v));
+}
+
+export function getBoundsShape(bounds) {
+  const [ minX, minY, maxX, maxY ] = bounds;
+  const h = maxY - minY;
+  const w = maxX - minX;
+  return [ w, h ];
+}
+
+export function combineBounds(bounds0, bounds1) {
+  if (!bounds0) {
+    return bounds1;
+  }
+  if (!bounds1) {
+    return bounds0;
+  }
+
+  // update with most extreme
+  const [ minX0, minY0, maxX0, maxY0 ] = bounds0;
+  const [ minX1, minY1, maxX1, maxY1 ] = bounds1;
+  const minX = Math.min(minX0, minX1);
+  const minY = Math.min(minY0, minY1);
+  const maxX = Math.max(maxX0, maxX1);
+  const maxY= Math.max(maxY0, maxY1);
+  return [ minX, minY, maxX, maxY ];
+}
+
+// reduce bounds to be within limits
+export function limitBounds(bounds, limit) {
+  if (!bounds || !limit) {
+    return bounds;
+  }
+
+  // update with most extreme
+  const [ minX0, minY0, maxX0, maxY0 ] = bounds;
+  const [ minX1, minY1, maxX1, maxY1 ] = limit;
+  const minX = Math.max(minX0, minX1);
+  const minY = Math.max(minY0, minY1);
+  const maxX = Math.min(maxX0, maxX1);
+  const maxY= Math.min(maxY0, maxY1);
+  return [ minX, minY, maxX, maxY ];
 }
 
 export function delay(timer) {

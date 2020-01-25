@@ -10,7 +10,8 @@ const DrawDebugNextSegmentOption = props => {
       <div>{ !isNaN(debugOption.score) ? debugOption.score.toFixed(4) : null }</div>
       <DrawDebugNewMark debugOption={debugOption} scale={scale} />
       <h4>Acts</h4>
-      <DrawDebugNewMarkActs max={debugOption.max} ids={debugOption.ids} scale={scale * 3} kernels={kernels} />
+      {/*<DrawDebugNewMarkActs max={debugOption.maxOriginal} ids={debugOption.idsOriginal} scale={scale * 2} kernels={kernels} />*/}
+      <DrawDebugNewMarkActs max={debugOption.max} ids={debugOption.ids} scale={scale * 2} kernels={kernels} />
       { debugOption.channelsDebug.map((channelDebug, i) => {
         const { maxPos, idsPos, maxNeg, idsNeg } = channelDebug
         return (
