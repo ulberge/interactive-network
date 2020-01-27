@@ -427,8 +427,23 @@ export function max2D(arr2D) {
   return max;
 }
 
+export function max3D(arr3D) {
+  let max = -Infinity;
+  arr3D.forEach(arr2D => arr2D.forEach(row => row.forEach(v => v > max ? max = v : null)));
+  return max;
+}
+
 export function sum2D(arr2D) {
   let sum = 0;
   arr2D.forEach(row => row.forEach(v => sum += v));
   return sum;
+}
+
+// Given an array of 2D arrays, normalize all the 2D arrays to max value across all of them
+export function normalize3DByMax(arr3D) {
+  let max = max3D(arr3D);
+  if (max === 0) {
+    return max = 1;
+  }
+  return arr3D.map(arr2D => arr2D.map(row => row.map(v => v / max)));
 }

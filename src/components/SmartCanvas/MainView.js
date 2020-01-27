@@ -38,11 +38,16 @@ const SmartCanvasMainView = props => {
     return null;
   }, [state]);
 
+  let zoomScale = 1;
+  if (state.imgArr && state.imgArr.length > 0) {
+    zoomScale = Math.min(200 / state.imgArr[0].length, 20);
+  }
+
   return (
     <Grid container spacing={1} className="bordered-canvas">
       <Grid item>
         <SmartCanvasDrawingInput kernels={kernels} shape={[200, 200]} onChange={onDrawingChange} />
-        <Array2DView imgArr={state.imgArr} scale={5} />
+        <Array2DView imgArr={state.imgArr} scale={zoomScale} />
       </Grid>
       <Grid item>
         <SmartCanvasColorCodedView kernels={kernels} scale={3} ids={ids} max={max} onSelect={onSelect} />

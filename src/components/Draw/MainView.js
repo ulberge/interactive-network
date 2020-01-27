@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import DrawMachineInput from './MachineInput';
 
-
 const DrawMainView = props => {
   return (
     <Grid container justify="center" spacing={4} className="bordered-canvas">
       <Grid item xs={12}>
+        {/*<DrawMachineInput shape={[52, 52]} kernels={props.kernels} />*/}
         <DrawMachineInput shape={[80, 80]} kernels={props.kernels} />
       </Grid>
     </Grid>

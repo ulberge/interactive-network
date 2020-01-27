@@ -1,6 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import SmartCanvas from '../../js/smartCanvas/smartCanvas';
+import ClearIcon from '@material-ui/icons/Clear';
+import IconButton from '@material-ui/core/IconButton';
 
 const SmartCanvasDrawingInput = props => {
   const imgRef = useRef(null);
@@ -13,8 +15,19 @@ const SmartCanvasDrawingInput = props => {
     }
   }, [props]);
 
+  const clear = () => {
+    if (smartCanvasRef.current) {
+      smartCanvasRef.current.reset();
+    }
+  };
+
   return (
-    <div ref={imgRef}></div>
+    <div>
+      <div ref={imgRef}></div>
+      <IconButton aria-label="reset" onClick={clear}>
+        <ClearIcon />
+      </IconButton>
+    </div>
   );
 };
 

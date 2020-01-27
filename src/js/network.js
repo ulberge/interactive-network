@@ -10,6 +10,7 @@ export default class Network {
     this.layersInfo = [
       {
         filters: filters0,
+        type: 'conv2d',
         layer: Network.getLayerConv2D(filters0),
         layerTranspose: Network.getLayerConv2DTranspose(filters0),
         kernelSize: filters0[0][0].length
@@ -21,6 +22,8 @@ export default class Network {
         const { poolSize } = layer;
         const layerInfo = {
           filters: null,
+          poolSize,
+          type: 'maxPool2d',
           layer: tf.layers.maxPooling2d({ poolSize }),
           layerTranspose: tf.layers.upSampling2d({ size: [ poolSize, poolSize ] }),
         };
@@ -29,6 +32,7 @@ export default class Network {
         const filters = layer.filters;
         const layerInfo = {
           filters,
+          type: 'conv2d',
           layer: Network.getLayerConv2D(filters),
           layerTranspose: Network.getLayerConv2DTranspose(filters),
           kernelSize: filters[0][0].length
@@ -103,7 +107,9 @@ export default class Network {
     for (let i = layerIndex; i >= 0; i -= 1) {
       const layer = this.layersInfo[i].layerTranspose;
       curr = layer.apply(curr);
-      // console.table(curr.arraySync()[0]);
+      // const tbs = curr.arraySync();
+      // console.log('layer index', i);
+      // tbs.forEach(tb => console.table(tb.map(row => row.map(col => col[0] > 0 ? Number(col[0].toFixed(2)) : 0))));
     }
     let result = curr.arraySync();
 
@@ -162,7 +168,10 @@ export default class Network {
     return layer;
   }
 
- static getLayerConv2DTranspose(filters, bias=0, strides=1, name='conv') {
+  static getLayerConv2DTranspose(filters, bias=0, strides=1, name='conv') {
+    // remove all negative values, since we only use this to calculate potential connections, not suppression
+    filters = filters.map(outChannel => outChannel.map(inChannel => inChannel.map(row => row.map(v => v > 0 ? v : 0))));
+
     // kernels in: [out_filters, in_filters, h, w]
     // convert to: [h, w, in_filters, out_filters]
     const weights = nj.array(filters).transpose(2, 3, 1, 0).tolist();

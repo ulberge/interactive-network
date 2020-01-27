@@ -13,6 +13,12 @@ export default class SmartCanvas {
     this.dirtyBounds = null;
   }
 
+  reset() {
+    this.p.clear();
+    this.dirtyBounds = [ 0, 0, this.shape[0], this.shape[1] ];
+    this.update();
+  }
+
   /**
    * Draw a new line segment and update the dirtyBounds for this canvas
    * @param {{onChange: function}} l - Listener to onChange events to add

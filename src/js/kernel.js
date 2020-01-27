@@ -85,17 +85,17 @@ function getLineEnd(windowSize, theta, lambda, sigma) {
   return kernel;
 }
 
-function getLineEnds(windowSize, numKernels, lambda, sigma) {
-  const rotationDelta = 2 * Math.PI / numKernels; // divide 180 degrees in number
-  const kernels = [];
-  for (let i = 0; i < numKernels; i += 1) {
-    const theta = i * rotationDelta; // angle of this cos wave
-    const kernel = getLineEnd(windowSize, theta, lambda, sigma);
-    kernels.push(kernel);
-  }
+// function getLineEnds(windowSize, numKernels, lambda, sigma) {
+//   const rotationDelta = 2 * Math.PI / numKernels; // divide 180 degrees in number
+//   const kernels = [];
+//   for (let i = 0; i < numKernels; i += 1) {
+//     const theta = i * rotationDelta; // angle of this cos wave
+//     const kernel = getLineEnd(windowSize, theta, lambda, sigma);
+//     kernels.push(kernel);
+//   }
 
-  return kernels;
-}
+//   return kernels;
+// }
 
 function getLs(windowSize, angle, numKernels, lambda, sigma) {
   const rotationDelta = 2 * Math.PI / numKernels; // divide 180 degrees in number
@@ -279,12 +279,12 @@ export function getKernels(windowSize, numComponents, lambda, sigma) {
 
   kernels.push(...getLines(windowSize, numComponents, lambda, sigma));
   kernels.push(...getLs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
-  kernels.push(...getLineEnds(windowSize, numComponents * 2, lambda, sigma));
+  // kernels.push(...getLineEnds(windowSize, numComponents * 2, lambda, sigma));
 
   // curves?
   // kernels.push(...getLs(windowSize, Math.PI * 0.925, numComponents * 2, lambda, sigma));
 
-  // kernels.push(...getLs(windowSize, Math.PI * 0.75, numComponents * 2, lambda, sigma));
+  kernels.push(...getLs(windowSize, Math.PI * 0.75, numComponents * 2, lambda, sigma));
   // kernels.push(...getLs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
 
 
@@ -302,10 +302,13 @@ export function getKernels(windowSize, numComponents, lambda, sigma) {
 
   // console.log(kernels.length);
 
-  const scaledKernels = kernels.map(scaleKernel);
+  // const scaledKernels = kernels.filter((k, i) => [0, 1, 2, 3, 4, 6, 8, 10, 12, 15, 16, 19].includes(i)).map(scaleKernel);
+  const scaledKernels = kernels.filter((k, i) => [0, 1, 2, 3, 5, 8, 10, 12, 15].includes(i)).map(scaleKernel);
+  // const scaledKernels = kernels.map(scaleKernel);
 
   // console.log(JSON.stringify(scaledKernels.map(k => k.map(r => r.map(v => Number(v.toFixed(5)))))));
   // console.log(JSON.stringify(scaledKernels));
+
 
   return scaledKernels;
 }

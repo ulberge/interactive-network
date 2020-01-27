@@ -5,13 +5,14 @@ import Tester from './tester';
 
 const settings = {
   strokeWeight: 2,
-  speed: 10,
+  speed: 1,
   angleRange: Math.PI * 0.75,
-  // segmentLength: Math.sqrt(2) * 2.01,
   segmentLength: 4,
-  minStartTries: 4,
-  numTries: 24,
-  minNextSegmentTries: 4,
+  startMinTries: 6,
+  startNumStarts: 4,
+  startNumAngles: 4,
+  nextMinTries: 2,
+  nextNumStarts: 24,
 };
 
 export default class Drawer {
@@ -41,7 +42,6 @@ export default class Drawer {
     const h = this.shadow.length;
     const w = this.shadow[0].length;
     this.bounds = [ x, y, w + x, h + y ];
-    console.log('draw', location, this.bounds);
 
     // TODO: limit # of channels by passing channel filter
     this.getScore = lineInfo => network.getScore(lineInfo.channels, layerIndex, channelIndex);
@@ -105,12 +105,12 @@ export default class Drawer {
 
   // Draw one step of animation, returns true if done
   drawTick() {
-    console.log('drawTick');
+    // console.log('drawTick');
     if (this.boid.pos === null) {
       const hasMoreStarts = this.getNewLine();
       if (!hasMoreStarts) {
         this.countStartFails++;
-        if (this.countStartFails >= settings.minStartTries) {
+        if (this.countStartFails >= settings.startMinTries) {
           this.countStartFails = 0;
           return true;
         }
@@ -121,7 +121,7 @@ export default class Drawer {
       const hasNextSegment = this.getNextSegment();
       if (!hasNextSegment) {
         this.countNextSegmentFails++;
-        if (this.countNextSegmentFails >= settings.minNextSegmentTries) {
+        if (this.countNextSegmentFails >= settings.nextMinTries) {
           this.countNextSegmentFails = 0;
           this.boid.pos = null;
         }
@@ -138,18 +138,16 @@ export default class Drawer {
   getNewLine() {
     const tester = this.getTester();
 
-    const numStarts = 4;
-    const numAngles = 4;
-    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (numStarts * numAngles) + ' times.');
+    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (settings.startNumStarts * settings.startNumAngles) + ' times.');
 
     const options = [];
     const scores = [];
-    for (let i = 0; i < numStarts; i += 1) {
+    for (let i = 0; i < settings.startNumStarts; i += 1) {
       const { x, y } = choose2D(this.shadow);
       // add random so it is not always at corner of pixel
       // add offset so that start and end are relative to origin
       const start = new p5.Vector(x + Math.random(), y + Math.random()).add(this.shadowOffset);
-      for (let j = 0; j < numAngles; j += 1) {
+      for (let j = 0; j < settings.startNumAngles; j += 1) {
         const vel = p5.Vector.random2D().setMag(settings.segmentLength);
         const end = start.copy().add(vel);
 
@@ -168,14 +166,14 @@ export default class Drawer {
       }
     }
 
-    if (scores.filter(s => s > 0.2).length === 0) {
+    if (scores.filter(s => s > 0.5).length === 0) {
       return false; // if no more improvements possible, halt
     }
 
     const optionIndex = Drawer.chooseScore(scores);
     const score = scores[optionIndex];
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores);
+    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.sort((a, b) => (a > b) ? -1 : 1));
     const { start, end, vel } = options[optionIndex];
     this.boid.move(start);
     this.update(start, end, vel, score);
@@ -186,7 +184,7 @@ export default class Drawer {
   getNextSegment() {
     const tester = this.getTester();
 
-    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.numTries + ' times.');
+    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.nextNumStarts + ' times.');
     // choose a random line segment from the current position
     // make a list of options and evalutate them
     const options = [];
@@ -195,9 +193,9 @@ export default class Drawer {
 
     // try angles center at angle segments
     const startAngle = this.boid.vel.copy().rotate(-settings.angleRange);
-    const angleDelta = (settings.angleRange * 2) / (settings.numTries - 1);
+    const angleDelta = (settings.angleRange * 2) / (settings.nextNumStarts - 1);
 
-    for (let i = 0; i < settings.numTries; i += 1) {
+    for (let i = 0; i < settings.nextNumStarts; i += 1) {
       const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
       const angle = (angleDelta * i) + angleNoise;
       const vel = startAngle.copy().rotate(angle);
@@ -227,7 +225,7 @@ export default class Drawer {
       this.debug.onGetNextSegment(debugOptions);
     }
 
-    if (scores.filter(s => s > 0.1).length === 0) {
+    if (scores.filter(s => s > 0.5).length === 0) {
       return false; // if no more improvements possible, halt
     }
 
@@ -237,7 +235,7 @@ export default class Drawer {
     // const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
     // console.log('update', optionIndex, start, end, vel, score, scores);
-    console.log('Found ' + scores.length + ' starts with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores);
+    console.log('Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores.sort((a, b) => (a > b) ? -1 : 1));
 
     this.update(start, end, vel, score);
     return true;
