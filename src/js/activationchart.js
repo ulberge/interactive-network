@@ -19,7 +19,7 @@ function getKernelImgs(kernels, kernelKeys) {
 // render chart of top activations (list of channel values at a given position) with their icon on top to the el
 export function renderChart(el, activations, kernels, numKernels) {
   let data = getTopValues(activations, numKernels);
-  data = data.map((d, i) => ({ name: d[0], value: d[1] }));
+  data = data.map((d, i) => ({ name: d[0], value: d[1] / 255 }));
 
   const kernelKeys = data.map(d => d.name);
   const kernelImgs = getKernelImgs(kernels, kernelKeys);

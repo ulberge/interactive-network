@@ -1,4 +1,4 @@
-import { getImgArrFromP, getImgArrFromPSelection, slice2D, getBoundsShape, limitBounds, dilateBounds, getLineBounds } from '../helpers';
+import { getImgArrFromP, getImgArrFromPSelection, slice2D, getBoundsShape, limitBounds, dilateBounds, getLineBounds } from './helpers';
 import p5 from 'p5';
 
 // should wrap a canvas object and specify what actions you can take on it

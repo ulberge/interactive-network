@@ -1,6 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
-tf.setBackend('cpu');
-const nj = require('./numjs');
+import nj from 'numjs';
+// tf.setBackend('cpu');
 
 // Returns the result of a given a layer applied to an image as a 2D array.
 export function eval2DArray(layer, imgArr) {

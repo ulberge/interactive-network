@@ -6,10 +6,35 @@ for (let i = 0; i < 1000; i += 1) {
 }
 const colorMap = {};
 
+function getIcon(p, imgArr) {
+  const kernelSize = imgArr.length;
+  const g = p.createGraphics(kernelSize, kernelSize);
+
+  // normalize
+  let max = Math.max(...imgArr.flat());
+  imgArr = imgArr.map(row => row.map(v => v / max));
+
+  g.noStroke();
+  for (let y = 0; y < imgArr.length; y += 1) {
+    for (let x = 0; x < imgArr[0].length; x += 1) {
+      let v = imgArr[y][x] * 255;
+      if (v > 0) {
+        g.fill(0, 0, 0, v);
+        g.rect(x, y, 1, 1);
+      } else if (v < 0) {
+        g.fill(255, 0, 0, -v / 2);
+        g.rect(x, y, 1, 1);
+      }
+    }
+  }
+
+  return g.get();
+}
+
 /**
  * Returns a p5 sketch that can draw a 2D array
  */
-export function getChannelSketch() {
+export function getChannelSketch(kernels) {
   // spacing between rectangles
   const gridWeight = 0.08;
   // some good contrast colors to start
@@ -23,7 +48,6 @@ export function getChannelSketch() {
   }
   let ids_last = null;
   let max_last = null;
-  let kernels_last = null;
   let scale_last = 1;
   let pt = null;
   let zoomPresent = false;
@@ -74,55 +98,28 @@ export function getChannelSketch() {
    * @param {Number[][]} max - 2D array of value for max id
    * @param {Number} scale - Scale to draw the canvas
    */
-  function drawIconArray(p, ids, max, kernels, scale=1) {
+  function drawIconArray(p, ids, max, scale=1) {
     if (!ids || ids.length === 0) {
       return;
     }
 
-    p.push();
     for (let y = 0; y < ids.length; y += 1) {
       for (let x = 0; x < ids[0].length; x += 1) {
         let key = ids[y][x];
-        let intensity = max[y][x];
-        const kernel = kernels[key];
-        drawIcon(p, kernel, intensity, scale, [ x * scale, y * scale ]);
-      }
-    }
-    p.pop();
-  }
-
-  function drawIcon(p, imgArr, intensity, scale=1, location) {
-    if (!imgArr || imgArr.length === 0) {
-      return;
-    }
-
-    // normalize
-    let max = Math.max(...imgArr.map(row => Math.max(...row.map(v => Math.abs(v)))));
-    imgArr = imgArr.map(row => row.map(v => v / max));
-
-    const pixelScale = scale / imgArr.length;
-
-    p.push();
-    const [ ox, oy ] = location;
-    p.translate(ox, oy);
-    p.noStroke();
-    for (let y = 0; y < imgArr.length; y += 1) {
-      for (let x = 0; x < imgArr[0].length; x += 1) {
-        let v = imgArr[y][x] * 255;
-        if (v > 0) {
-          p.fill(0, 0, 0, v * intensity);
-          p.rect(x * pixelScale, y * pixelScale, pixelScale, pixelScale);
-        } else if (v < 0) {
-          p.fill(255, 0, 0, intensity * -v / 2);
-          p.rect(x * pixelScale, y * pixelScale, pixelScale, pixelScale);
+        if (key >= 0) {
+          let intensity = max[y][x];
+          const kernel = p._kernelCache[key];
+          p.push();
+          p.tint(255, intensity * 255);
+          p.image(kernel, x * scale, y * scale, scale, scale);
+          p.pop();
         }
       }
     }
-    p.pop();
   }
 
   return (p) => {
-    p.customDraw = (ids, max, kernels, scale=1) => {
+    p.customDraw = (ids, max, scale=1) => {
       if (!ids || ids.length === 0) {
         return;
       }
@@ -134,8 +131,10 @@ export function getChannelSketch() {
       }
 
       ids_last = ids;
+      // normalize max 2d array
+      let maxMax = Math.max(...max.flat());
+      max = max.map(row => row.map(v => v / maxMax));
       max_last = max;
-      kernels_last = kernels;
       scale_last = scale;
       const h = ids_last.length * scale;
       const w = ids_last[0].length * scale;
@@ -157,23 +156,30 @@ export function getChannelSketch() {
         pt = { x: 120, y: 150 };
         p._onSelect(pt);
       }, 150);
+
+      // create the kernel image cache
+      p._kernelCache = [];
+      for (const kernel of kernels) {
+        const icon = getIcon(p, kernel);
+        p._kernelCache.push(icon);
+      }
     };
 
     p.draw = () => {
       if (ids_last) {
         const x = Math.floor(p.mouseX / scale_last);
         const y = Math.floor(p.mouseY / scale_last);
-        const size = 5;
+        const size = 3;
 
         if (!(x < size || y < size || x >= (ids_last.length - size) || y >= (ids_last[0].length - size))) {
           p.clear();
           drawColorArray(p, ids_last, max_last, scale_last);
 
           // draw zoomed in version
-          const bounds = [x - size, y - size, x + size, y + size];
+          const bounds = [x - size, y - size, x + size + 1, y + size + 1];
           const slice_ids = get2DArraySlice(ids_last, bounds);
           const slice_max = get2DArraySlice(max_last, bounds);
-          const zoomScale = scale_last * 6;
+          const zoomScale = scale_last * 10;
           p.push();
           p.translate((x * scale_last) - ((size + 0.5) * zoomScale), (y * scale_last) - ((size + 0.5) * zoomScale));
           // clear
@@ -183,17 +189,18 @@ export function getChannelSketch() {
           p.rect(0, 0, slice_ids.length * zoomScale, slice_ids[0].length * zoomScale);
           p.pop();
           // draw zoom
-          drawIconArray(p, slice_ids, slice_max, kernels_last, zoomScale);
+          drawIconArray(p, slice_ids, slice_max, zoomScale);
           // outline
           p.push();
           p.noFill();
-          p.stroke('#b2b2b2');
+          p.strokeWeight(2);
+          p.stroke('#777');
           p.rect(0, 0, slice_ids.length * zoomScale, slice_ids[0].length * zoomScale);
           p.pop();
           // outline center
           p.push();
           p.noFill();
-          p.stroke('#666');
+          p.stroke('#000');
           p.rect(size * zoomScale, size * zoomScale, zoomScale, zoomScale);
           p.pop();
           p.pop();

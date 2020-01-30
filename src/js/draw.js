@@ -1,5 +1,5 @@
-import { delay, getRandomArbitrary, choose2D } from '../helpers';
-import Boid from '../boid';
+import { delay, getRandomArbitrary, choose2D } from './helpers';
+import Boid from './boid';
 import p5 from 'p5';
 import Tester from './tester';
 
@@ -23,7 +23,7 @@ export default class Drawer {
     this.pOverlay = pOverlay;
     this.debug = debug;
     this.drawingTimer = null;
-    this.isStep = false;
+    this.isStep = true;
 
     document.addEventListener('keypress', () => {
       console.log('step');

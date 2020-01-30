@@ -19,11 +19,6 @@ export default class SmartCanvas {
     this.update();
   }
 
-  /**
-   * Draw a new line segment and update the dirtyBounds for this canvas
-   * @param {{onChange: function}} l - Listener to onChange events to add
-   * @param {{x: number, y: number}} end - End point of line segment
-   */
   addListener(fn) {
     this.listeners.push(fn);
   }

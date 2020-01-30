@@ -1,60 +1,29 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import SmartCanvasColorCodedView from './ColorCodedView';
 import Grid from '@material-ui/core/Grid';
-import SmartCanvasActChart from './ActChart';
 import SmartCanvasDrawingInput from './DrawingInput';
-import SmartCanvasKernelOverlays from './KernelOverlays';
-import Array2DView from '../UI/Array2DView';
+import NetworkView1 from './NetworkView1';
 
 const SmartCanvasMainView = props => {
-  const { kernels } = props;
-
-  const [ state, setState ] = useState({});
-
+  const [ drawingResult, setDrawingResult ] = useState(null);
   const onDrawingChange = useCallback(result => {
-    const { lineInfo, dirtyImgArr, offset } = result;
-    setState({ ...state, lineInfo, imgArr: dirtyImgArr, offset })
-  }, [state, setState]);
-  const onSelect = useCallback(pt => {
-    if (state.offset) {
-      const ptAdj = { x: pt.x - state.offset.x, y: pt.y - state.offset.y };
-      setState({ ...state, pt: pt, ptAdj: ptAdj });
-    }
-  }, [state, setState]);
+    setDrawingResult({ network: result.network });
+  }, [setDrawingResult]);
 
-  let max = [];
-  let ids = [];
-  if (state.lineInfo) {
-    max = state.lineInfo.max;
-    ids = state.lineInfo.ids;
-  }
-
-  const acts = useMemo(() => {
-    const { lineInfo, pt } = state;
-    if (lineInfo && pt) {
-      return lineInfo.getChannelsAt(pt);
-    }
-    return null;
-  }, [state]);
-
-  let zoomScale = 1;
-  if (state.imgArr && state.imgArr.length > 0) {
-    zoomScale = Math.min(200 / state.imgArr[0].length, 20);
-  }
+  // let zoomScale = 1;
+  // if (state.imgArr && state.imgArr.length > 0) {
+  //   zoomScale = Math.min(200 / state.imgArr[0].length, 20);
+  // }
+  console.log('render main view');
 
   return (
     <Grid container spacing={1} className="bordered-canvas">
       <Grid item>
-        <SmartCanvasDrawingInput kernels={kernels} shape={[200, 200]} onChange={onDrawingChange} />
-        <Array2DView imgArr={state.imgArr} scale={zoomScale} />
+        <SmartCanvasDrawingInput kernels={props.kernels} shape={[200, 200]} onChange={onDrawingChange} />
+        {/*<Array2DView imgArr={state.imgArr} scale={zoomScale} />*/}
       </Grid>
       <Grid item>
-        <SmartCanvasColorCodedView kernels={kernels} scale={3} ids={ids} max={max} onSelect={onSelect} />
-      </Grid>
-      <Grid item xs={3}>
-        <SmartCanvasActChart kernels={kernels} acts={acts} numKernels={9} />
-        <SmartCanvasKernelOverlays kernels={kernels} imgArr={state.imgArr} acts={acts} pt={state.ptAdj} numKernels={9} scale={8.5} />
+        { drawingResult && drawingResult.network ? <NetworkView1 network={drawingResult.network} /> : null }
       </Grid>
     </Grid>
   );

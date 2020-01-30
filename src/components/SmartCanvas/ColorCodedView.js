@@ -10,14 +10,14 @@ const SmartCanvasColorCodedView = props => {
   useEffect(() => {
     // run once
     if (!pRef.current && imgRef.current) {
-      pRef.current = new p5(getChannelSketch(), imgRef.current);
+      pRef.current = new p5(getChannelSketch(props.kernels), imgRef.current);
     }
 
     // run every time
     if (pRef.current) {
-      const { onSelect, ids, max, kernels, scale } = props;
+      const { onSelect, ids, max, scale } = props;
       pRef.current._onSelect = onSelect;
-      pRef.current.customDraw(ids, max, kernels, scale);
+      pRef.current.customDraw(ids, max, scale);
     }
   }, [props]);
 
