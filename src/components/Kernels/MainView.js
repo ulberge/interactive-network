@@ -6,7 +6,29 @@ import KernelsListView from './ListView';
 import KernelsControls from './Controls';
 import KernelsDrawingInput from './DrawingInput';
 import Array2DViewList from '../UI/Array2DViewList';
-import { eval2DArrayMultipleLayers } from '../../js/tfhelpers';
+import nj from 'numjs';
+
+tf.setBackend('cpu');
+
+// Returns the result of a given a layer applied to an image as a 2D array.
+function eval2DArrayMultipleLayers(layers, imgArrs) {
+  const imgArrs_f = imgArrs.map(imgArr => imgArr.map(row => row.map(col => [col])));
+
+  let curr = tf.tensor4d(imgArrs_f);
+  layers.forEach(layer => {
+    curr = layer.apply(curr);
+  });
+  let outputs = curr.arraySync();
+
+  // format output
+  const formattedOutputs = outputs.map(output => {
+    output = nj.array(output);
+    output = output.transpose(2, 0, 1);
+    return output.tolist();
+  });
+
+  return formattedOutputs;
+}
 
 // Set up pooling layer
 const maxPoolLayer = tf.layers.maxPooling2d({poolSize: 3});

@@ -1,6 +1,6 @@
 import nj from 'numjs';
 import { dilateBounds, limitBounds } from './helpers';
-import cwise from 'cwise';
+// import cwise from 'cwise';
 import ops from 'ndarray-ops';
 // import { GPU } from 'gpu.js';
 import * as tf from '@tensorflow/tfjs';
@@ -87,12 +87,12 @@ function getConvLayer(filters, kernelSize) {
 //   }
 // });
 
-const relu = cwise({
-  args: ['array'],
-  body: function(a) {
-    a = a > 0 ? a : 0;
-  }
-});
+// const relu = cwise({
+//   args: ['array'],
+//   body: function(a) {
+//     a = a > 0 ? a : 0;
+//   }
+// });
 
 // A wrapper to simplify the update and retrieval of 2D array slices for convolutions
 export class ConvArray {

@@ -1,12 +1,9 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import SmartCanvasColorCodedView from './ColorCodedView';
 import Grid from '@material-ui/core/Grid';
 import SmartCanvasActChart from './ActChart';
-import SmartCanvasDrawingInput from './DrawingInput';
-import SmartCanvasKernelOverlays from './KernelOverlays';
-import Array2DView from '../UI/Array2DView';
-import { getShadows } from '../../js/shadow';
+import { getShadows } from '../../js/networkShadow';
 
 const LayerView = props => {
   console.log('render LayerView');

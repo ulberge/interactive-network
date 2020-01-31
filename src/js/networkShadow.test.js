@@ -1,4 +1,4 @@
-import { getShadows } from './shadow';
+import { getShadows } from './networkShadow';
 
 
 it('calculates acts for the network for an img array for the first layer', () => {
