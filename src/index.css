@@ -1,5 +1,5 @@
 body {
-  margin: 40px 40px;
+  margin: 40px 40px 200px 40px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
     sans-serif;
@@ -12,22 +12,8 @@ code {
     monospace;
 }
 
-
 canvas {
-  border: 1px solid #fff;
-}
-
-.bordered-canvas canvas {
-  border-color: rgba(0, 0, 0, 0.3);
-}
-
-.selected canvas {
-  border-color: rgba(0, 0, 0, 0.6);
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 3px -2px, rgba(0, 0, 0, 0.14) 0px 3px 4px 0px, rgba(0, 0, 0, 0.12) 0px 1px 8px 0px;
-}
-
-.selectable {
-  cursor: pointer;
+  border: 1px solid #b2b2b2;
 }
 
 .overlay-container {
@@ -70,4 +56,12 @@ h2, h3, h4 {
 .draw-test h4 {
   padding: 4px;
   margin: 0;
+}
+
+.toggle-types .MuiToggleButton-root {
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.toggle-types .MuiToggleButton-root.Mui-selected {
+  color: rgba(0, 0, 0, 0.87);;
 }

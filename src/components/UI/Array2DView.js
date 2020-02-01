@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { getArraySketch } from '../../js/sketches/array';
+import { getSketch } from '../../js/sketches/array2DSketch';
 
 const Array2DView = props => {
   const imgRef = useRef(null);
@@ -9,13 +9,13 @@ const Array2DView = props => {
 
   useEffect(() => {
     // run once
-    if (!pRef.current && imgRef.current) {
-      pRef.current = new p5(getArraySketch(props.withColor, props.normalize), imgRef.current);
+    if (!pRef.current) {
+      pRef.current = new p5(getSketch(), imgRef.current);
     }
 
     // run every time
     if (pRef.current) {
-      pRef.current.customDraw(props.imgArr, props.scale);
+      pRef.current._draw(props.imgArr, props.scale);
     }
   }, [props]);
 
@@ -26,9 +26,7 @@ const Array2DView = props => {
 
 Array2DView.propTypes = {
   imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
-  scale: PropTypes.number,
-  normalize: PropTypes.bool,
-  withColor: PropTypes.bool,
+  scale: PropTypes.number
 };
 
 export default Array2DView;

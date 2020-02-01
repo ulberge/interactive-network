@@ -1,10 +1,9 @@
 import nj from 'numjs';
 import { dilateBounds, limitBounds } from './helpers';
 // import cwise from 'cwise';
-import ops from 'ndarray-ops';
+// import ops from 'ndarray-ops';
 // import { GPU } from 'gpu.js';
 import * as tf from '@tensorflow/tfjs';
-tf.setBackend('cpu');
 
 export const dtype = 'float32';
 
@@ -109,7 +108,7 @@ export class ConvArray {
     this._arr = nj.zeros([channels, h, w], dtype);
 
     // max data
-    this._ids = nj.zeros(this._shape, 'int8').assign(-1, false);
+    this._ids = nj.zeros(this._shape, 'int32').assign(-1, false);
     this._max = nj.zeros(this._shape, dtype);
 
     // 4-tuple containing bounds of area that has been changed, coordinates relative to editable area
@@ -146,21 +145,139 @@ export class ConvArray {
   /**
    * Clears the dirtyBounds
    */
-  calcStats() {
+  calcStats(outputTensor) {
     if (this._dirtyBounds) {
       const [ minX, minY, maxX, maxY ] = this._dirtyBounds;
-      const visible = this._slice();
-      for (let y = minY; y < maxY; y += 1) {
-        for (let x = minX; x < maxX; x += 1) {
-          const xSel = [x, (x + 1)];
-          const ySel = [y, (y + 1)];
-          const column = visible.slice(null, ySel, xSel);
-          const id = ops.argmax(column.selection)[0];
-          const max = column.max();
-          this._ids.set(y, x, id);
-          this._max.set(y, x, max);
-        }
+      const h = maxY - minY;
+      const w = maxX - minX;
+
+      const times = [];
+      let ct0 = Date.now();
+      let ct1;
+
+      const size = h * w;
+      if (size > 3500) {
+        tf.setBackend('webgl');
+      } else {
+        tf.setBackend('cpu');
       }
+
+      const idsT = outputTensor.argMax(1);
+
+      tf.setBackend('cpu');
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const dsync = idsT.dataSync();
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      let idsUpdate = nj['int32'](dsync);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      idsUpdate = idsUpdate.reshape([ h, w ]);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const idsSlice = this._ids.slice([minY, maxY], [minX, maxX]);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      idsSlice.assign(idsUpdate, false);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      times.push('start max');
+
+      // gather max
+      const flatOutputTensor = outputTensor.reshape([-1]);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const flatIdsTensor = idsT.reshape([-1]);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const layerOffsets = tf.mul(flatIdsTensor, tf.scalar(w * h, 'int32'));
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const withinLayerOffsets = tf.range(0, h * w, 1, 'int32');
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const idLookups = tf.add(layerOffsets, withinLayerOffsets);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      const maxT = flatOutputTensor.gather(idLookups);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      times.push('gathered max');
+
+      const maxUpdate = nj[dtype](maxT.dataSync()).reshape([ h, w ]);
+      const maxSlice = this._max.slice([minY, maxY], [minX, maxX]);
+      maxSlice.assign(maxUpdate, false);
+
+      ct1 = Date.now();
+      times.push(ct1 - ct0);
+      ct0 = ct1;
+
+      console.log('stats op', times.reduce((a, b) => Number.isInteger(b) ? a + b : a), ...times);
+
+
+      // const t0 = Date.now();
+      // const maxT = outputTensor.max(1);
+      // const t1 = Date.now();
+      // const maxUpdate = nj[dtype](maxT.dataSync()).reshape([ h, w ]);
+      // const t2 = Date.now();
+      // const maxSlice = this._max.slice([minY, maxY], [minX, maxX]);
+      // const t3 = Date.now();
+      // maxSlice.assign(maxUpdate, false);
+      // const t4 = Date.now();
+
+      // const idsT = outputTensor.argMax(1);
+      // const t5 = Date.now();
+      // const dsync = idsT.dataSync();
+      // const t5a = Date.now();
+      // let idsUpdate = nj['int32'](dsync);
+      // const t5b = Date.now();
+      // idsUpdate = idsUpdate.reshape([ h, w ]);
+      // const t6 = Date.now();
+      // const idsSlice = this._ids.slice([minY, maxY], [minX, maxX]);
+      // const t7 = Date.now();
+      // idsSlice.assign(idsUpdate, false);
+      // const t8 = Date.now();
+
+      // const { values, indices } = tf.topk(outputTensor, 1)
+
+      // console.log('calc stats', t8 - t0, t1 - t0, t2 - t1, t3-t2,t4-t3,'ids',t5-t4,t5a-t5,t5b-t5a,t6-t5b,t7-t6,t8-t7);
     }
   }
 
@@ -259,43 +376,55 @@ export class ConvLayer {
 
   run() {
     const dirty = this.input.dirty;
-
-
     // updateBounds for this layer will be the dirtyBounds eroded by the padding for convolution
     const updateBounds = dilateBounds(this.input.dirtyBounds, -this._pad);
     const [ minX, minY, maxX, maxY ] = updateBounds;
     const h = maxY - minY;
     const w = maxX - minX;
 
-
-    // for (const [outChannel, filter] of this.filters.entries()) {
-    //   const sum = nj.zeros([ 1, h, w ]);
-    //   for (const [inChannel, kernel] of filter.entries()) {
-    //     if (!kernel) {
-    //       // ignore null kernels (they are empty, this is a sparse network)
-    //       continue;
-    //     }
-
-    //     const dirtySlice = dirty.slice([ inChannel, inChannel + 1 ], null, null);
-    //     const update = nj.convolve(dirtySlice, kernel);
-    //     sum.add(update, false);
-    //   }
-
-    //   // relu
-    //   relu(sum.selection);
-    //   this.output.assign(sum, outChannel, updateBounds);
-    // }
+    const size = h * w;
+    if (size > 3500) {
+      tf.setBackend('webgl');
+    } else {
+      tf.setBackend('cpu');
+    }
 
     // tf backend
+    const times = [];
+    let ct0 = Date.now();
+    let ct1;
+
     const d = dirty.reshape([1, ...dirty.shape]).selection;
+
+    ct1 = Date.now();
+    times.push(ct1 - ct0);
+    ct0 = ct1;
+
     const input = tf.tensor4d(d.data, d.shape);
+
+    ct1 = Date.now();
+    times.push(ct1 - ct0);
+    ct0 = ct1;
+
     const output = this._tflayer.apply(input);
+
+    ct1 = Date.now();
+    times.push(ct1 - ct0);
+    ct0 = ct1;
+
     const updateShape = [ this.output._channels, h, w ];
     const update = nj[dtype](output.dataSync()).reshape(updateShape);
+
+    ct1 = Date.now();
+    times.push(ct1 - ct0);
+    ct0 = ct1;
+
+    console.log('conv op', times.reduce((a, b) => Number.isInteger(b) ? a + b : a), ...times);
+
+    tf.setBackend('cpu');
+
     this.output.assign(update, null, updateBounds);
-
-    this.output.calcStats();
-
+    this.output.calcStats(output);
     this.input.clean();
   }
 }
@@ -305,6 +434,7 @@ export class MaxPoolLayer {
     this.input = input;
     this.output = output;
     this.poolSize = poolSize;
+    this._tflayer = tf.layers.maxPooling2d({ poolSize });
   }
 
   run() {
@@ -315,22 +445,24 @@ export class MaxPoolLayer {
     const h = maxY - minY;
     const w = maxX - minX;
 
-    // calculate update
-    for (let i = 0; i < dirty.shape[0]; i += 1) {
-      const update = nj.zeros([ 1, h, w ]);
-      for (let y = 0; y < h; y += 1) {
-        for (let x = 0; x < w; x += 1) {
-          const xSel = [x * this.poolSize, (x + 1) * this.poolSize];
-          const ySel = [y * this.poolSize, (y + 1) * this.poolSize];
-          const poolSlice = dirty.slice([i, i + 1], ySel, xSel);
-          const max = poolSlice.max();
-          update.set(0, y, x, max);
-        }
-      }
-      this.output.assign(update, i, updateBounds);
+    const size = h * w;
+    if (size > 3500) {
+      tf.setBackend('webgl');
+    } else {
+      tf.setBackend('cpu');
     }
-    this.output.calcStats();
 
+    // tf backend
+    const d = dirty.reshape([1, ...dirty.shape]).selection;
+    const input = tf.tensor4d(d.data, d.shape);
+    const output = this._tflayer.apply(input);
+    const updateShape = [ this.output._channels, h, w ];
+    const update = nj[dtype](output.dataSync()).reshape(updateShape);
+
+    tf.setBackend('cpu');
+
+    this.output.assign(update, null, updateBounds);
+    this.output.calcStats(output);
     this.input.clean();
   }
 }
@@ -398,5 +530,10 @@ export class Network {
 
     // mark last layer clean (or it will accumlate dirty!)
     this.arrs[this.arrs.length - 1].clean();
+  }
+
+  getOutput(i) {
+    const { arr: acts, _max: max, _ids: ids } = this.arrs[i + 1];
+    return { acts, max, ids };
   }
 }

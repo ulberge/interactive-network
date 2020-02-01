@@ -25,6 +25,15 @@ export default class SmartCanvas {
     this._listeners = [];
   }
 
+  // do full calc once p5 is ready
+  init() {
+    if (!this.p._setupDone) {
+      setTimeout(() => this.init(), 10);
+    } else {
+      this.forceFullUpdate();
+    }
+  }
+
   reset() {
     this.p.clear();
     this._dirtyBounds = this.bounds;
@@ -91,6 +100,11 @@ export default class SmartCanvas {
       this._notifyListeners({ network: this.network, dirtyBounds: [...this._dirtyBounds] });
       this._dirtyBounds = null; // reset dirty bounds
     }
+  }
+
+  forceFullUpdate() {
+    this._dirtyBounds = this.bounds;
+    this.update();
   }
 
   /**
