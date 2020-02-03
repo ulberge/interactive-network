@@ -16,17 +16,28 @@ function renderKernelsOnBars(el, x, kernels) {
   const weightPixels = el.append('g').selectAll('.pixel').data(flatKernelData).enter();
   const pixelSize = x.bandwidth() / kernels[0].length;
   weightPixels.append('rect')
-      .attr('fill', d => {
-        if (d.v >= 0) {
-          return 'rgba(0, 0, 0, ' + (d.v) + ')';
-        } else {
-          return 'rgba(214, 30, 30, ' + (-d.v / 2) + ')';
-        }
-      })
-      .attr('x', d => x(d.kIndex) + (pixelSize * d.col))
-      .attr('y', d => (pixelSize * d.row))
-      .attr('height', pixelSize)
-      .attr('width', pixelSize);
+    .attr('fill', d => {
+      if (d.v >= 0) {
+        return 'rgba(0, 0, 0, ' + (d.v) + ')';
+      } else {
+        return 'rgba(214, 30, 30, ' + (-d.v * 0.75) + ')';
+      }
+    })
+    .attr('x', d => x(d.kIndex) + (pixelSize * d.col))
+    .attr('y', d => (pixelSize * d.row))
+    .attr('height', pixelSize)
+    .attr('width', pixelSize);
+
+  // render outlines of kernels
+  const kernelOutlines = el.append('g').selectAll('.outline').data(kernels).enter();
+  kernelOutlines.append('rect')
+    .attr('x', (d, i) => x(i))
+    .attr('y', 0)
+    .attr('height', x.bandwidth())
+    .attr('width', x.bandwidth())
+    .style("stroke", '#b2b2b2')
+    .style("fill", "none")
+    .style("stroke-width", 1);
 }
 
 // render bar chart of activations with the kernel icon on top of each bar

@@ -1,15 +1,15 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { getSketch } from '../../js/sketches/activationInspectorSketch';
+import { getSketch } from '../../js/sketches/colorCodedMapSketch';
 
-const KernelInspectorActivationMap = props => {
+const KernelInspectorColorCodedMap = props => {
+  const { kernels, pt, ids, max, scale, onSelect } = props;
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
   useEffect(() => {
     if (imgRef.current) {
-      console.log('new inspector sketch');
       imgRef.current.innerHTML = '';
       pRef.current = new p5(getSketch(), imgRef.current);
     }
@@ -17,34 +17,34 @@ const KernelInspectorActivationMap = props => {
 
   useEffect(() => {
     if (pRef.current) {
-      pRef.current.setKernels(props.kernels);
+      pRef.current.setKernels(kernels);
     }
-  }, [props.kernels]);
+  }, [ kernels ]);
 
   useEffect(() => {
     if (pRef.current) {
-      pRef.current._pt = props.pt;
+      pRef.current._pt = pt;
     }
-  }, [props.pt]);
+  }, [ pt ]);
 
   useEffect(() => {
-    if (pRef.current && props.ids && props.max) {
-      pRef.current.setData(props.ids, props.max, props.scale);
+    if (pRef.current && ids && max) {
+      pRef.current.setData(ids, max, scale);
     }
-  }, [props.ids, props.max, props.scale]);
+  }, [ ids, max, scale ]);
 
   useEffect(() => {
     if (pRef.current) {
-      pRef.current._onSelect = props.onSelect;
+      pRef.current._onSelect = onSelect;
     }
-  }, [props.onSelect]);
+  }, [ onSelect ]);
 
   return (
-    <div ref={imgRef} style={{ cursor: 'none' }}></div>
+    <div ref={imgRef}></div>
   );
 };
 
-KernelInspectorActivationMap.propTypes = {
+KernelInspectorColorCodedMap.propTypes = {
   ids: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   max: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
   kernels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))),
@@ -53,4 +53,4 @@ KernelInspectorActivationMap.propTypes = {
   onSelect: PropTypes.func,
 };
 
-export default KernelInspectorActivationMap;
+export default KernelInspectorColorCodedMap;

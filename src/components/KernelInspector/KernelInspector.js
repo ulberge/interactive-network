@@ -1,79 +1,46 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import KernelInspectorDrawingInput from './KernelInspectorDrawingInput';
-import KernelInspectorActivationMap from './KernelInspectorActivationMap';
-import KernelInspectorSelection from './KernelInspectorSelection';
+import KernelInspectorViewOutput from './KernelInspectorViewOutput';
+import { getKernels } from '../../js/kernel';
 
+// shape of the drawing area
 const shape = [ 150, 150 ];
+const defaultPt = { x: Math.floor(shape[0] / 2) - 1, y: Math.floor(shape[1] / 2) - 1 }
 
 function KernelInspector(props) {
+  // store up-to-date data from network, use this object to trigger updates
   const [ data, setData ] = useState(null);
-  const [ pt, setPt ] = useState({ x: Math.floor(shape[0] / 2) - 1, y: Math.floor(shape[1] / 2) - 1 });
 
-  const { imgArr, acts, max, ids } = useMemo(() => {
-    if (data && data.network) {
-      // get input
-      const { acts: imgArr } = data.network.getOutput(-1);
-      // get output
-      const { acts, max, ids } = data.network.getOutput(0);
-      // unwrap ndarrays into arrays
-      return { imgArr: imgArr.tolist()[0], acts: acts.tolist(), max: max.tolist(), ids: ids.tolist() };
-    }
-    return {};
-  }, [data]);
-
-  const onUpdate = useCallback(data => setData({ ...data }), [setData]);
+  // get the kernels
+  const { numComponents, lambda, sigma, windowSize, types } = props.kernelSettings;
+  const kernels = useMemo(() => {
+    return getKernels(windowSize, 2 ** numComponents, lambda, sigma, types);
+  }, [ numComponents, lambda, sigma, windowSize, types ]);
 
   return (
     <div style={props.style}>
-      <h2>Kernel Inspector</h2>
+      <h3>Kernel Inspector</h3>
       <Grid container spacing={4} justify="center">
         <Grid item>
           <KernelInspectorDrawingInput
-            kernels={props.kernels}
+            kernels={kernels}
             shape={shape}
-            onUpdate={onUpdate}
+            onUpdate={setData}
           />
           <div style={{ marginTop: '10px', textAlign: 'center' }}>Make a test drawing</div>
         </Grid>
-        { data ? (
-          <Grid item>
-            <div>
-              <KernelInspectorActivationMap
-                kernels={props.kernels}
-                max={max}
-                ids={ids}
-                scale={2.5}
-                onSelect={setPt}
-                pt={pt}
-              />
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ marginTop: '10px' }}><b>A color-coded map of maximum activation</b></div>
-                <div style={{ marginTop: '10px' }}>Select a pixel to inspect</div>
-              </div>
-            </div>
-          </Grid>
-        ) : null }
-        { data ? (
-          <Grid item>
-            <KernelInspectorSelection
-              kernels={props.kernels}
-              imgArr={imgArr}
-              acts={acts}
-              pt={pt}
-              count={Math.min(8, props.kernels.length)}
-              style={{ width: '400px' }}
-            />
-          </Grid>
-        ) : null }
+        <Grid item>
+          { data && <KernelInspectorViewOutput kernels={kernels} data={data} defaultPt={defaultPt} /> }
+        </Grid>
       </Grid>
     </div>
   );
 }
 
 KernelInspector.propTypes = {
-  kernels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
+  kernelSettings: PropTypes.object.isRequired,
 };
 
 export default KernelInspector;

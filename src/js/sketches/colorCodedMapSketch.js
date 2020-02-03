@@ -1,4 +1,4 @@
-import { get2DArraySlice } from '../helpers';
+import nj from 'numjs';
 
 // some good contrast colors to start
 const colors = ['#e6194b', '#3cb44b', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe', '#008080', '#e6beff', '#9a6324', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075'];
@@ -56,7 +56,7 @@ export function getSketch(kernels) {
         const y = Math.floor(p.mouseY / scale);
         const zoomWindow = 4;
         const zoomScale = scale * 8;
-        if (x > 0 && y > 0 && x < (w / scale) && y < (h / scale)) {
+        if (x > zoomWindow && y > zoomWindow && x < (w / scale) - zoomWindow && y < (h / scale) - zoomWindow) {
           // if so, we need to redraw with overlay
           p.clear();
           p._drawBackground(ids, max, scale);
@@ -68,8 +68,9 @@ export function getSketch(kernels) {
             Math.min(w / scale, x + zoomWindow + 1),
             Math.min(h / scale, y + zoomWindow + 1)
           ];
-          const slice_ids = get2DArraySlice(ids, bounds);
-          const slice_max = get2DArraySlice(max, bounds);
+          const [ x0, y0, x1, y1 ] = bounds;
+          const slice_ids = nj.array(ids).slice([y0, y1], [x0, x1]).tolist();
+          const slice_max = nj.array(max).slice([y0, y1], [x0, x1]).tolist();
 
           // draw zoomed in version as overlay
           p.push();
@@ -78,7 +79,7 @@ export function getSketch(kernels) {
           p.push();
           p.fill(255);
           p.noStroke();
-          p.rect(0, 0, slice_ids.length * zoomScale, slice_ids[0].length * zoomScale);
+          p.rect(0, 0, slice_ids[0].length * zoomScale, slice_ids.length * zoomScale);
           p.pop();
           // draw zoom
           p._drawIconArray(slice_ids, slice_max, zoomScale);
@@ -87,7 +88,7 @@ export function getSketch(kernels) {
           p.noFill();
           p.strokeWeight(1);
           p.stroke('#b2b2b2');
-          p.rect(0, 0, slice_ids.length * zoomScale, slice_ids[0].length * zoomScale);
+          p.rect(0, 0, slice_ids[0].length * zoomScale, slice_ids.length * zoomScale);
           p.pop();
           // outline the center of the zoom
           p.push();
@@ -190,19 +191,18 @@ export function getSketch(kernels) {
       let max = Math.max(...imgArr.flat());
       imgArr = imgArr.map(row => row.map(v => v / max));
 
-      g.noStroke();
+      g.loadPixels();
       for (let y = 0; y < imgArr.length; y += 1) {
         for (let x = 0; x < imgArr[0].length; x += 1) {
-          let v = imgArr[y][x] * 255;
+          const v = imgArr[y][x] * 255;
           if (v > 0) {
-            g.fill(0, 0, 0, v);
-            g.rect(x, y, 1, 1);
+            g.set(x, y, p.color(0, 0, 0, v));
           } else if (v < 0) {
-            g.fill(214, 30, 30, -v / 2);
-            g.rect(x, y, 1, 1);
+            g.set(x, y, p.color(214, 30, 30, -v * 0.75));
           }
         }
       }
+      g.updatePixels();
       return g.get();
     };
   };

@@ -1,5 +1,6 @@
 import nj from 'numjs';
-import { Network, dtype } from './conv';
+import { dtype } from './conv/convArray';
+import Network from './conv/network';
 import p5 from 'p5';
 
 function limit(v, min, max) {

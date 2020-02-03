@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import PropTypes from 'prop-types';
-import DebounceSlider from '../UI/DebounceSlider';
+import Slider from '@material-ui/core/Slider';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 
@@ -11,7 +11,7 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
         <div>Types</div>
         <ToggleButtonGroup
           value={props.types}
-          onChange={(e, types) => props.onChange('types', types)}
+          onChange={(event, types) => types.length > 0 ? props.onChange('types', types) : 0}
           aria-label="types of kernels"
           style={{ borderRadius: 0, margin: '12px 0' }}
           className="toggle-types"
@@ -29,7 +29,7 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
       </div>
       <div>
         <div>Angles</div>
-        <DebounceSlider
+        <Slider
           defaultValue={props.numComponents}
           track={false}
           aria-labelledby="number of components"
@@ -37,12 +37,12 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
           step={1}
           min={1}
           max={5}
-          onChange={value => props.onChange('numComponents', value)}
+          onChange={(event, value) => props.onChange('numComponents', value)}
         />
       </div>
       <div>
         <div>Size</div>
-        <DebounceSlider
+        <Slider
           defaultValue={props.windowSize}
           track={false}
           aria-labelledby="window size"
@@ -51,12 +51,12 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
           step={2}
           min={3}
           max={15}
-          onChange={value => props.onChange('windowSize', value)}
+          onChange={(event, value) => props.onChange('windowSize', value)}
         />
       </div>
       <div>
         <div>Width Factor</div>
-        <DebounceSlider
+        <Slider
           defaultValue={props.lambda}
           track={false}
           aria-labelledby="lambda"
@@ -64,14 +64,13 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
           step={0.1}
           min={1.1}
           max={10}
-          onChange={value => props.onChange('lambda', value)}
+          onChange={(event, value) => props.onChange('lambda', value)}
           style={{ padding: '24px 0' }}
-          timer={50}
         />
       </div>
       <div>
         <div>Gaussian Spread</div>
-        <DebounceSlider
+        <Slider
           defaultValue={props.sigma}
           track={false}
           aria-labelledby="sigma"
@@ -79,9 +78,8 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
           step={0.1}
           min={0.1}
           max={8}
-          onChange={value => props.onChange('sigma', value)}
+          onChange={(event, value) => props.onChange('sigma', value)}
           style={{ padding: '24px 0' }}
-          timer={50}
         />
       </div>
     </div>
@@ -93,7 +91,6 @@ KernelTunerControls.propTypes = {
   lambda: PropTypes.number.isRequired,
   sigma: PropTypes.number.isRequired,
   windowSize: PropTypes.number.isRequired,
-  // types: PropTypes.object.isRequired,
   types: PropTypes.arrayOf(PropTypes.string).isRequired,
   onChange: PropTypes.func.isRequired
 };

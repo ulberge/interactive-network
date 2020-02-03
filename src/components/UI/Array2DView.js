@@ -1,9 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import p5 from 'p5';
-import { getSketch } from '../../js/sketches/array2DSketch';
+import { getSketch } from '../../js/sketches/array2DViewSketch';
 
+// Renders a 2D array as a p5 sketch
 const Array2DView = props => {
+  const { imgArr, scale } = props;
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
@@ -15,9 +17,9 @@ const Array2DView = props => {
 
     // run every time
     if (pRef.current) {
-      pRef.current._draw(props.imgArr, props.scale);
+      pRef.current._draw(imgArr, scale);
     }
-  }, [props]);
+  }, [ imgArr, scale ]);
 
   return (
     <div ref={imgRef}></div>

@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -7,13 +7,31 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import Array2DViewList from '../UI/Array2DViewList';
 import KernelTunerControls from './KernelTunerControls';
+import { getKernels } from '../../js/kernel';
 
 function KernelTuner(props) {
-  const { numComponents, lambda, sigma, windowSize, types } = props.kernelSettings;
+  const { defaultKernelSettings, updateKernelSettings } = props;
+  // store the kernel settings as a local state for snappy updates
+  const [ kernelSettings, setKernelSettings ] = useState(defaultKernelSettings);
+  const { numComponents, lambda, sigma, windowSize, types } = kernelSettings;
 
-  const updateKernelSettings = useCallback((field, value) => {
-    props.updateKernelSettings({ ...props.kernelSettings, [field]: value });
-  }, [props]);
+  const timerRef = useRef(null);
+  const updateKernelSettingsCallback = useCallback((field, value) => {
+    const newKernelSettings = { ...kernelSettings, [field]: value }
+    setKernelSettings(newKernelSettings);
+
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    // delay global update to make the kernel tuner UI update smoothly
+    timerRef.current = setTimeout(() => {
+      updateKernelSettings(newKernelSettings);
+    }, 100);
+  }, [ setKernelSettings, kernelSettings, updateKernelSettings ]);
+
+  const kernels = useMemo(() => {
+    return getKernels(windowSize, 2 ** numComponents, lambda, sigma, types);
+  }, [ numComponents, lambda, sigma, windowSize, types ]);
 
   return (
     <ExpansionPanel defaultExpanded={true} square={true} style={{ boxShadow: 'none', border: '1px solid #b2b2b2' }}>
@@ -32,11 +50,11 @@ function KernelTuner(props) {
               sigma={sigma}
               windowSize={windowSize}
               types={types}
-              onChange={updateKernelSettings}
+              onChange={updateKernelSettingsCallback}
              />
           </Grid>
           <Grid item style={{ width: 'calc(100% - 220px)' }}>
-            <Array2DViewList imgArrs={props.kernels} scale={4} cols={8} />
+            <Array2DViewList imgArrs={kernels} scale={4} cols={8} />
           </Grid>
         </Grid>
       </ExpansionPanelDetails>
@@ -45,9 +63,8 @@ function KernelTuner(props) {
 }
 
 KernelTuner.propTypes = {
-  kernelSettings: PropTypes.object.isRequired,
+  defaultKernelSettings: PropTypes.object.isRequired,
   updateKernelSettings: PropTypes.func.isRequired,
-  kernels: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))).isRequired,
 };
 
 export default KernelTuner;

@@ -1,4 +1,4 @@
-import { getEmpty2DArray } from './helpers';
+import nj from 'numjs';
 
 // Returns a f(x, y) for 2D cosine wave at angle theta of width inverse lambda from -PI to PI, scaled by pos and neg
 function getCosWaveFn(theta, lambda, period=1) {
@@ -22,7 +22,7 @@ function getGaussianFn(sigma) {
 function getLine(windowSize, theta, lambda, sigma) {
   const wave = getCosWaveFn(theta, lambda);
   const gauss = getGaussianFn(sigma);
-  const kernel = getEmpty2DArray(windowSize, windowSize, -1);
+  const kernel = nj.zeros([windowSize, windowSize]).assign(-1).tolist();
   const halfWindowSize = Math.floor(windowSize / 2);
 
   for (let y = 0; y < windowSize; y += 1) {
@@ -58,7 +58,7 @@ function getLines(windowSize, numKernels, lambda, sigma) {
 function getLineEnd(windowSize, theta, lambda, sigma) {
   const wave = getCosWaveFn(theta, lambda);
   const gauss = getGaussianFn(sigma);
-  const kernel = getEmpty2DArray(windowSize, windowSize, -1);
+  const kernel = nj.zeros([windowSize, windowSize]).assign(-1).tolist();
   const halfWindowSize = Math.floor(windowSize / 2);
 
   for (let y = 0; y < windowSize; y += 1) {
@@ -109,7 +109,8 @@ function getLs(windowSize, angle, numKernels, lambda, sigma) {
     // Create two line ends at 90 degrees to each other and merge at diagonal between them
     const kernelLineEnd0 = getLineEnd(windowSize, theta, lambda, sigma);
     const kernelLineEnd1 = getLineEnd(windowSize, theta - angle, lambda, sigma);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+    const kernel = nj.zeros([windowSize, windowSize]).tolist();
+
     for (let y = 0; y < windowSize; y += 1) {
       const yCentered = y - halfWindowSize;
       for (let x = 0; x < windowSize; x += 1) {
@@ -141,7 +142,7 @@ function getTs(windowSize, angle, numKernels, lambda, sigma) {
     // Create two line ends at 90 degrees to each other and merge at diagonal between them
     const kernelLine = getLine(windowSize, theta, lambda, sigma);
     const kernelLineEnd = getLineEnd(windowSize, theta - angle, lambda, sigma);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+    const kernel = nj.zeros([windowSize, windowSize]).tolist();
     for (let y = 0; y < windowSize; y += 1) {
       const yCentered = y - halfWindowSize;
       for (let x = 0; x < windowSize; x += 1) {
@@ -174,7 +175,7 @@ function getXs(windowSize, angle, numKernels, lambda, sigma) {
     // Create two line ends at 90 degrees to each other and merge at diagonal between them
     const kernelLine0 = getLine(windowSize, theta, lambda, sigma);
     const kernelLine1 = getLine(windowSize, theta - angle, lambda, sigma);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+    const kernel = nj.zeros([windowSize, windowSize]).tolist();
     for (let y = 0; y < windowSize; y += 1) {
       for (let x = 0; x < windowSize; x += 1) {
         // use most extreme
@@ -204,7 +205,7 @@ function getYs(windowSize, angle, numKernels, lambda, sigma) {
 
     const a = Math.sin(theta);
     const b = Math.cos(theta);
-    const kernel = getEmpty2DArray(windowSize, windowSize, 0);
+    const kernel = nj.zeros([windowSize, windowSize]).tolist();
     for (let y = 0; y < windowSize; y += 1) {
       const yCentered = y - halfWindowSize;
       for (let x = 0; x < windowSize; x += 1) {
