@@ -26,10 +26,12 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && mv build docs",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "test:debug": "react-scripts --inspect-brk test --runInBand --no-cache"
+    "test:debug": "react-scripts --inspect-brk test --runInBand --no-cache",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -49,5 +51,6 @@
   "devDependencies": {
     "canvas": "^2.6.1",
     "jest-canvas-mock": "^2.2.0"
-  }
+  },
+  "homepage": "https://ulberge.github.io/interactive-network/"
 }
