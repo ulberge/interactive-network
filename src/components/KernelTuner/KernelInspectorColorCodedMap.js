@@ -40,7 +40,7 @@ const KernelInspectorColorCodedMap = props => {
   }, [ onSelect ]);
 
   return (
-    <div ref={imgRef}></div>
+    <div ref={imgRef} className="zoom300"></div>
   );
 };
 

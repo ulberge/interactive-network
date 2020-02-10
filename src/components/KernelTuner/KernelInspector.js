@@ -6,7 +6,8 @@ import KernelInspectorViewOutput from './KernelInspectorViewOutput';
 import { getKernels } from '../../js/kernel';
 
 // shape of the drawing area
-const shape = [ 150, 150 ];
+const shape = [ 100, 100 ];
+// const shape = [ 256, 256 ];
 const defaultPt = { x: Math.floor(shape[0] / 2) - 1, y: Math.floor(shape[1] / 2) - 1 }
 
 function KernelInspector(props) {
@@ -21,7 +22,6 @@ function KernelInspector(props) {
 
   return (
     <div style={props.style}>
-      <h3>Kernel Inspector</h3>
       <Grid container spacing={4} justify="center">
         <Grid item>
           <KernelInspectorDrawingInput
@@ -29,7 +29,6 @@ function KernelInspector(props) {
             shape={shape}
             onUpdate={setData}
           />
-          <div style={{ marginTop: '10px', textAlign: 'center' }}>Make a test drawing</div>
         </Grid>
         <Grid item>
           { data && <KernelInspectorViewOutput kernels={kernels} data={data} defaultPt={defaultPt} /> }

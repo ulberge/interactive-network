@@ -37,8 +37,7 @@ export default class SmartCanvas {
 
   reset() {
     this.p.clear();
-    this._dirtyBounds = this.bounds;
-    this.update();
+    this.forceFullUpdate();
   }
 
   get bounds() {

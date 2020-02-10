@@ -6,7 +6,7 @@ import Array2DViewList from '../UI/Array2DViewList';
 const Array2DViewOverlayList = props => {
   const { imgArrs, imgArrsOverlay, scale, overlayOpacity } = props;
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ ...props.style, position: 'relative' }}>
       <Array2DViewList
         imgArrs={imgArrs}
         scale={scale}

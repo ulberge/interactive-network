@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Grid from '@material-ui/core/Grid';
 import KernelInspectorActivationChart from './KernelInspectorActivationChart';
 import Array2DViewOverlayList from '../UI/Array2DViewOverlayList';
 import nj from 'numjs';
@@ -14,7 +13,7 @@ function getImgArrAtPt(imgArr, pt, pad) {
   const { x, y } = pt;
   const bounds = [ x - pad, y - pad, x + pad + 1, y + pad + 1 ];
   const [ x0, y0, x1, y1 ] = bounds;
-  if (x0 < 0 || y0 < 0 || x1 >= imgArr[0].length || y1 >= imgArr.length) {
+  if (x0 < 0 || y0 < 0 || x1 > imgArr[0].length || y1 > imgArr.length) {
     return null;
   }
   const imgArrSlice = nj.array(imgArr).slice([y0, y1], [x0, x1]).tolist();
@@ -44,29 +43,28 @@ const KernelInspectorViewOutputAtPoint = props => {
   const ptDisplay = `(${pt.x}, ${pt.y})`;
 
   return (
-    <Grid container spacing={4} justify="center" style={props.style}>
-      <Grid item>
+    <div style={{ width: '200px' }}>
+      <div>
+        <KernelInspectorActivationChart kernels={kernels} acts={actsAtPt} style={{ margin: '10px auto' }}/>
+        <div style={{ margin: '5px 0 25px 0', textAlign: 'center' }}>
+          Top activations at {ptDisplay}
+        </div>
+      </div>
+      { imgArrAtPt &&
         <div>
-          <KernelInspectorActivationChart kernels={kernels} acts={actsAtPt} />
-          <div style={{ margin: '5px 0 25px 0', textAlign: 'center' }}>
-            <b>Top activations for pixel {ptDisplay}</b>
+          <Array2DViewOverlayList
+            imgArrs={new Array(kernels.length).fill(imgArrAtPt)}
+            imgArrsOverlay={kernels}
+            scale={4.5}
+            overlayOpacity={0.8}
+            style={{ margin: '10px auto' }}
+          />
+          <div style={{ margin: '10px 0', textAlign: 'center' }}>
+            Kernel overlays at {ptDisplay}
           </div>
         </div>
-        { imgArrAtPt &&
-          <div>
-            <Array2DViewOverlayList
-              imgArrs={new Array(kernels.length).fill(imgArrAtPt)}
-              imgArrsOverlay={kernels}
-              scale={6}
-              overlayOpacity={0.8}
-            />
-            <div style={{ margin: '10px 0', textAlign: 'center' }}>
-              <b>Kernel overlays for pixel {ptDisplay}</b>
-            </div>
-          </div>
-        }
-      </Grid>
-    </Grid>
+      }
+    </div>
   );
 };
 

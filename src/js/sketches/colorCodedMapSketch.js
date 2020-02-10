@@ -10,11 +10,12 @@ const colorMap = {};
  */
 export function getSketch(kernels) {
   // spacing between rectangles
-  const gridWeight = 0.08;
   let ids = null;
   let max = null;
   let scale = 1;
   let needsRefresh = false;
+  let drawWindow = true;
+  const zoomWindow = 4;
 
   return (p) => {
     p.setData = (_ids, _max, _scale=1) => {
@@ -40,6 +41,9 @@ export function getSketch(kernels) {
       p.pixelDensity(1);
       p.createCanvas(300, 300);
       p.stroke(255);
+      p.noSmooth();
+
+      p._colorCodedGraphics = p.createGraphics(300, 300);
     };
 
     p.draw = () => {
@@ -49,14 +53,15 @@ export function getSketch(kernels) {
         const w = ids[0].length * scale;
         if (h !== p.height || w !== p.width) {
           p.resizeCanvas(w, h);
+          p._colorCodedGraphics = p.createGraphics(ids[0].length, ids.length);
         }
 
         // check if mouse is in canvas (with padding of zoomWindow)
         const x = Math.floor(p.mouseX / scale);
         const y = Math.floor(p.mouseY / scale);
-        const zoomWindow = 4;
-        const zoomScale = scale * 8;
-        if (x > zoomWindow && y > zoomWindow && x < (w / scale) - zoomWindow && y < (h / scale) - zoomWindow) {
+        const zoomScale = scale * 6;
+        const isMouseInBounds = p._isMouseInBounds();
+        if (isMouseInBounds && drawWindow) {
           // if so, we need to redraw with overlay
           p.clear();
           p._drawBackground(ids, max, scale);
@@ -111,13 +116,28 @@ export function getSketch(kernels) {
       }
     };
 
+    // check if legal mouse position
+    p._isMouseInBounds = () => {
+      const h = p.height;
+      const w = p.width;
+      const x = p.mouseX;
+      const y = p.mouseY;
+      const pad = zoomWindow * scale;
+      return x > pad && y > pad && x < w - pad && y < h - pad;
+    }
+
     p.mouseClicked = () => {
       if (ids && scale) {
-        const x = Math.floor(p.mouseX / scale);
-        const y = Math.floor(p.mouseY / scale);
-        if (x > 0 && y > 0 && x < ids.length && y < ids[0].length) {
+        if (p._isMouseInBounds()) {
+          const x = Math.floor(p.mouseX / scale);
+          const y = Math.floor(p.mouseY / scale);
           if (p._onSelect) {
             p._onSelect({ x, y });
+            // close zoom window for a brief moment like a camera shutter
+            drawWindow = false;
+            setTimeout(() => {
+              drawWindow = true;
+            }, 150);
           }
           p._pt = { x, y };
         }
@@ -125,7 +145,9 @@ export function getSketch(kernels) {
     };
 
     p._drawBackground = (ids, max, scale=1) => {
-      p.strokeWeight(scale * gridWeight);
+      const g = p._colorCodedGraphics;
+      g.clear();
+      g.loadPixels();
       for (let y = 0; y < ids.length; y += 1) {
         for (let x = 0; x < ids[0].length; x += 1) {
           // for performance reasons only draw ones that are dark enough
@@ -134,22 +156,65 @@ export function getSketch(kernels) {
             if (key >= 0) {
               let c = p._getColor(key);
               c.setAlpha(max[y][x] * 255);
-              p.fill(c);
-              p.rect(x * scale, y * scale, scale, scale);
+              g.set(x, y, c);
             }
           }
         }
       }
+      g.updatePixels();
+      p.push();
+      p.scale(scale);
+      p.image(g.get(), 0, 0);
+      p.pop();
 
       if (p._pt) {
-        p.push();
-        p.scale(scale);
-        p.fill(0);
         const { x, y } = p._pt;
-        const zoomScale = 6 / scale;
-        p.translate(0.5, 1);
-        p.triangle(x, y, x + (zoomScale * 0.75), y + (zoomScale * 2), x - (zoomScale * 0.75), y + (zoomScale * 2));
+        // draw triangle
+        // p.push();
+        // p.scale(scale);
+        // p.fill(0);
+        // p.noStroke();
+        // const zoomScale = 6 / scale;
+        // p.translate(0.5, 0);
+        // p.triangle(x, y, x + (zoomScale * 0.75), y - (zoomScale * 2), x - (zoomScale * 0.75), y - (zoomScale * 2));
+        // p.pop();
+
+
+        // draw selected point
+        const key = ids[y][x];
+        const intensity = max[y][x];
+        const rectScale = 10;
+
+        p.push();
+        p.translate(((x + 0.5) - (rectScale / 2)) * scale, ((y + 0.5) - (rectScale / 2)) * scale);
+        if (intensity > 0.1) {
+          p.fill(255);
+          p.noStroke();
+          p.rect(0, 0, scale * rectScale, scale * rectScale);
+          const kernel = p._kernelCache[key];
+          // p.tint(255, intensity * 255 * );
+          p.image(kernel, 0, 0, scale * rectScale, scale * rectScale);
+          p.noFill();
+          p.stroke(0);
+          p.rect(0, 0, scale * rectScale, scale * rectScale);
+        } else {
+          p.fill(255);
+          p.stroke(0);
+          p.rect(0, 0, scale * rectScale, scale * rectScale);
+        }
         p.pop();
+
+        // const c = (intensity > 0.1) ? p._getColor(key) : p.color(255, 255, 255);
+        // const rectScale = 5;
+        // c.setAlpha(255);
+        // p.push();
+        // p.fill(c);
+        // p.stroke(0);
+        // p.translate(((x + 0.5) - (rectScale / 2)) * scale, ((y + 0.5) - (rectScale / 2)) * scale);
+        // p.rect(0, 0, scale * rectScale, scale * rectScale);
+        // p.pop();
+
+
       }
     };
 
@@ -187,8 +252,10 @@ export function getSketch(kernels) {
     p._getIcon = imgArr => {
       const kernelSize = imgArr.length;
       const g = p.createGraphics(kernelSize, kernelSize);
-      // normalize
-      let max = Math.max(...imgArr.flat());
+      // normalize to max value (positive or negative)
+      const flatArr = imgArr.flat();
+      let max = Math.max(...flatArr);
+      max = max > 0 ? max : -Math.min(...flatArr);
       imgArr = imgArr.map(row => row.map(v => v / max));
 
       g.loadPixels();

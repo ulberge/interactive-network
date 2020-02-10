@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import grey from '@material-ui/core/colors/grey';
 import KernelTuner from '../KernelTuner/KernelTuner';
-import KernelInspector from '../KernelInspector/KernelInspector';
-import Container from '@material-ui/core/Container';
+import { kernelTypes } from '../../js/kernel';
 
 const theme = createMuiTheme({
   palette: {
@@ -17,7 +16,7 @@ const defaultKernelSettings = {
   lambda: 4.9,
   sigma: 3.3,
   windowSize: 9,
-  types: ['l', 'L', 'T', 'X'] // 'l', 'i', 'L', 'T', 'X', 'Y'
+  types: [kernelTypes[0], kernelTypes[2]]
 };
 // Check the saved kernel settings have not been corrupted somehow
 function areValidKernelSettings(kernelSettings) {
@@ -25,8 +24,17 @@ function areValidKernelSettings(kernelSettings) {
     return false;
   }
   const { numComponents, lambda, sigma, windowSize, types } = kernelSettings;
-  if (isNaN(numComponents) || isNaN(lambda) || isNaN(sigma) || isNaN(windowSize) || !Array.isArray(types) || types.length === 0) {
+  if (isNaN(numComponents) || isNaN(lambda) || isNaN(sigma) || isNaN(windowSize)) {
     return false;
+  }
+  if (!Array.isArray(types) || types.length === 0) {
+    return false;
+  }
+  for (const kernelType of types) {
+    if (!kernelTypes.includes(kernelType)) {
+      // invalid type
+      return false;
+    }
   }
   return true;
 }
@@ -44,12 +52,7 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Container maxWidth="md">
-        <KernelTuner defaultKernelSettings={kernelSettings} updateKernelSettings={updateKernelSettings} />
-      </Container>
-      <Container maxWidth="lg" style={{ marginTop: '40px' }}>
-        <KernelInspector kernelSettings={kernelSettings} />
-      </Container>
+      <KernelTuner kernelSettings={kernelSettings} updateKernelSettings={updateKernelSettings} />
     </ThemeProvider>
   );
 }

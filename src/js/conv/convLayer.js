@@ -116,9 +116,19 @@ function getConvLayer(filters, kernelSize) {
   // -> filters: A Tensor. Must have the same type as input. A 4-D tensor of shape
   const numOutputs = filters.shape[0];
   const weights = filters.transpose(2, 3, 1, 0).tolist();
-  // const biases = nj.zeros([numOutputs]).tolist();
-  // const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
-  const weightsTensor = [tf.tensor4d(weights)];
+  // create bias such that the ideal input is 1
+  const biases = nj.zeros([numOutputs]).tolist();
+
+  // we only need a bias for all negative weights (the others are balanced to equal 1 on ideal)
+  filters.tolist().forEach((filter, i) => {
+    // for filters that are all negative, give bias of positive 1
+    if (filter.flat().flat().filter(v => v > 0).length === 0) {
+      biases[i] = 64;
+    }
+  });
+
+  const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
+  // const weightsTensor = [tf.tensor4d(weights)];
   const layer = tf.layers.conv2d({
     filters: numOutputs,
     kernelSize: kernelSize,
@@ -127,7 +137,7 @@ function getConvLayer(filters, kernelSize) {
     weights: weightsTensor,
     activation: 'relu',
     dataFormat: 'channelsFirst',
-    useBias: false
+    // useBias: false
   });
   return layer;
 }

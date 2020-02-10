@@ -28,13 +28,12 @@ function KernelInspectorViewOutput(props) {
             kernels={kernels}
             max={max}
             ids={ids}
-            scale={2.5}
+            scale={3}
             onSelect={setPt}
             pt={pt}
           />
           <div style={{ textAlign: 'center' }}>
-            <div style={{ marginTop: '10px' }}><b>A color-coded map of maximum activation</b></div>
-            <div style={{ marginTop: '10px' }}>Select a pixel to inspect</div>
+            <div style={{ marginTop: '10px' }}>Select to inspect</div>
           </div>
         </div>
       </Grid>

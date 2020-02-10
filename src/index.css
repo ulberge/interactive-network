@@ -14,6 +14,12 @@ code {
 
 canvas {
   border: 1px solid #b2b2b2;
+  image-rendering: optimizeSpeed;             /* Older versions of FF          */
+  image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+  image-rendering: -webkit-optimize-contrast; /* Safari                        */
+  image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+  image-rendering: pixelated;                 /* Awesome future-browsers       */
+  -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
 }
 
 .overlay-container {
@@ -31,7 +37,7 @@ canvas {
   border-color: transparent;
 }
 
-h2, h3, h4 {
+h2 {
   text-align: center;
 }
 
@@ -64,4 +70,13 @@ h2, h3, h4 {
 
 .toggle-types .MuiToggleButton-root.Mui-selected {
   color: rgba(0, 0, 0, 0.87);;
+}
+
+.zoom300 canvas {
+  width: 300px !important;
+  height: 300px !important;
+}
+.zoom600 canvas {
+  width: 600px !important;
+  height: 600px !important;
 }

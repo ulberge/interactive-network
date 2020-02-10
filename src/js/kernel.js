@@ -1,5 +1,8 @@
 import nj from 'numjs';
 
+// export const kernelTypes = ['┃', '╻', '┗', '┳', '╋', 'Y', '>', '_/', ')', '⭑'];
+export const kernelTypes = ['I', 'i', 'L', 'T', 'X', 'Y', '>', '_/', ')', '⭑'];
+
 // Returns a f(x, y) for 2D cosine wave at angle theta of width inverse lambda from -PI to PI, scaled by pos and neg
 function getCosWaveFn(theta, lambda, period=1) {
   return (x, y) => {
@@ -22,7 +25,7 @@ function getGaussianFn(sigma) {
 function getLine(windowSize, theta, lambda, sigma) {
   const wave = getCosWaveFn(theta, lambda);
   const gauss = getGaussianFn(sigma);
-  const kernel = nj.zeros([windowSize, windowSize]).assign(-1).tolist();
+  const kernel = nj.zeros([windowSize, windowSize]).assign(-1, false).tolist();
   const halfWindowSize = Math.floor(windowSize / 2);
 
   for (let y = 0; y < windowSize; y += 1) {
@@ -58,7 +61,7 @@ function getLines(windowSize, numKernels, lambda, sigma) {
 function getLineEnd(windowSize, theta, lambda, sigma) {
   const wave = getCosWaveFn(theta, lambda);
   const gauss = getGaussianFn(sigma);
-  const kernel = nj.zeros([windowSize, windowSize]).assign(-1).tolist();
+  const kernel = nj.zeros([windowSize, windowSize]).assign(-1, false).tolist();
   const halfWindowSize = Math.floor(windowSize / 2);
 
   for (let y = 0; y < windowSize; y += 1) {
@@ -191,6 +194,27 @@ function getXs(windowSize, angle, numKernels, lambda, sigma) {
   return kernels;
 }
 
+function getDot(windowSize, lambda, sigma, size=1) {
+  const gaussNeg = getGaussianFn(sigma);
+  const gaussPos = getGaussianFn(size * lambda / 4);
+  const kernel = nj.zeros([windowSize, windowSize]).assign(-1, false).tolist();
+  const halfWindowSize = Math.floor(windowSize / 2);
+
+  for (let y = 0; y < windowSize; y += 1) {
+    const yCentered = y - halfWindowSize;
+    for (let x = 0; x < windowSize; x += 1) {
+      const xCentered = x - halfWindowSize;
+      kernel[y][x] = (gaussPos(xCentered, yCentered) * 8) - gaussNeg(xCentered, yCentered);
+    }
+  }
+
+  // normalize
+  const max = Math.max(...kernel.flat());
+  const kernelNorm = kernel.map(row => row.map(v => v / max));
+
+  return kernelNorm;
+}
+
 function getYs(windowSize, angle, numKernels, lambda, sigma) {
   const rotationDelta = 2 * Math.PI / numKernels; // divide 360 degrees in number
   const halfWindowSize = Math.floor(windowSize / 2);
@@ -276,29 +300,39 @@ export function getKernels(windowSize, numComponents, lambda, sigma, types) {
     return kernels;
   }
 
-  if (types.includes('l')) {
+  if (types.includes(kernelTypes[0])) {
     kernels.push(...getLines(windowSize, numComponents, lambda, sigma));
   }
-  if (types.includes('i')) {
-    kernels.push(...getLineEnds(windowSize, numComponents * 2, lambda, sigma));
+  if (types.includes(kernelTypes[1])) {
+    kernels.push(...getLineEnds(windowSize, numComponents, lambda, sigma));
   }
-  if (types.includes('L')) {
-    kernels.push(...getLs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
+  if (types.includes(kernelTypes[2])) {
+    kernels.push(...getLs(windowSize, Math.PI * 0.5, numComponents, lambda, sigma));
   }
-  if (types.includes('T')) {
-    kernels.push(...getTs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
+  if (types.includes(kernelTypes[3])) {
+    kernels.push(...getTs(windowSize, Math.PI * 0.5, numComponents, lambda, sigma));
   }
-  if (types.includes('X')) {
+  if (types.includes(kernelTypes[4])) {
     kernels.push(...getXs(windowSize, Math.PI * 0.5, numComponents / 2, lambda, sigma));
   }
-  if (types.includes('Y')) {
-    kernels.push(...getYs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
+  if (types.includes(kernelTypes[5])) {
+    kernels.push(...getYs(windowSize, Math.PI * 0.25, numComponents, lambda, sigma));
+  }
+  if (types.includes(kernelTypes[6])) {
+    kernels.push(...getLs(windowSize, Math.PI * 0.25, numComponents, lambda, sigma));
+  }
+  if (types.includes(kernelTypes[7])) {
+    kernels.push(...getLs(windowSize, Math.PI * 0.75, numComponents, lambda, sigma));
+  }
+  if (types.includes(kernelTypes[8])) {
+    kernels.push(...getLs(windowSize, Math.PI * 0.925, numComponents * 2, lambda, sigma));
+  }
+  if (types.includes(kernelTypes[9])) {
+    kernels.push(getDot(windowSize, lambda, sigma, 0.7));
+    kernels.push(getDot(windowSize, lambda, sigma, 1));
   }
 
   // Other potentials
-  // kernels.push(...getLs(windowSize, Math.PI * 0.925, numComponents * 2, lambda, sigma));
-  // kernels.push(...getLs(windowSize, Math.PI * 0.75, numComponents * 2, lambda, sigma));
-  // kernels.push(...getLs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
   // kernels.push(...getTs(windowSize, Math.PI * 0.75, numComponents * 2, lambda, sigma));
   // kernels.push(...getTs(windowSize, Math.PI * 0.25, numComponents * 2, lambda, sigma));
   // kernels.push(...getXs(windowSize, Math.PI * 0.25, numComponents, lambda, sigma));
@@ -306,6 +340,17 @@ export function getKernels(windowSize, numComponents, lambda, sigma, types) {
   // look at internal representations in Sketch-A-Net and try to add those
 
   const scaledKernels = kernels.map(scaleKernel);
+
+  if (types.includes(kernelTypes[9])) {
+    // Blank, full, single pixel
+    // scaledKernels.push(nj.zeros([windowSize, windowSize]).assign(1 / (windowSize * windowSize), false).tolist());
+    // scaledKernels.push(nj.zeros([windowSize, windowSize]).assign(-1 / 4, false).tolist());
+    // const pixel = nj.zeros([windowSize, windowSize]);
+    // pixel.set(Math.floor(windowSize / 2), Math.floor(windowSize / 2), 1);
+    // scaledKernels.push(pixel.tolist());
+  }
   // console.log(JSON.stringify(scaledKernels.map(k => k.map(r => r.map(v => Number(v.toFixed(5)))))));
+  console.log(scaledKernels.map(kernel => kernel.map(row => row.join(',')).join('\n')).join('\n:\n'));
+
   return scaledKernels;
 }

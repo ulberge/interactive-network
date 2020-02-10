@@ -3,8 +3,10 @@ import PropTypes from 'prop-types';
 import Slider from '@material-ui/core/Slider';
 import ToggleButton from '@material-ui/lab/ToggleButton';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
+import { kernelTypes } from '../../js/kernel';
 
-const KernelTunerControls = memo(function KernelTunerControls(props) {
+// { ['l', 'i', 'L', 'T', 'X', 'Y', '>', '7', ')', '⭑'].map(type => (
+const KernelMakerControls = memo(function KernelMakerControls(props) {
   return (
     <div>
       <div>
@@ -13,14 +15,31 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
           value={props.types}
           onChange={(event, types) => types.length > 0 ? props.onChange('types', types) : 0}
           aria-label="types of kernels"
-          style={{ borderRadius: 0, margin: '12px 0' }}
+          style={{ borderRadius: 0, margin: '12px 0 0 0' }}
           className="toggle-types"
         >
-          { ['l', 'i', 'L', 'T', 'X', 'Y'].map(type => (
+          { kernelTypes.slice(0, 5).map((type, i) => (
             <ToggleButton
               key={type}
               value={type}
-              style={{ borderRadius: 0, height: '28px', width: '28px', textTransform: 'none' }}
+              style={{ borderRadius: 0, height: '28px', width: '28px', textTransform: 'none', padding: '4px', textAlign: 'center' }}
+            >
+              { type }
+            </ToggleButton>
+          )) }
+        </ToggleButtonGroup>
+        <ToggleButtonGroup
+          value={props.types}
+          onChange={(event, types) => types.length > 0 ? props.onChange('types', types) : 0}
+          aria-label="types of kernels"
+          style={{ borderRadius: 0, margin: '2px 0 12px 0' }}
+          className="toggle-types"
+        >
+          { kernelTypes.slice(5, 10).map((type, i) => (
+            <ToggleButton
+              key={type}
+              value={type}
+              style={{ borderRadius: 0, height: '28px', width: '28px', textTransform: 'none', padding: '4px', textAlign: 'center' }}
             >
               { type }
             </ToggleButton>
@@ -86,7 +105,7 @@ const KernelTunerControls = memo(function KernelTunerControls(props) {
   );
 });
 
-KernelTunerControls.propTypes = {
+KernelMakerControls.propTypes = {
   numComponents: PropTypes.number.isRequired,
   lambda: PropTypes.number.isRequired,
   sigma: PropTypes.number.isRequired,
@@ -95,4 +114,4 @@ KernelTunerControls.propTypes = {
   onChange: PropTypes.func.isRequired
 };
 
-export default KernelTunerControls;
+export default KernelMakerControls;

@@ -6,7 +6,7 @@ export function getSketch() {
     /**
      * Draw a 2D array at the given scale
      * @param {Number[][]} imgArr - 2D array to initialize canvas (values between [-1, 1])
-     * @param {Number} scale - Scale to draw the canvas
+     * @param {Number} scale - Scale at which to render (uses css, hopefully pixelated, but depends on browser)
      */
     p._draw = (imgArr, scale=1) => {
       if (!imgArr) {
@@ -19,50 +19,36 @@ export function getSketch() {
         return;
       }
 
-      const h = imgArr.length * scale;
-      const w = imgArr[0].length * scale;
+      const h = imgArr.length;
+      const w = imgArr[0].length;
       if (h !== p.height || w !== p.width) {
         p.resizeCanvas(w, h);
-        p._img = p.createGraphics(imgArr.length, imgArr[0].length);
       }
+
+      p.canvas.style.height = (h * scale) + 'px';
+      p.canvas.style.width = (w * scale) + 'px';
 
       p.clear();
 
       // normalize to max value (positive or negative)
-      let max = Math.max(...imgArr.flat());
-      imgArr = imgArr.map(row => row.map(v => v / (max || 1)));
+      const flatArr = imgArr.flat();
+      let max = Math.max(...flatArr);
+      max = max > 0 ? max : -Math.min(...flatArr);
+      imgArr = imgArr.map(row => row.map(v => v / max));
 
       // render pixels using image
-      p._img.clear();
-      p._img.loadPixels();
+      p.loadPixels();
       for (let y = 0; y < imgArr.length; y += 1) {
         for (let x = 0; x < imgArr[0].length; x += 1) {
           const v = imgArr[y][x] * 255;
-          if (v > 0) {
-            p._img.set(x, y, p.color(0, 0, 0, v));
+          if (v >= 0) {
+            p.set(x, y, p.color(0, 0, 0, v));
           } else if (v < 0) {
-            p._img.set(x, y, p.color(214, 30, 30, -v * 0.75));
+            p.set(x, y, p.color(214, 30, 30, -v * 0.75));
           }
         }
       }
-      p._img.updatePixels();
-      p.image(p._img, 0, 0, w, h);
-
-      // // render pixels as rects
-      // const gridWeight = 0.08;
-      // p.strokeWeight(scale * gridWeight);
-      // for (let y = 0; y < imgArr.length; y += 1) {
-      //   for (let x = 0; x < imgArr[0].length; x += 1) {
-      //     const v = imgArr[y][x] * 255;
-      //     if (v > 0) {
-      //       p.fill(0, 0, 0, v);
-      //       p.rect(x * scale, y * scale, scale, scale);
-      //     } else if (v < 0) {
-      //       p.fill(214, 30, 30, -v / 2);
-      //       p.rect(x * scale, y * scale, scale, scale);
-      //     }
-      //   }
-      // }
+      p.updatePixels();
     }
 
     p.setup = () => {

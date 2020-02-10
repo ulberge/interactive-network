@@ -15,7 +15,7 @@ const KernelInspectorActivationChart = props => {
   }, [ kernels, acts ]);
 
   return (
-    <div ref={chartRef} style={{ width: '400px' }}></div>
+    <div ref={chartRef} style={props.style}></div>
   );
 };
 

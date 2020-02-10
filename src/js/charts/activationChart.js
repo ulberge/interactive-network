@@ -23,6 +23,7 @@ function renderKernelsOnBars(el, x, kernels) {
         return 'rgba(214, 30, 30, ' + (-d.v * 0.75) + ')';
       }
     })
+    .style('stroke-width', 0)
     .attr('x', d => x(d.kIndex) + (pixelSize * d.col))
     .attr('y', d => (pixelSize * d.row))
     .attr('height', pixelSize)
@@ -35,9 +36,9 @@ function renderKernelsOnBars(el, x, kernels) {
     .attr('y', 0)
     .attr('height', x.bandwidth())
     .attr('width', x.bandwidth())
-    .style("stroke", '#b2b2b2')
-    .style("fill", "none")
-    .style("stroke-width", 1);
+    .style('stroke', '#b2b2b2')
+    .style('fill', 'none')
+    .style('stroke-width', 1);
 }
 
 // render bar chart of activations with the kernel icon on top of each bar
