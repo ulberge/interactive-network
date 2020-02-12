@@ -11,6 +11,7 @@ export default class ConvLayer {
     this._rawFilters = filters;
     this.filters = filters.map(filter => filter.map(kernel => kernel ? nj[dtype]([kernel]) : null));
     this._tflayer = getConvLayer(nj[dtype](filters.map(filter => filter.map(kernel => kernel ? kernel : nj.zeros([kernelSize, kernelSize], dtype).tolist()))), kernelSize);
+    this.keepStats = true;
   }
 
   runWith(backend) {
@@ -65,7 +66,7 @@ export default class ConvLayer {
     times.push(ct1 - ct0);
     ct0 = ct1;
 
-    console.log('conv stats:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
+    console.log('conv2d:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
 
     return { output, updateArr };
   }
@@ -100,10 +101,12 @@ export default class ConvLayer {
     const update = updateArr.reshape(updateShape);
     this.output.assign(update, null, updateBounds);
 
-    if (useWebGL) {
-      this.output.calcStats(output, 'webgl');
-    } else {
-      this.output.calcStats(output, 'cpu');
+    if (this.keepStats) {
+      if (useWebGL) {
+        this.output.calcStats(output, 'webgl');
+      } else {
+        this.output.calcStats(output, 'cpu');
+      }
     }
 
     this.input.clean();

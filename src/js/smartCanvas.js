@@ -55,14 +55,15 @@ export default class SmartCanvas {
     // sanitize
     start = safePt(start, this.bounds);
     end = safePt(end, this.bounds);
-
     const bounds = this._getLineBounds(start, end);
     if (makeBackup) {
       if (this._backup !== null) {
         console.log('Overwriting existing backup! Should call restore() first');
       }
+      const w = bounds[2] - bounds[0];
+      const h = bounds[3] - bounds[1];
       this._backup = {
-        img: this.p.get(...bounds),
+        img: this.p.get(...bounds.slice(0, 2), w, h),
         bounds
       };
     }
@@ -78,6 +79,16 @@ export default class SmartCanvas {
     if (this._backup !== null) {
       const { img, bounds } = this._backup;
       const [ x, y ] = bounds.slice(0, 2);
+      const w = bounds[2] - bounds[0];
+      const h = bounds[3] - bounds[1];
+      // erase area behind since these are transparent images
+      this.p.push();
+      this.p.erase();
+      this.p.noStroke();
+      this.p.rect(x, y, w, h);
+      this.p.noErase();
+      this.p.pop();
+      // draw backup image on fresh background
       this.p.image(img, x, y);
       this._backup = null;
       this._updateDirtyBounds(bounds);
@@ -89,7 +100,7 @@ export default class SmartCanvas {
   /**
    * Recalculate the network activations within the current dirty bounds and reset dirty bounds to null
    */
-  update() {
+  update(notify=true) {
     if (this._dirtyBounds) {
       // get dirty area
       const [ sx, sy, ex, ey ] = this._dirtyBounds;
@@ -97,7 +108,9 @@ export default class SmartCanvas {
       g.loadPixels();
       const dirty = nj[dtype](g.pixels).reshape(g.height, g.width, 4).slice(null, null, [3, 4]).reshape(1, g.height, g.width);
       this.network.run(dirty, this._dirtyBounds);
-      this._notifyListeners({ network: this.network, dirtyBounds: [...this._dirtyBounds] });
+      if (notify) {
+        this._notifyListeners({ network: this.network, dirtyBounds: [...this._dirtyBounds] });
+      }
       this._dirtyBounds = null; // reset dirty bounds
     }
   }

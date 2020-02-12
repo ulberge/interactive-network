@@ -8,6 +8,7 @@ export default class MaxPoolLayer {
     this.output = output;
     this.poolSize = poolSize;
     this._tflayer = tf.layers.maxPooling2d({ poolSize, dataFormat: 'channelsFirst' });
+    this.keepStats = true;
   }
 
   run() {
@@ -38,10 +39,12 @@ export default class MaxPoolLayer {
 
     this.output.assign(update, null, updateBounds);
 
-    if (size > sizeThreshold) {
-      this.output.calcStats(output, 'webgl');
-    } else {
-      this.output.calcStats(output, 'cpu');
+    if (this.keepStats) {
+      if (size > sizeThreshold) {
+        this.output.calcStats(output, 'webgl');
+      } else {
+        this.output.calcStats(output, 'cpu');
+      }
     }
 
     this.input.clean();

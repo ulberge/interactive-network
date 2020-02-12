@@ -1,10 +1,13 @@
 import ConvArray from './convArray';
 import ConvLayer from './convLayer';
 import MaxPoolLayer from './maxPoolLayer';
+import { getShadows } from '../networkShadow';
+import p5 from 'p5';
 
 export default class Network {
   constructor(inputShape, layerInfos) {
     this.layerInfos = layerInfos;
+    this.shadows = getShadows(layerInfos);
 
     // setup input and output data reps
     this.arrs = []; // should be length = layers.length + 1
@@ -70,5 +73,48 @@ export default class Network {
   getOutput(i) {
     const { arr: acts, _max: max, _ids: ids } = this.arrs[i + 1];
     return { acts, max, ids };
+  }
+
+  getScopedOutput(rect) {
+    // given the rectangle bounds in the first layer, return all the arrs whose receptive fields touch it
+    const arrs = [];
+    let currRect = rect;
+    for (let i = 0; i < this.layerInfos.length; i += 1) {
+      const layerInfo = this.layerInfos[i];
+      const [ sx, sy, w, h ] = currRect;
+      if (layerInfo.type === 'conv2d') {
+        arrs.push(this.arrs[i + 1].arr.slice(null, [sy, sy + h], [sx, sx + w]));
+      } else if (layerInfo.type === 'maxPool2d') {
+        const { poolSize } = layerInfo;
+        currRect = [
+          Math.floor(sx  / poolSize),
+          Math.floor(sy  / poolSize),
+          Math.ceil(w / poolSize),
+          Math.ceil(h / poolSize)
+        ];
+        const [ sx2, sy2, w2, h2 ] = currRect;
+        arrs.push(this.arrs[i + 1].arr.slice(null, [sy2, sy2 + h2], [sx2, sx2 + w2]));
+      }
+      console.log(layerInfo.type, currRect);
+    }
+    return arrs;
+  }
+
+  getShadowOffset(layerIndex, location) {
+    // if all the layers have "same" padding, then you should be able to multiply the stride?
+    let xOffset = 1;
+    let yOffset = 1;
+    for (let layerInfo of this.layerInfos) {
+      xOffset *= layerInfo.poolSize || 1;
+      yOffset *= layerInfo.poolSize || 1;
+    }
+    const { x, y } = location;
+    return new p5.Vector(x * xOffset, y * yOffset);
+  }
+
+  noStats() {
+    for (const layer of this.layers) {
+      layer.keepStats = false;
+    }
   }
 }

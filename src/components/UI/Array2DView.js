@@ -5,7 +5,7 @@ import { getSketch } from '../../js/sketches/array2DViewSketch';
 
 // Renders a 2D array as a p5 sketch
 const Array2DView = props => {
-  const { imgArr, scale } = props;
+  const { imgArr, scale, fixedWidth } = props;
   const imgRef = useRef(null);
   const pRef = useRef(null);
 
@@ -17,9 +17,9 @@ const Array2DView = props => {
 
     // run every time
     if (pRef.current) {
-      pRef.current._draw(imgArr, scale);
+      pRef.current._draw(imgArr, scale, fixedWidth);
     }
-  }, [ imgArr, scale ]);
+  }, [ imgArr, scale, fixedWidth ]);
 
   return (
     <div ref={imgRef}></div>
@@ -28,7 +28,8 @@ const Array2DView = props => {
 
 Array2DView.propTypes = {
   imgArr: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number)),
-  scale: PropTypes.number
+  scale: PropTypes.number,
+  fixedWidth: PropTypes.number,
 };
 
 export default Array2DView;

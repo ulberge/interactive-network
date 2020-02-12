@@ -9,10 +9,11 @@ export function getSketch(shape, smartCanvasRef) {
       const [ w, h ] = shape;
       p.createCanvas(w, h);
       p.strokeWeight(2);
+      p._noDraw = false;
     };
 
     p.draw = () => {
-      if (p.mouseIsPressed) {
+      if (!p._noDraw && p.mouseIsPressed) {
         // while mouse is pressed, add line segments to canvas
         const start = { x: p.pmouseX, y: p.pmouseY };
         const end = { x: p.mouseX, y: p.mouseY };

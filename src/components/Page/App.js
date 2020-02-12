@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import grey from '@material-ui/core/colors/grey';
-import KernelTuner from '../KernelTuner/KernelTuner';
 import { kernelTypes } from '../../js/kernel';
+import { Router, Route, Redirect, Switch } from 'react-router-dom';
+import { createHashHistory } from 'history';
+import Layout from '../Page/Layout';
+import KernelTuner from '../KernelTuner/KernelTuner';
+import NetworkBuilder from '../NetworkBuilder/NetworkBuilder';
 
+const history = createHashHistory();
 const theme = createMuiTheme({
   palette: {
     primary: grey,
@@ -52,7 +57,27 @@ export default function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <KernelTuner kernelSettings={kernelSettings} updateKernelSettings={updateKernelSettings} />
+      <Router onUpdate={() => window.scrollTo(0, 0)} history={history}>
+        <Layout>
+          <Switch>
+            <Route
+              name="Kernel Tuner"
+              path="/tuner"
+              render={() => (
+                <KernelTuner kernelSettings={kernelSettings} updateKernelSettings={updateKernelSettings} />
+              )}
+            />
+            <Route
+              name="Network Builder"
+              path="/builder"
+              render={() => (
+                <NetworkBuilder kernelSettings={kernelSettings} />
+              )}
+            />
+            <Redirect path="*" to="/builder" />
+          </Switch>
+        </Layout>
+      </Router>
     </ThemeProvider>
   );
 }

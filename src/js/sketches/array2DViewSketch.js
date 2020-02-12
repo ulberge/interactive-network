@@ -8,14 +8,14 @@ export function getSketch() {
      * @param {Number[][]} imgArr - 2D array to initialize canvas (values between [-1, 1])
      * @param {Number} scale - Scale at which to render (uses css, hopefully pixelated, but depends on browser)
      */
-    p._draw = (imgArr, scale=1) => {
+    p._draw = (imgArr, scale=1, fixedWidth=null) => {
       if (!imgArr) {
         return;
       }
 
       // protect against rendering before sketch ready
       if (!p._setupDone) {
-        setTimeout(() => p._draw(imgArr, scale), 10);
+        setTimeout(() => p._draw(imgArr, scale, fixedWidth), 10);
         return;
       }
 
@@ -25,8 +25,13 @@ export function getSketch() {
         p.resizeCanvas(w, h);
       }
 
-      p.canvas.style.height = (h * scale) + 'px';
-      p.canvas.style.width = (w * scale) + 'px';
+      if (fixedWidth) {
+        p.canvas.style.height = fixedWidth + 'px';
+        p.canvas.style.width = fixedWidth + 'px';
+      } else {
+        p.canvas.style.height = (h * scale) + 'px';
+        p.canvas.style.width = (w * scale) + 'px';
+      }
 
       p.clear();
 

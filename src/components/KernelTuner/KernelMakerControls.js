@@ -5,7 +5,6 @@ import ToggleButton from '@material-ui/lab/ToggleButton';
 import ToggleButtonGroup from '@material-ui/lab/ToggleButtonGroup';
 import { kernelTypes } from '../../js/kernel';
 
-// { ['l', 'i', 'L', 'T', 'X', 'Y', '>', '7', ')', '⭑'].map(type => (
 const KernelMakerControls = memo(function KernelMakerControls(props) {
   return (
     <div>

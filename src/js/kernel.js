@@ -307,7 +307,7 @@ export function getKernels(windowSize, numComponents, lambda, sigma, types) {
     kernels.push(...getLineEnds(windowSize, numComponents, lambda, sigma));
   }
   if (types.includes(kernelTypes[2])) {
-    kernels.push(...getLs(windowSize, Math.PI * 0.5, numComponents, lambda, sigma));
+    kernels.push(...getLs(windowSize, Math.PI * 0.5, numComponents * 2, lambda, sigma));
   }
   if (types.includes(kernelTypes[3])) {
     kernels.push(...getTs(windowSize, Math.PI * 0.5, numComponents, lambda, sigma));
