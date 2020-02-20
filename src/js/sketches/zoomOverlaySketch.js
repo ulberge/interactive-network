@@ -15,13 +15,13 @@ export function getSketch(shape, onSelect) {
     };
 
     p.draw = () => {
+      p.clear();
       if (!p._isActive) {
         return;
       }
       // check if mouse is in canvas (with padding of zoomWindow)
       const x = p.mouseX;
       const y = p.mouseY;
-      p.clear();
       if (p._isInBounds(x, y)) {
         // if so, we need to redraw with overlay
         p.noFill();

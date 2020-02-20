@@ -2,14 +2,16 @@ import p5 from 'p5';
 
 const settings = {
   strokeWeight: 2,
-  speed: 1,
-  angleRange: Math.PI * 0.75,
-  segmentLength: 4,
-  startMinTries: 6,
-  startNumStarts: 4,
+  speed: 0,
+  angleRange: Math.PI * 0.55,
+  // angleRange: Math.PI * 0.1,
+  segmentLength: 5,
+  startMinTries: 2,
+  startNumStarts: 12,
   startNumAngles: 4,
-  nextMinTries: 2,
-  nextNumStarts: 24,
+  nextMinTries: 8,
+  nextNumStarts: 13,
+  minScore: 50,
 };
 
 function delay(timer) {
@@ -22,6 +24,19 @@ function normalize(arr) {
     return arr.map(v => (1 / arr.length));
   }
   return arr.map(v => (v / sum));
+}
+
+// choose index from array with probability equal to relative value
+function choose(arr) {
+  const arr_n = normalize(arr);
+  const selector = Math.random();
+  let cursor = 0;
+  for (let i = 0; i < arr_n.length; i += 1) {
+    cursor += arr_n[i];
+    if (selector <= cursor) {
+      return i;
+    }
+  }
 }
 
 function choose2D(arr2D) {
@@ -40,6 +55,10 @@ function choose2D(arr2D) {
   }
 }
 
+function chooseRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function getRandomArbitrary(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -54,8 +73,10 @@ export default class Drawer {
     this.isStep = false;
 
     document.addEventListener('keypress', () => {
-      console.log('step');
-      this.start();
+      if (this.isStep) {
+        console.log('step');
+        this.start();
+      }
     });
   }
 
@@ -92,6 +113,9 @@ export default class Drawer {
     this.countStartFails = 0;
     this.countNextSegmentFails = 0;
     this.isDone = false;
+
+    this.lineEnds = [];
+    this.lineSegmentEnds = [];
 
     this.start();
   }
@@ -169,13 +193,33 @@ export default class Drawer {
   // test random lines and choose one with probability equal to quality
   getNewLine() {
     console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (settings.startNumStarts * settings.startNumAngles) + ' times.');
+
+    const starts = [];
+    for (let i = 0; i < settings.startNumStarts; i += 1) {
+      let start;
+      if (this.lineEnds.length === 0 || Math.random() < 0.3) {
+        // choose random point from shadow if no line ends or with probability
+        const { x, y } = choose2D(this.shadow);
+        // add offset so that start and end are relative to origin
+        start = new p5.Vector(x, y).add(this.shadowOffset);
+        // add random so it is not always at corner of pixel
+        start.add(new p5.Vector(Math.random(), Math.random()));
+      } else {
+        // choose line end
+        if (this.lineSegmentEnds.length === 0 || Math.random() < 0.5) {
+          start = chooseRandom(this.lineEnds);
+        } else {
+          start = chooseRandom(this.lineSegmentEnds);
+        }
+        const offsetMax = 3;
+        start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
+      }
+      starts.push(start);
+    }
+
     const options = [];
     const scores = [];
-    for (let i = 0; i < settings.startNumStarts; i += 1) {
-      const { x, y } = choose2D(this.shadow);
-      // add random so it is not always at corner of pixel
-      // add offset so that start and end are relative to origin
-      const start = new p5.Vector(x + Math.random(), y + Math.random()).add(this.shadowOffset);
+    for (let start of starts) {
       for (let j = 0; j < settings.startNumAngles; j += 1) {
         const vel = p5.Vector.random2D().setMag(settings.segmentLength);
         const end = start.copy().add(vel);
@@ -195,8 +239,8 @@ export default class Drawer {
       }
     }
 
-    if (scores.filter(s => s > 0.5).length === 0) {
-      console.log('No scores over 0.5 found');
+    if (scores.filter(s => s > settings.minScore).length === 0) {
+      console.log('No scores over ' + settings.minScore + ' found');
       return false; // if no more improvements possible, halt
     }
 
@@ -205,7 +249,11 @@ export default class Drawer {
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
     console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.sort((a, b) => (a > b) ? -1 : 1));
     const { start, end, vel } = options[optionIndex];
+    if (this.boid.pos) {
+      this.lineEnds.push(this.boid.pos);
+    }
     this.boid.move(start);
+    this.lineEnds.push(start);
     this.update(start, end, vel, score);
 
     return true;
@@ -219,16 +267,30 @@ export default class Drawer {
     const scores = [];
 
     // try angles center at angle segments
-    const startAngle = this.boid.vel.copy().rotate(-settings.angleRange);
+    const startAngle = this.boid.vel.copy().setMag(Math.max(1, settings.segmentLength - this.countNextSegmentFails)).rotate(-settings.angleRange);
     const angleDelta = (settings.angleRange * 2) / (settings.nextNumStarts - 1);
 
+    const testOptions = [];
     for (let i = 0; i < settings.nextNumStarts; i += 1) {
       const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
       const angle = (angleDelta * i) + angleNoise;
       const vel = startAngle.copy().rotate(angle);
       const start = this.boid.pos.copy();
       const end = this.boid.pos.copy().add(vel);
+      testOptions.push({ start, vel, end });
+    }
 
+    if (this.prevOption) {
+      const { vel } = this.prevOption;
+      const angleNoise = getRandomArbitrary(-angleDelta / 8, angleDelta / 8);
+      const velAdj = vel.copy().rotate(angleNoise);
+      const start = this.boid.pos.copy();
+      const end = this.boid.pos.copy().add(velAdj);
+      testOptions.push({ start, vel: velAdj, end });
+    }
+
+    for (let option of testOptions) {
+      const { start, end } = option;
       if (!this.isWithinBounds(start) || !this.isWithinBounds(end)) {
         console.log('Next segment rejection', start, end);
         continue;
@@ -238,12 +300,12 @@ export default class Drawer {
       const score = this.getScore();
       console.log('score', score, this.prevScore, score - this.prevScore);
       this.smartCanvas.restore();
-      options.push({ start, vel, end });
+      options.push(option);
       scores.push(score - this.prevScore);
     }
 
-    if (scores.filter(s => s > 0.5).length === 0) {
-      console.log('Next segment no scores over 0.5');
+    if (scores.filter(s => s > settings.minScore).length === 0) {
+      console.log('Next segment no scores over ' + settings.minScore);
       return false; // if no more improvements possible, halt
     }
 
@@ -255,6 +317,7 @@ export default class Drawer {
     // console.log('update', optionIndex, start, end, vel, score, scores);
     console.log('Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores.sort((a, b) => (a > b) ? -1 : 1));
 
+    this.lineSegmentEnds.push(start);
     this.update(start, end, vel, score);
     return true;
   }
@@ -268,24 +331,31 @@ export default class Drawer {
     }
 
     // sort the scores, but keep indices
-    const sortedScores = scores.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
+    // const sortedScores = scores.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
 
-    // return top index
-    return sortedScores[0][0];
+    // // return top index
+    // return sortedScores[0][0];
+
+    // return random weighted by score
+    const filteredScores = scores.map((s, i) => [i, s]).filter(el => el[1] > settings.minScore);
+    const choice = choose(filteredScores.map(el => el[1] ** 2));
+    const scoreIndex = filteredScores[choice][0];
+    return scoreIndex;
+
     // const highScore = sortedScores[0][1];
 
     // // select from one of the better scores
-    // const topScores = sortedScores.filter(el => (highScore * 0.5) - el[1]);
+    // const topScores = sortedScores.filter(el => (el[1] - (highScore * 0.5)) > 0);
 
     // // randomly choose one of the better scores with probability equal to amount
-    // const randomWeightedtopScoreIndex = choose(topScores.map(el => el[1]));
+    // const choice = choose(topScores.map(el => el[1]));
 
-    // const chosenTopScore = topScores[randomWeightedtopScoreIndex];
-    // const scoreIndex = chosenTopScore[0];
+    // const scoreIndex = topScores[choice][1];
     // return scoreIndex;
   }
 
   update(start, end, vel, score) {
+    this.prevOption = { start, end, vel };
     console.log('New high score', this.prevScore + score, score);
     this.boid.run(vel);
 

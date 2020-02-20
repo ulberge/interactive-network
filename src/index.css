@@ -81,3 +81,22 @@ h2 {
   width: 600px !important;
   height: 600px !important;
 }
+
+#saved-drawings {
+  margin: 25px;
+}
+#saved-drawings img {
+  margin: -160px -200px -200px -200px;
+  margin: -40px -50px -50px -50px;
+  margin: -80px -100px -100px -100px;
+  margin: -20px -60px;
+  width: 600px;
+  width: 150px;
+  width: 300px;
+  image-rendering: optimizeSpeed;             /* Older versions of FF          */
+  image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+  image-rendering: -webkit-optimize-contrast; /* Safari                        */
+  image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+  image-rendering: pixelated;                 /* Awesome future-browsers       */
+  -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+}

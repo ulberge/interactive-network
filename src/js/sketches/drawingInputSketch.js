@@ -13,7 +13,7 @@ export function getSketch(shape, smartCanvasRef) {
     };
 
     p.draw = () => {
-      if (!p._noDraw && p.mouseIsPressed) {
+      if (!p._noDraw && p.mouseIsPressed && p.mouseButton === p.LEFT) {
         // while mouse is pressed, add line segments to canvas
         const start = { x: p.pmouseX, y: p.pmouseY };
         const end = { x: p.mouseX, y: p.mouseY };
@@ -22,7 +22,20 @@ export function getSketch(shape, smartCanvasRef) {
           if (p._rotationCache) {
             p._rotationCache = null;
           }   // draw new line
-          smartCanvasRef.current.addSegment(start, end);
+
+          if (p.keyIsDown(p.SHIFT)) {
+            p.push();
+            p.erase();
+            p.strokeWeight(4);
+            smartCanvasRef.current.addSegment(start, end);
+            p.noErase();
+            p.pop();
+          } else {
+            p.push();
+            p.strokeWeight(1.5);
+            smartCanvasRef.current.addSegment(start, end);
+            p.pop();
+          }
           dirty = true;
         }
       } else {

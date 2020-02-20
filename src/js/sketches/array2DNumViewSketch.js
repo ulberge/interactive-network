@@ -1,7 +1,10 @@
 /**
  * Returns a p5 sketch that can draw a 2D array
  */
-export function getSketch(normalize=true) {
+export function getSketch() {
+  const fontSize = 14;
+  const lineHeight = 48;
+
   return (p) => {
     /**
      * Draw a 2D array at the given scale
@@ -19,8 +22,8 @@ export function getSketch(normalize=true) {
         return;
       }
 
-      const h = imgArr.length;
-      const w = imgArr[0].length;
+      const h = imgArr.length * lineHeight;
+      const w = imgArr[0].length * lineHeight;
       if (h !== p.height || w !== p.width) {
         p.resizeCanvas(w, h);
       }
@@ -35,35 +38,22 @@ export function getSketch(normalize=true) {
 
       p.clear();
 
-      // normalize to max value (positive or negative)
-      if (normalize) {
-        const flatArr = imgArr.flat();
-        const max = Math.max(...flatArr) || 1;
-        const min = Math.min(...flatArr) || -1;
-        imgArr = imgArr.map(row => row.map(v => v < 0 ? v / -min : v / max));
-      }
-
       // render pixels using image
-      p.loadPixels();
       for (let y = 0; y < imgArr.length; y += 1) {
         for (let x = 0; x < imgArr[0].length; x += 1) {
-          const v = imgArr[y][x] * 255;
-          if (v >= 0) {
-            p.set(x, y, p.color(0, 0, 0, v));
-          } else if (v < 0) {
-            p.set(x, y, p.color(214, 30, 30, -v * 0.75));
-          }
+          const v = imgArr[y][x].toFixed(0);
+          p.text(v, (x + 0.5) * lineHeight, (y + 0.5) * lineHeight);
         }
       }
-      p.updatePixels();
     }
 
     p.setup = () => {
       p.pixelDensity(1);
       p.createCanvas(1, 1);
-      p.stroke(255);
+      p.fill(0);
+      p.textSize(fontSize);
+      p.textAlign(p.CENTER, p.CENTER);
       p.noLoop();
-      p.noSmooth();
     };
   };
 }

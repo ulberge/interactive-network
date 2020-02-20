@@ -51,10 +51,10 @@ const KernelMakerControls = memo(function KernelMakerControls(props) {
           defaultValue={props.numComponents}
           track={false}
           aria-labelledby="number of components"
-          marks={[1, 2, 3, 4, 5].map(value => ({ value, label: (2 ** value) }))}
+          marks={[1, 2, 3, 4].map(value => ({ value, label: (2 ** value) }))}
           step={1}
           min={1}
-          max={5}
+          max={4}
           onChange={(event, value) => props.onChange('numComponents', value)}
         />
       </div>
