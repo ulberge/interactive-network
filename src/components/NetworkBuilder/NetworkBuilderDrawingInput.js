@@ -15,6 +15,24 @@ const saveDrawing = (p, container) => {
     dataURL = 'data:image/png;base64,' + dataURL;
   }
   img.src = dataURL;
+  const index = container.children.length;
+  img.addEventListener('click', () => {
+    if (!window.dataSet) {
+      window.dataSet = [];
+    }
+    const stageData = window['stageData' + index];
+
+    // assign activation based on percentage of total distance travelled at each point
+    const totalDist = stageData.reduce((total, stage) => total += stage.dist, 0);
+    let dist = 0;
+    stageData.forEach(stage => {
+      dist += stage.dist
+      stage.act = dist / totalDist;
+    });
+
+    alert(stageData.map(stage => stage.act));
+    window.dataSet.push(...stageData);
+  });
   container.appendChild(img);
 }
 
@@ -46,6 +64,7 @@ function NetworkBuilderDrawingInput(props) {
   });
 
   useEffect(() => {
+    console.log('update layer infos', layerInfos);
     smartCanvasRef.current = new SmartCanvas(pRef.current, shape, layerInfos);
     // turn off stats for speed
     smartCanvasRef.current.network.noStats();
@@ -89,12 +108,19 @@ function NetworkBuilderDrawingInput(props) {
       drawerRef.current = new Drawer(smartCanvasRef.current, pOverlayRef.current);
     }
     const draw = () => {
-      smartCanvasRef.current.reset();
+      // smartCanvasRef.current.reset();
       const arrs = smartCanvasRef.current.network.arrs;
       const [ h, w ] = arrs[arrs.length - 1]._shape;
-      drawerRef.current.draw(layerInfos.length - 1, 0, { x: Math.floor(w / 2), y: Math.floor(h / 2) }, () => {
+      const drawLocation = { x: Math.floor(w / 2), y: Math.floor(h / 2) };
+      // const drawLocation = { x: Math.floor(w / 4), y: Math.floor(h / 4) };
+      // const drawLocation = { x: Math.floor(w * Math.random()), y: Math.floor(h * Math.random()) };
+      drawerRef.current.draw(layerInfos.length - 1, 0, drawLocation, () => {
         const container = document.getElementById('saved-drawings');
+        window['stageData' + container.children.length] = drawerRef.current.stages;
+        window.maxLocation = { x: Math.floor(w / 2), y: Math.floor(h / 2) };
+        window.regularizerTerm = Math.max(drawerRef.current.prevScore, window.regularizerTerm || 0);
         saveDrawing(pRef.current, container);
+        smartCanvasRef.current.reset();
         draw();
       });
     };

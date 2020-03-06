@@ -18,6 +18,7 @@ export default function Header() {
     <MenuList>
       <MenuItem><NavLink to="/tuner" activeStyle={activeStyle} style={linkStyle}>Kernel Tuner</NavLink></MenuItem>
       <MenuItem><NavLink to="/builder" activeStyle={activeStyle} style={linkStyle}>Network Builder</NavLink></MenuItem>
+      <MenuItem><NavLink to="/collage" activeStyle={activeStyle} style={linkStyle}>Collage</NavLink></MenuItem>
     </MenuList>
   );
 };

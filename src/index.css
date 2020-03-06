@@ -90,6 +90,7 @@ h2 {
   margin: -40px -50px -50px -50px;
   margin: -80px -100px -100px -100px;
   margin: -20px -60px;
+  margin: 10px;
   width: 600px;
   width: 150px;
   width: 300px;
@@ -99,4 +100,9 @@ h2 {
   image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
   image-rendering: pixelated;                 /* Awesome future-browsers       */
   -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+  border: 1px solid #b2b2b2;
+}
+
+.compact .output-arr, .compact .extra-space {
+  display: none;
 }

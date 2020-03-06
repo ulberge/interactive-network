@@ -6,7 +6,7 @@ import * as serviceWorker from './serviceWorker';
 
 import App from './components/Page/App';
 
-console.log = function(){};
+// console.log = function(){};
 
 ReactDOM.render(
   (<App />),

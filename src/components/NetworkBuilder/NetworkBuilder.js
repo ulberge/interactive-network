@@ -8,11 +8,14 @@ import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import NetworkBuilderEditKernelDialog from './NetworkBuilderEditKernelDialog';
 import NetworkLoader from './NetworkLoader';
+import NetworkTrainer from './NetworkTrainer';
 import NetworkBuilderEditNetworkDialog from './NetworkBuilderEditNetworkDialog';
 
 const last = localStorage.getItem('lastNetworkName');
 const lastNetworkSettings = JSON.parse(localStorage.getItem(last));
 const defaultNetworkSettings = getNetworkSettings();
+
+const canvasSize = 100;
 
 function NetworkBuilder(props) {
   const { kernelSettings } = props;
@@ -37,6 +40,7 @@ function NetworkBuilder(props) {
 
   // Update the network settings on change to the settings
   const layerInfos = useMemo(() => {
+    console.log('update layer infos from NS and K');
     const layerInfos = [
       {
         filters: kernels.map(k => [k]),
@@ -71,9 +75,12 @@ function NetworkBuilder(props) {
     setEditNetworkOpen(false);
     if (update) {
       // update network settings async to make close window faster
-      setTimeout(() => {
-        setNetworkSettings(update);
-      }, 0);
+      //setTimeout(() => {
+      if (!update.kernelFilter) {
+        update.kernelFilter = networkSettings.kernelFilter;
+      }
+      setNetworkSettings(update);
+      //}, 0);
     }
   };
 
@@ -88,6 +95,7 @@ function NetworkBuilder(props) {
   }, [editSelection, networkSettings]);
 
   const onLoad = networkSettings => {
+    console.log('onload');
     setNetworkSettings(networkSettings || defaultNetworkSettings);
   };
 
@@ -100,6 +108,11 @@ function NetworkBuilder(props) {
     return 0;
   }, [networkData]);
 
+  const exportLayerInfos = () => {
+    const name = document.getElementById('network-name').value;
+    localStorage.setItem(name + '_export', JSON.stringify(layerInfos));
+  };
+
   return (
     <div>
       <h2>
@@ -107,15 +120,21 @@ function NetworkBuilder(props) {
       </h2>
       <Grid container>
         <Grid item xs={5}>
-          <NetworkBuilderDrawingInput
-            shape={[150, 150]}
-            layerInfos={layerInfos}
-            onUpdate={setNetworkData}
-            onSelect={setZoomSelection}
-          />
-          { maxScore }
+          <div style={{ position: 'relative'}}>
+            <NetworkBuilderDrawingInput
+              shape={[canvasSize, canvasSize]}
+              layerInfos={layerInfos}
+              onUpdate={setNetworkData}
+              onSelect={setZoomSelection}
+            />
+            <div style={{ position: 'absolute', top: '-20px', left: '200px' }}>Max: { maxScore }</div>
+          </div>
           <div style={{ marginTop: '40px' }}>
-            <NetworkLoader networkSettings={networkSettings} onLoad={onLoad} />
+            <NetworkLoader networkSettings={networkSettings} onLoad={onLoad} kernels={kernels} />
+          </div>
+          <Button onClick={exportLayerInfos} color="primary" aria-label="export network" variant="contained" style={{ marginLeft: '20px' }}>Export</Button>
+          <div style={{ marginTop: '40px' }}>
+            <NetworkTrainer networkSettings={networkSettings} kernels={kernels} onUpdate={onLoad} />
           </div>
           <div style={{ marginTop: '40px' }}>
             <Button onClick={() => setEditNetworkOpen(!editNetworkOpen)} color="primary" variant="contained">
@@ -132,7 +151,7 @@ function NetworkBuilder(props) {
           />
         </Grid>
         <Grid item xs={12}>
-          <div id="saved-drawings" style={{ maxWidth: '800px' }}></div>
+          <div id="saved-drawings" style={{ maxWidth: '3300px' }}></div>
         </Grid>
       </Grid>
       <NetworkBuilderEditKernelDialog open={editOpen} onClose={handleCloseEdit} kernel={selectedKernel} />

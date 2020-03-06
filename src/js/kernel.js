@@ -297,7 +297,7 @@ export function scaleKernel(kernel) {
       // scale negative weights with scale where min is equal negative magnitude of max positive
       // there may be a lot more negative than positive, but by scaling to match, an equal number
       // of mismatch pixels will cancel out with positive
-      return v / negativeScaleFactor;
+      return 0.5 * v / negativeScaleFactor;
     }
   }));
 

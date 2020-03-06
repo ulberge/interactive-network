@@ -78,6 +78,10 @@ function NetworkLoader(props) {
             onChange={e => load(e.target.value)}
           >
             <MenuItem value={'Default'}>Default</MenuItem>
+            <MenuItem value={'autosave'}>autosave</MenuItem>
+            <MenuItem value={'autosave2'}>autosave2</MenuItem>
+            <MenuItem value={'autosave3'}>autosave3</MenuItem>
+            <MenuItem value={'autosave4'}>autosave4</MenuItem>
             { networkNames.map(name => <MenuItem key={name} value={name}>{ name }</MenuItem>) }
           </Select>
         </FormControl>

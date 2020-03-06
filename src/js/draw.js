@@ -3,15 +3,14 @@ import p5 from 'p5';
 const settings = {
   strokeWeight: 2,
   speed: 0,
-  angleRange: Math.PI * 0.55,
+  angleRange: Math.PI * 0.85,
   // angleRange: Math.PI * 0.1,
   segmentLength: 5,
-  startMinTries: 2,
-  startNumStarts: 12,
+  startMinTries: 3000,
+  startNumStarts: 8,
   startNumAngles: 4,
-  nextMinTries: 8,
-  nextNumStarts: 13,
-  minScore: 50,
+  nextMinTries: 2,
+  nextNumStarts: 21,
 };
 
 function delay(timer) {
@@ -116,6 +115,38 @@ export default class Drawer {
 
     this.lineEnds = [];
     this.lineSegmentEnds = [];
+    this.stages = [];
+    this.dynamicMinScore = 50;
+    this.updateOnTest = false;
+
+    this.start();
+  }
+
+  /**
+   * Draws multiple networks to the canvas, optimizing whatever score is passed
+   */
+  async drawMultiple(getScore, callback) {
+    this.shadow = null;
+    this.bounds = null;
+    this.shadowOffset = null;
+
+    // TODO: limit # of channels by passing channel filter
+    this.getScore = getScore;
+    this.updateOnTest = true;
+
+    // initialize new drawer
+    this.boid = new Boid();
+    this.callback = callback;
+
+    this.prevScore = 0;
+    this.countStartFails = 0;
+    this.countNextSegmentFails = 0;
+    this.isDone = false;
+
+    this.lineEnds = [];
+    this.lineSegmentEnds = [];
+    this.stages = [];
+    this.dynamicMinScore = 50;
 
     this.start();
   }
@@ -197,13 +228,33 @@ export default class Drawer {
     const starts = [];
     for (let i = 0; i < settings.startNumStarts; i += 1) {
       let start;
+      // if (this.lineEnds.length === 0) {
+      //   // choose random point from shadow if no line ends or with probability
+      //   const { x, y } = choose2D(this.shadow);
+      //   // add offset so that start and end are relative to origin
+      //   start = new p5.Vector(x, y).add(this.shadowOffset);
+      //   // add random so it is not always at corner of pixel
+      //   start.add(new p5.Vector(Math.random(), Math.random()));
+      // } else {
+      //   // choose line end
+      //   start = chooseRandom(this.lineEnds);
+      //   const offsetMax = 3;
+      //   start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
+      // }
+
       if (this.lineEnds.length === 0 || Math.random() < 0.3) {
-        // choose random point from shadow if no line ends or with probability
-        const { x, y } = choose2D(this.shadow);
-        // add offset so that start and end are relative to origin
-        start = new p5.Vector(x, y).add(this.shadowOffset);
-        // add random so it is not always at corner of pixel
-        start.add(new p5.Vector(Math.random(), Math.random()));
+      // if (this.lineEnds.length === 0) {
+        if (this.shadow) {
+          // choose random point from shadow if no line ends or with probability
+          const { x, y } = choose2D(this.shadow);
+          // add offset so that start and end are relative to origin
+          start = new p5.Vector(x, y).add(this.shadowOffset);
+          // add random so it is not always at corner of pixel
+          start.add(new p5.Vector(Math.random(), Math.random()));
+        } else {
+          // if no shadow, use random locations
+          start = new p5.Vector(Math.random() * this.smartCanvas.shape[0], Math.random()  * this.smartCanvas.shape[1]);
+        }
       } else {
         // choose line end
         if (this.lineSegmentEnds.length === 0 || Math.random() < 0.5) {
@@ -230,24 +281,24 @@ export default class Drawer {
         }
 
         this.smartCanvas.addSegment(start, end, true);
-        this.smartCanvas.update(false);
+        this.smartCanvas.update(this.updateOnTest);
         const score = this.getScore();
-        console.log('score', score, this.prevScore, score - this.prevScore);
+        // console.log('score', score, this.prevScore, score - this.prevScore);
         this.smartCanvas.restore();
         options.push({ start, vel, end });
         scores.push(score - this.prevScore);
       }
     }
 
-    if (scores.filter(s => s > settings.minScore).length === 0) {
-      console.log('No scores over ' + settings.minScore + ' found');
+    if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
+      console.log('No scores over ' + this.dynamicMinScore + ' found');
       return false; // if no more improvements possible, halt
     }
 
-    const optionIndex = Drawer.chooseScore(scores);
+    const optionIndex = this.chooseScore(scores);
     const score = scores[optionIndex];
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.sort((a, b) => (a > b) ? -1 : 1));
+    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
     const { start, end, vel } = options[optionIndex];
     if (this.boid.pos) {
       this.lineEnds.push(this.boid.pos);
@@ -296,26 +347,26 @@ export default class Drawer {
         continue;
       }
       this.smartCanvas.addSegment(start, end, true);
-      this.smartCanvas.update(false);
+      this.smartCanvas.update(this.updateOnTest);
       const score = this.getScore();
-      console.log('score', score, this.prevScore, score - this.prevScore);
+      // console.log('score', score, this.prevScore, score - this.prevScore);
       this.smartCanvas.restore();
       options.push(option);
       scores.push(score - this.prevScore);
     }
 
-    if (scores.filter(s => s > settings.minScore).length === 0) {
-      console.log('Next segment no scores over ' + settings.minScore);
+    if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
+      console.log('Next segment no scores over ' + this.dynamicMinScore);
       return false; // if no more improvements possible, halt
     }
 
-    const optionIndex = Drawer.chooseScore(scores);
+    const optionIndex = this.chooseScore(scores);
 
     const { start, end, vel } = options[optionIndex];
     // const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
     // console.log('update', optionIndex, start, end, vel, score, scores);
-    console.log('Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores.sort((a, b) => (a > b) ? -1 : 1));
+    console.log('Chose ' + optionIndex, 'Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
 
     this.lineSegmentEnds.push(start);
     this.update(start, end, vel, score);
@@ -323,7 +374,7 @@ export default class Drawer {
   }
 
   // Return index of one of the better scores ([index, score]), chosen randomly, but weight towards better
-  static chooseScore(scores) {
+  chooseScore(scores) {
     if (scores.length === 0) {
       return -1;
     } else if (scores.length === 1) {
@@ -331,43 +382,47 @@ export default class Drawer {
     }
 
     // sort the scores, but keep indices
-    // const sortedScores = scores.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
+    const sortedScores = scores.map((s, i) => [i, s]).sort((a, b) => (a[1] > b[1]) ? -1 : 1);
 
-    // // return top index
-    // return sortedScores[0][0];
+    // return top index
+    return sortedScores[0][0];
 
     // return random weighted by score
-    const filteredScores = scores.map((s, i) => [i, s]).filter(el => el[1] > settings.minScore);
-    const choice = choose(filteredScores.map(el => el[1] ** 2));
-    const scoreIndex = filteredScores[choice][0];
-    return scoreIndex;
+    // const filteredScores = scores.map((s, i) => [i, s]).filter(el => el[1] > this.dynamicMinScore);
+    // const choice = choose(filteredScores.map(el => el[1] ** 2));
+    // const scoreIndex = filteredScores[choice][0];
+    // return scoreIndex;
 
     // const highScore = sortedScores[0][1];
 
     // // select from one of the better scores
     // const topScores = sortedScores.filter(el => (el[1] - (highScore * 0.5)) > 0);
 
-    // // randomly choose one of the better scores with probability equal to amount
-    // const choice = choose(topScores.map(el => el[1]));
+    // randomly choose one of the better scores with probability equal to amount
+    // const choice = choose(sortedScores.map(el => el[1] ** 8));
 
-    // const scoreIndex = topScores[choice][1];
+    // const scoreIndex = sortedScores[choice][0];
     // return scoreIndex;
   }
 
   update(start, end, vel, score) {
     this.prevOption = { start, end, vel };
-    console.log('New high score', this.prevScore + score, score);
+    // console.log('New high score', this.prevScore + score, score);
     this.boid.run(vel);
+    this.smartCanvas.p.loadPixels();
+    this.stages.push({ dist: start.dist(end), img: this.smartCanvas.p.pixels.slice() });
 
     // draw display version scaled up
     if (this.pOverlay) {
       this.pOverlay.clear();
-      this.pOverlay.push();
-      this.pOverlay.noFill();
-      this.pOverlay.stroke(255, 0, 0);
-      const [ sx, sy, ex, ey ] = this.bounds;
-      this.pOverlay.rect(sx, sy, ex - sx, ey - sy);
-      this.pOverlay.pop();
+      if (this.bounds) {
+        this.pOverlay.push();
+        this.pOverlay.noFill();
+        this.pOverlay.stroke(255, 0, 0);
+        const [ sx, sy, ex, ey ] = this.bounds;
+        this.pOverlay.rect(sx, sy, ex - sx, ey - sy);
+        this.pOverlay.pop();
+      }
       this.pOverlay.stroke(0);
       this.boid.drawBoid(this.pOverlay);
     }
@@ -375,10 +430,20 @@ export default class Drawer {
     this.smartCanvas.addSegment(start, end);
     this.smartCanvas.update();
     this.prevScore += score;
+
+    this.dynamicMinScore = 50;
+    if (this.lineSegmentEnds.length > 5) {
+      this.dynamicMinScore = (this.prevScore / (this.lineSegmentEnds.length + 1)) / 5;
+    }
   }
 
   isWithinBounds(v) {
-    const [ sx, sy, ex, ey ] = this.bounds;
+    let bounds = this.bounds;
+    if (!bounds) {
+      bounds = this.smartCanvas.bounds;
+    }
+
+    const [ sx, sy, ex, ey ] = bounds;
     if (v.x >= sx && v.y >= sy && v.x < ex && v.y < ey) {
       return true;
     }

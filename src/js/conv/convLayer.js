@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 import { dtype, dilateBounds } from './convArray';
 
 export default class ConvLayer {
-  constructor(input, output, filters, kernelSize) {
+  constructor(input, output, filters, kernelSize, bias=0) {
     this.input = input;
     this.output = output;
     this._kernelSize = kernelSize;
@@ -66,7 +66,7 @@ export default class ConvLayer {
     times.push(ct1 - ct0);
     ct0 = ct1;
 
-    console.log('conv2d:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
+    // console.log('conv2d:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
 
     return { output, updateArr };
   }
@@ -89,10 +89,10 @@ export default class ConvLayer {
     let result;
     const sizeDisplay = `${w} x ${h} x ${this._kernelSize} x ${this._rawFilters.length} = ${size}`;
     if (useWebGL) {
-      console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing webgl backend');
+      // console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing webgl backend');
       result = this.runWith('webgl');
     } else {
-      console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing cpu backend');
+      // console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing cpu backend');
       result = this.runWith('cpu');
     }
     const { output, updateArr } = result;
@@ -113,7 +113,7 @@ export default class ConvLayer {
   }
 }
 
-function getConvLayer(filters, kernelSize) {
+export function getConvLayer(filters, kernelSize, bias=0, inputShape=null, trainable=true) {
   // data format in: [out, in, h, w]
   // data format out: [filter_height, filter_width, in_channels, out_channels]
   // -> filters: A Tensor. Must have the same type as input. A 4-D tensor of shape
@@ -123,15 +123,22 @@ function getConvLayer(filters, kernelSize) {
   const biases = nj.zeros([numOutputs]).tolist();
 
   // we only need a bias for all negative weights (the others are balanced to equal 1 on ideal)
-  filters.tolist().forEach((filter, i) => {
-    // for filters that are all negative, give bias of positive 1
-    if (filter.flat().flat().filter(v => v > 0).length === 0) {
-      biases[i] = 64;
-    }
-  });
+  // filters.tolist().forEach((filter, i) => {
+  //   // for filters that are all negative, give bias of positive 1
+  //   if (filter.flat().flat().filter(v => v > 0).length === 0) {
+  //     biases[i] = 64;
+  //   }
+  // });
 
-  const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
-  // const weightsTensor = [tf.tensor4d(weights)];
+  // if (bias !== 0) {
+  //   filters.tolist().forEach((filter, i) => {
+  //     // add bias as ratio of total positive weight
+  //     biases[i] = -filter.flat().flat().filter(v => v > 0).reduce((a, b) => a + b) * bias * 255;
+  //   });
+  // }
+
+  // const weightsTensor = [tf.tensor4d(weights), tf.tensor1d(biases)];
+  const weightsTensor = [tf.tensor4d(weights)];
   const layer = tf.layers.conv2d({
     filters: numOutputs,
     kernelSize: kernelSize,
@@ -140,7 +147,9 @@ function getConvLayer(filters, kernelSize) {
     weights: weightsTensor,
     activation: 'relu',
     dataFormat: 'channelsFirst',
-    // useBias: false
+    inputShape,
+    trainable,
+    useBias: false
   });
   return layer;
 }

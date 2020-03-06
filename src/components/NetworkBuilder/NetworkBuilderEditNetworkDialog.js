@@ -103,6 +103,33 @@ function NetworkBuilderEditNetworkDialog(props) {
     //     angles: [0, 0.75, 1, 1.75],
     //   },
     // ];
+    // const kernelInfos = [ // Salal
+    //   {
+    //     type: 0,
+    //     angles: [0, 0.5, 0.25, 0.75],
+    //   },
+    //   {
+    //     type: 1, // Tip
+    //     angles: [0],
+    //   },
+    //   // {
+    //   //   type: 3, // T
+    //   //   angles: [1.5],
+    //   // },
+    //   {
+    //     type: 4, // cross
+    //     angles: [0],
+    //   },
+    //   {
+    //     type: 5, // Y
+    //     angles: [1],
+    //   },
+    //   {
+    //     type: 7,
+    //     angles: [0, 0.75, 1, 1.25, 1.5, 1.75],
+    //   },
+    // ];
+    // const kernelInfos = null;
     // const kernelInfos = [
     //   {
     //     type: 0,
@@ -113,14 +140,23 @@ function NetworkBuilderEditNetworkDialog(props) {
     //     angles: [0, 0.5, 1, 1.5],
     //   },
     // ];
-    const kernelInfos = [
+    // const kernelInfos = [
+    //   {
+    //     type: 0,
+    //     angles: [0.5],
+    //   },
+    // ];
+    const kernelInfos = [ // HMAX
       {
         type: 0,
-        angles: [0.5],
+        angles: [0, 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875, 1],
       },
     ];
-    const kernelFilter = [];
-    kernelInfos.forEach(d => d.angles.forEach(angle => kernelFilter.push(d.type + '_' + (angle * Math.PI).toFixed(2))));
+    let kernelFilter = null;
+    if (kernelInfos) {
+      kernelFilter = [];
+      kernelInfos.forEach(d => d.angles.forEach(angle => kernelFilter.push(d.type + '_' + (angle * Math.PI).toFixed(2))));
+    }
     const update = { kernelFilter, layerInfos };
     onClose(update);
   };

@@ -7,7 +7,7 @@ export default class MaxPoolLayer {
     this.input = input;
     this.output = output;
     this.poolSize = poolSize;
-    this._tflayer = tf.layers.maxPooling2d({ poolSize, dataFormat: 'channelsFirst' });
+    this._tflayer = getMaxPoolLayer(poolSize);
     this.keepStats = true;
   }
 
@@ -49,4 +49,8 @@ export default class MaxPoolLayer {
 
     this.input.clean();
   }
+}
+
+export function getMaxPoolLayer(poolSize) {
+  return tf.layers.maxPooling2d({ poolSize, dataFormat: 'channelsFirst' });
 }

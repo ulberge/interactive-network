@@ -3,11 +3,14 @@ import ConvLayer from './convLayer';
 import MaxPoolLayer from './maxPoolLayer';
 import { getShadows } from '../networkShadow';
 import p5 from 'p5';
+import * as tf from '@tensorflow/tfjs';
 
 export default class Network {
-  constructor(inputShape, layerInfos) {
+  constructor(inputShape, layerInfos, noShadows=false) {
     this.layerInfos = layerInfos;
-    this.shadows = getShadows(layerInfos);
+    if (!noShadows) {
+      this.shadows = getShadows(layerInfos);
+    }
 
     // setup input and output data reps
     this.arrs = []; // should be length = layers.length + 1
@@ -38,7 +41,8 @@ export default class Network {
       const output = this.arrs[i + 1];
       let layer;
       if (layerInfo.type === 'conv2d') {
-        layer = new ConvLayer(input, output, layerInfo.filters, layerInfo.kernelSize);
+        const bias = i === 0 ? 0.5 : 0;
+        layer = new ConvLayer(input, output, layerInfo.filters, layerInfo.kernelSize, bias);
       } else if (layerInfo.type === 'maxPool2d') {
         layer = new MaxPoolLayer(input, output, layerInfo.poolSize);
       }
@@ -52,22 +56,24 @@ export default class Network {
    * Given a change to the input layer, update all
    */
   run(dirty, dirtyBounds) {
+    const backend = tf.getBackend();
     // update first layer
     this.arrs[0].assign(dirty, 0, dirtyBounds);
 
     // propogate through network by running layers
-    const t00 = Date.now();
+    // const t00 = Date.now();
     for (const [i, layer] of this.layers.entries()) {
-      const t0 = Date.now();
+      // const t0 = Date.now();
       layer.run();
-      const t1 = Date.now();
-      console.log('time for layer ' + i, t1 - t0);
+      // const t1 = Date.now();
+      // console.log('time for layer ' + i, t1 - t0);
     }
-    const t01 = Date.now();
-    console.log('total network time', t01 - t00);
+    // const t01 = Date.now();
+    // console.log('total network time', t01 - t00);
 
     // mark last layer clean (or it will accumlate dirty!)
     this.arrs[this.arrs.length - 1].clean();
+    tf.setBackend(backend);
   }
 
   getOutput(i) {
@@ -95,7 +101,7 @@ export default class Network {
         const [ sx2, sy2, w2, h2 ] = currRect;
         arrs.push(this.arrs[i + 1].arr.slice(null, [sy2, sy2 + h2], [sx2, sx2 + w2]));
       }
-      console.log(layerInfo.type, currRect);
+      // console.log(layerInfo.type, currRect);
     }
     return arrs;
   }

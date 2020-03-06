@@ -7,6 +7,7 @@ import { createHashHistory } from 'history';
 import Layout from '../Page/Layout';
 import KernelTuner from '../KernelTuner/KernelTuner';
 import NetworkBuilder from '../NetworkBuilder/NetworkBuilder';
+import Collage from '../Collage/Collage';
 
 const history = createHashHistory();
 const theme = createMuiTheme({
@@ -72,6 +73,13 @@ export default function App() {
               path="/builder"
               render={() => (
                 <NetworkBuilder kernelSettings={kernelSettings} />
+              )}
+            />
+            <Route
+              name="Collage"
+              path="/collage"
+              render={() => (
+                <Collage />
               )}
             />
             <Redirect path="*" to="/builder" />

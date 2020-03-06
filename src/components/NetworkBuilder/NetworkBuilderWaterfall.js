@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import Array2DView from '../UI/Array2DView';
@@ -31,6 +31,9 @@ function scale3DArray(arr3D) {
 
 function NetworkBuilderWaterfall(props) {
   const { networkData, onSelectKernel, zoomSelection } = props;
+  console.log('nd', networkData);
+
+  const [ outputSelection, setOutputSelection ] = useState(null);
 
   if (!networkData) {
     return null;
@@ -43,6 +46,15 @@ function NetworkBuilderWaterfall(props) {
   } else {
     arrs = networkData.network.arrs.slice(1).map(arr => arr.arr.tolist());
   }
+
+  let debugData;
+  if (outputSelection) {
+    const { layerIndex, filterIndex } = outputSelection;
+    if (layerIndex < arrs.length && filterIndex < arrs[layerIndex].length) {
+      debugData = arrs[layerIndex][filterIndex];
+    }
+  }
+
   const { layerInfos, shadows } = networkData.network;
   // the image is inserted horizontally to start
   let dir = 'hor';
@@ -69,7 +81,7 @@ function NetworkBuilderWaterfall(props) {
         // add filters as columns outputting vertically
         const el = (
           <Grid container spacing={1}>
-            <Grid item>
+            <Grid item className="extra-space">
               <Grid container direction="column" spacing={1}>
                 <Grid item>
                   <div style={placeholderStyles}></div>
@@ -84,7 +96,7 @@ function NetworkBuilderWaterfall(props) {
             { layerInfo.filters.map((kernels, filterIndex) => (
               <Grid item>
                 <Grid container direction="column" spacing={1}>
-                  <Grid item className="output-arr">
+                  <Grid item className="output-arr shadow-arr">
                     <Array2DView imgArr={kernelShadows[filterIndex]} fixedWidth={size} />
                   </Grid>
                   { kernels.map((kernel, kernelIndex) => (
@@ -105,12 +117,9 @@ function NetworkBuilderWaterfall(props) {
                     ? null
                     : (
                       <Grid item className="output-arr">
-                        <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
-                        {
-                          (i === (layerInfos.length - 1) && zoomSelection)
-                          ? <Array2DNumView imgArr={outputsRaw[filterIndex]} style={{ marginTop: '8px' }} />
-                          : null
-                        }
+                        <button style={buttonStyles} type="button" onClick={() => setOutputSelection({ layerIndex: i, filterIndex})}>
+                          <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
+                        </button>
                       </Grid>
                     )
                   }
@@ -132,7 +141,7 @@ function NetworkBuilderWaterfall(props) {
         // add filters as rows outputting horizontally
         const el = (
           <Grid container direction="column" spacing={1}>
-            <Grid item>
+            <Grid item className="extra-space">
               <Grid container spacing={1}>
                 <Grid item>
                   <div style={placeholderStyles}></div>
@@ -150,7 +159,7 @@ function NetworkBuilderWaterfall(props) {
             { layerInfo.filters.map((kernels, filterIndex) => (
               <Grid item>
                 <Grid container spacing={1}>
-                  <Grid item className="output-arr">
+                  <Grid item className="output-arr shadow-arr">
                     <Array2DView imgArr={kernelShadows[filterIndex]} fixedWidth={size} />
                   </Grid>
                   { kernels.map((kernel, kernelIndex) => (
@@ -161,12 +170,9 @@ function NetworkBuilderWaterfall(props) {
                     </Grid>
                   )) }
                   <Grid item className="output-arr">
-                    <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
-                    {
-                      (i === (layerInfos.length - 1) && zoomSelection)
-                      ? <Array2DNumView imgArr={outputsRaw[filterIndex]} style={{ marginTop: '4px' }} />
-                      : null
-                    }
+                    <button style={buttonStyles} type="button" onClick={() => setOutputSelection({ layerIndex: i, filterIndex})}>
+                      <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
+                    </button>
                   </Grid>
                 </Grid>
               </Grid>
@@ -189,7 +195,7 @@ function NetworkBuilderWaterfall(props) {
         // add filters as columns outputting horizontally
         const el = (
           <Grid container direction="column" spacing={1}>
-            <Grid item>
+            <Grid item className="extra-space">
               <div style={placeholderStyles}></div>
             </Grid>
             { inputs.map((kernels, filterIndex) => (
@@ -199,13 +205,9 @@ function NetworkBuilderWaterfall(props) {
                     <div style={placeholderStyles}>▷</div>
                   </Grid>
                   <Grid item className="output-arr">
-                    <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
-                    {
-                      // (i === (layerInfos.length - 1) && zoomSelection)
-                      // ((filterIndex === 2 || filterIndex === 3) && zoomSelection)
-                      // ? <Array2DNumView imgArr={outputsRaw[filterIndex]} style={{ marginTop: '4px' }} />
-                      // : null
-                    }
+                    <button style={buttonStyles} type="button" onClick={() => setOutputSelection({ layerIndex: i, filterIndex})}>
+                      <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
+                    </button>
                   </Grid>
                 </Grid>
               </Grid>
@@ -222,7 +224,7 @@ function NetworkBuilderWaterfall(props) {
         // add filters as rows outputting vertically
         const el = (
           <Grid container spacing={1}>
-            <Grid item>
+            <Grid item className="extra-space">
               <div style={placeholderStyles}></div>
             </Grid>
             { inputs.map((kernels, filterIndex) => (
@@ -232,7 +234,9 @@ function NetworkBuilderWaterfall(props) {
                     <div style={placeholderStyles}>▽</div>
                   </Grid>
                   <Grid item className="output-arr">
-                    <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
+                    <button style={buttonStyles} type="button" onClick={() => setOutputSelection({ layerIndex: i, filterIndex})}>
+                      <Array2DView imgArr={outputs[filterIndex]} fixedWidth={size} normalize={false} />
+                    </button>
                   </Grid>
                 </Grid>
               </Grid>
@@ -246,7 +250,8 @@ function NetworkBuilderWaterfall(props) {
 
   return (
     <div  style={{ width: '5000px' }}>
-      <table>
+      {/*<table className="compact">*/}
+      <table className="">
         <tbody>
           { table.map(row => (
             <tr>
@@ -257,6 +262,15 @@ function NetworkBuilderWaterfall(props) {
           )) }
         </tbody>
       </table>
+      {
+        debugData && zoomSelection
+        ?
+          <button style={buttonStyles} type="button" onClick={() => setOutputSelection(null)}>
+            <Array2DNumView imgArr={debugData} style={{ position: 'absolute', zIndex: 2, top: 0, right: 0, margin: '8px' }} />
+          </button>
+        : null
+      }
+
     </div>
   );
 }
