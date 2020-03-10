@@ -64,6 +64,7 @@ function NetworkBuilderWaterfall(props) {
   table.push(row);
   let inputs = null;
   for (let i = 0; i < layerInfos.length; i += 1) {
+    const isFinalLayer = (i === (layerInfos.length - 1)) ? true : false;
     const layerInfo = layerInfos[i];
     const outputsRaw = arrs[i];
     let outputs = outputsRaw;
@@ -80,7 +81,7 @@ function NetworkBuilderWaterfall(props) {
         colIndex += 1;
         // add filters as columns outputting vertically
         const el = (
-          <Grid container spacing={1}>
+          <Grid container spacing={1} className={ isFinalLayer ? 'final-layer' : '' }>
             <Grid item className="extra-space">
               <Grid container direction="column" spacing={1}>
                 <Grid item>
@@ -140,7 +141,7 @@ function NetworkBuilderWaterfall(props) {
 
         // add filters as rows outputting horizontally
         const el = (
-          <Grid container direction="column" spacing={1}>
+          <Grid container direction="column" spacing={1} className={ isFinalLayer ? 'final-layer' : '' }>
             <Grid item className="extra-space">
               <Grid container spacing={1}>
                 <Grid item>
@@ -194,7 +195,7 @@ function NetworkBuilderWaterfall(props) {
         colIndex += 1;
         // add filters as columns outputting horizontally
         const el = (
-          <Grid container direction="column" spacing={1}>
+          <Grid container direction="column" spacing={1} className={ isFinalLayer ? 'final-layer' : '' }>
             <Grid item className="extra-space">
               <div style={placeholderStyles}></div>
             </Grid>
@@ -223,7 +224,7 @@ function NetworkBuilderWaterfall(props) {
 
         // add filters as rows outputting vertically
         const el = (
-          <Grid container spacing={1}>
+          <Grid container spacing={1} className={ isFinalLayer ? 'final-layer' : '' }>
             <Grid item className="extra-space">
               <div style={placeholderStyles}></div>
             </Grid>
@@ -249,7 +250,7 @@ function NetworkBuilderWaterfall(props) {
   }
 
   return (
-    <div  style={{ width: '5000px' }}>
+    <div className="waterfall">
       {/*<table className="compact">*/}
       <table className="">
         <tbody>

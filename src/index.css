@@ -106,3 +106,15 @@ h2 {
 .compact .output-arr, .compact .extra-space {
   display: none;
 }
+
+.compact .final-layer .output-arr {
+  display: block;
+}
+
+.waterfall {
+  width: 5000px;
+}
+.composite .waterfall {
+  width: auto;
+  display: inline-block;
+}

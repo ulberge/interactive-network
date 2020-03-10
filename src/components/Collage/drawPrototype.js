@@ -2,19 +2,26 @@ import p5 from 'p5';
 
 const settings = {
   strokeWeight: 2,
-  speed: 0,
+  speed: 1,
   angleRange: Math.PI * 0.85,
-  // angleRange: Math.PI * 0.1,
   segmentLength: 5,
   startMinTries: 3000,
   startNumStarts: 8,
   startNumAngles: 4,
-  nextMinTries: 2,
-  nextNumStarts: 21,
+  nextMinTries: 4,
+  nextNumStarts: 16,
 };
 
 function delay(timer) {
   return new Promise(resolve => setTimeout(() => resolve(), timer));
+}
+
+function chooseRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
 }
 
 function normalize(arr) {
@@ -54,75 +61,31 @@ function choose2D(arr2D) {
   }
 }
 
-function chooseRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function getRandomArbitrary(min, max) {
-  return Math.random() * (max - min) + min;
-}
-
 export default class Drawer {
-  constructor(smartCanvas, pOverlay=null) {
-    // canvas + abstract info
-    this.smartCanvas = smartCanvas;
-    // debugging sketch
-    this.pOverlay = pOverlay;
-    this.drawingTimer = null;
-    this.isStep = false;
-
-    document.addEventListener('keypress', () => {
-      if (this.isStep) {
-        console.log('step');
-        this.start();
-      }
-    });
+  constructor(p) {
+    this.p = p;
   }
 
   /**
-   * Draws the given channels output on the provided canvas
+   * Draws multiple networks to the canvas, optimizing whatever score is passed
    */
-  async draw(layerIndex, filterIndex, location, callback) {
-    // calc shadow (2D array of activation potential) which is the size of the theoretical receptive field
-    this.shadow = this.smartCanvas.network.shadows[layerIndex][filterIndex];
-
-    // the center of the shadow
-    const { x, y } = this.smartCanvas.network.getShadowOffset(layerIndex, location);
-    const h = this.shadow.length;
-    const w = this.shadow[0].length;
-    this.bounds = [
-      Math.floor(x - (w / 2)),
-      Math.floor(y - (h / 2)),
-      Math.ceil(x + (w / 2)),
-      Math.ceil(y + (h / 2))
-    ];
-    this.shadowOffset = this.bounds.slice(0, 2);
-
-    // TODO: limit # of channels by passing channel filter
-    this.getScore = () => {
-      const { x, y } = location;
-      return this.smartCanvas.network.arrs[layerIndex + 1].arr.tolist()[filterIndex][y][x];
-    };
-
-    // initialize new drawer
-    this.boid = new Boid(this.smartCanvas.p);
+  async draw(imgArr, callback) {
+    this.imgArr = imgArr;
     this.callback = callback;
 
+    this.boid = new Boid(this.p);
     this.prevScore = 0;
     this.countStartFails = 0;
     this.countNextSegmentFails = 0;
     this.isDone = false;
-
     this.lineEnds = [];
     this.lineSegmentEnds = [];
-    this.stages = [];
     this.dynamicMinScore = 50;
 
     this.start();
   }
 
   async start() {
-    console.log('start');
     if (this.isDone) {
       return;
     }
@@ -132,7 +95,7 @@ export default class Drawer {
     }
 
     // wait until drawing canvases are ready
-    while (!this.smartCanvas.p || !this.smartCanvas.p._setupDone || (this.pOverlay && !this.pOverlay._setupDone)) {
+    while (!this.p || !this.p._setupDone) {
       console.log('waiting for p5 to be setup');
       await delay(10);
     }
@@ -162,7 +125,6 @@ export default class Drawer {
 
   // Draw one step of animation, returns true if done
   drawTick() {
-    // console.log('drawTick');
     if (this.boid.pos === null) {
       const hasMoreStarts = this.getNewLine();
       if (!hasMoreStarts) {
@@ -177,6 +139,7 @@ export default class Drawer {
     } else {
       const hasNextSegment = this.getNextSegment();
       if (!hasNextSegment) {
+        // slow speed on fail to find
         this.countNextSegmentFails++;
         if (this.countNextSegmentFails >= settings.nextMinTries) {
           this.countNextSegmentFails = 0;
@@ -190,35 +153,96 @@ export default class Drawer {
     return false;
   }
 
-  // get pos of new line
-  // test random lines and choose one with probability equal to quality
+  _getLineBounds(start, end) {
+    const pad = 1; // stroke weight is 2 right now, so pad by 1
+    let minX = Math.max(0, Math.min(start.x, end.x) - pad);
+    let minY = Math.max(0, Math.min(start.y, end.y) - pad);
+    let maxX = Math.min(this.p.width - 1, Math.max(start.x, end.x) + pad + 1);
+    let maxY = Math.min(this.p.height - 1, Math.max(start.y, end.y) + pad + 1);
+    const bounds = [ minX, minY, maxX, maxY ].map(v => Math.floor(v));
+    return bounds;
+  }
+
+  _getImgArr(pxs, rowWidth) {
+    const imgArr = [];
+    let row = [];
+    for (let i = 3; i < pxs.length; i += 4) {
+      row.push(pxs[i]);
+      if (row.length === rowWidth) {
+        imgArr.push(row);
+        row = [];
+      }
+    }
+    return imgArr;
+  }
+
+  _convolve(pxs0, pxs1) {
+    if (pxs0.length !== pxs1.length || pxs0[0].length !== pxs1[0].length) {
+      debugger;
+    }
+    let convSum = 0;
+    for (let y = 0; y < pxs0.length; y += 1) {
+      for (let x = 0; x < pxs0[0].length; x += 1) {
+        convSum += pxs0[y][x] * pxs1[y][x];
+      }
+    }
+    return convSum;
+  }
+
+  _get2DArraySlice(arr, selection) {
+    if (!arr || arr.length === 0 || arr[0].length === 0 || !selection) {
+      return arr;
+    }
+    let [ minX, minY, maxX, maxY ] = selection;
+    minX = Math.max(0, minX);
+    minY = Math.max(0, minY);
+    maxX = Math.min(arr[0].length, maxX);
+    maxY = Math.min(arr.length, maxY);
+
+    const slice = arr.slice(minY, maxY).map(row => row.slice(minX, maxX));
+    return slice;
+  }
+
+  // Create copy of area, multiply by section of protype
+  // Draw to the copy, multiply by section of prototype
+  // Calculate diff in score and set that as score
+  getScore(start, end) {
+    const bounds = this._getLineBounds(start, end);
+    const [ minX, minY, maxX, maxY ] = bounds;
+    const copy = this.p.get(minX, minY, maxX - minX, maxY - minY);
+    copy.loadPixels();
+    const copyPixels = this._getImgArr(copy.pixels, maxX - minX);
+    const kernelPixels = this._get2DArraySlice(this.imgArr, bounds);
+    const scoreBefore = this._convolve(copyPixels, kernelPixels);
+
+    const g = this.p.createGraphics(maxX - minX, maxY - minY);
+    g.image(copy, 0, 0);
+    const startAdj = start.copy().sub(minX, minY);
+    const endAdj = end.copy().sub(minX, minY);
+    g.strokeWeight(settings.strokeWeight);
+    g.line(startAdj.x, startAdj.y, endAdj.x, endAdj.y);
+
+    g.loadPixels();
+    const copyPixelsAfter = this._getImgArr(g.pixels, maxX - minX);
+    const scoreAfter = this._convolve(copyPixelsAfter, kernelPixels);
+
+    return scoreAfter - scoreBefore;
+  }
+
   getNewLine() {
     console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (settings.startNumStarts * settings.startNumAngles) + ' times.');
 
+    // Select starts with equal weight between random, at line ends, or along the lines
     const starts = [];
+    const weights = this.imgArr.map(row => row.map(v => v > 0 ? v : 0));
     for (let i = 0; i < settings.startNumStarts; i += 1) {
       let start;
-      // if (this.lineEnds.length === 0) {
-      //   // choose random point from shadow if no line ends or with probability
-      //   const { x, y } = choose2D(this.shadow);
-      //   // add offset so that start and end are relative to origin
-      //   start = new p5.Vector(x, y).add(this.shadowOffset);
-      //   // add random so it is not always at corner of pixel
-      //   start.add(new p5.Vector(Math.random(), Math.random()));
-      // } else {
-      //   // choose line end
-      //   start = chooseRandom(this.lineEnds);
-      //   const offsetMax = 3;
-      //   start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
-      // }
-
-      if (this.lineEnds.length === 0 || Math.random() < 0.3) {
-      // if (this.lineEnds.length === 0) {
-        if (this.shadow) {
+      if ((this.lineEnds.length === 0 && this.lineSegmentEnds.length === 0) || Math.random() < 0.33) {
+        // if (this.lineEnds.length === 0) {
+        if (this.imgArr) {
           // choose random point from shadow if no line ends or with probability
-          const { x, y } = choose2D(this.shadow);
-          // add offset so that start and end are relative to origin
-          start = new p5.Vector(x, y).add(this.shadowOffset);
+          const { x, y } = choose2D(weights);
+          start = new p5.Vector(x, y);
           // add random so it is not always at corner of pixel
           start.add(new p5.Vector(Math.random(), Math.random()));
         } else {
@@ -226,18 +250,19 @@ export default class Drawer {
           start = new p5.Vector(Math.random() * this.smartCanvas.shape[0], Math.random()  * this.smartCanvas.shape[1]);
         }
       } else {
-        // choose line end
         if (this.lineSegmentEnds.length === 0 || Math.random() < 0.5) {
           start = chooseRandom(this.lineEnds);
         } else {
           start = chooseRandom(this.lineSegmentEnds);
         }
+        // Add random noise
         const offsetMax = 3;
         start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
       }
       starts.push(start);
     }
 
+    // Get line segments
     const options = [];
     const scores = [];
     for (let start of starts) {
@@ -250,31 +275,37 @@ export default class Drawer {
           continue;
         }
 
-        this.smartCanvas.addSegment(start, end, true);
-        this.smartCanvas.update();
-        const score = this.getScore();
-        // console.log('score', score, this.prevScore, score - this.prevScore);
-        this.smartCanvas.restore();
+        // Check the scores
+        const score = this.getScore(start, end);
+
+        // Record and undo
         options.push({ start, vel, end });
-        scores.push(score - this.prevScore);
+        scores.push(score);
       }
     }
 
+    // Filter out scores that are too low (to eliminate drawing lines slightly thicker and darker)
     if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
       console.log('No scores over ' + this.dynamicMinScore + ' found');
       return false; // if no more improvements possible, halt
     }
+
 
     const optionIndex = this.chooseScore(scores);
     const score = scores[optionIndex];
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
     console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
     const { start, end, vel } = options[optionIndex];
+
+    // Always add start
+    this.lineEnds.push(start);
+    // If this was not the first line, add the end of the last line as an end
     if (this.boid.pos) {
       this.lineEnds.push(this.boid.pos);
     }
+
     this.boid.move(start);
-    this.lineEnds.push(start);
+
     this.update(start, end, vel, score);
 
     return true;
@@ -282,36 +313,13 @@ export default class Drawer {
 
   getNextSegment() {
     console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.nextNumStarts + ' times.');
-    // choose a random line segment from the current position
-    // make a list of options and evalutate them
     const options = [];
     const scores = [];
 
-    const segmentLength = Math.max(1, settings.segmentLength - this.countNextSegmentFails);
+    // Try angles center at angle segments
+    const segmentLength = Math.max(1, settings.segmentLength * Math.pow(0.85, this.countNextSegmentFails));
+    console.log('segmentLength', segmentLength);
     const testOptions = this.boid.getNextVelOptions(segmentLength, settings.angleRange, settings.nextNumStarts);
-
-    // try angles center at angle segments
-    // const startAngle = this.boid.vel.copy().setMag(Math.max(1, settings.segmentLength - this.countNextSegmentFails)).rotate(-settings.angleRange);
-    // const angleDelta = (settings.angleRange * 2) / (settings.nextNumStarts - 1);
-
-    // const testOptions = [];
-    // for (let i = 0; i < settings.nextNumStarts; i += 1) {
-    //   const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
-    //   const angle = (angleDelta * i) + angleNoise;
-    //   const vel = startAngle.copy().rotate(angle);
-    //   const start = this.boid.pos.copy();
-    //   const end = this.boid.pos.copy().add(vel);
-    //   testOptions.push({ start, vel, end });
-    // }
-
-    // if (this.prevOption) {
-    //   const { vel } = this.prevOption;
-    //   const angleNoise = getRandomArbitrary(-angleDelta / 8, angleDelta / 8);
-    //   const velAdj = vel.copy().rotate(angleNoise);
-    //   const start = this.boid.pos.copy();
-    //   const end = this.boid.pos.copy().add(velAdj);
-    //   testOptions.push({ start, vel: velAdj, end });
-    // }
 
     for (let option of testOptions) {
       const { start, end } = option;
@@ -319,13 +327,9 @@ export default class Drawer {
         console.log('Next segment rejection', start, end);
         continue;
       }
-      this.smartCanvas.addSegment(start, end, true);
-      this.smartCanvas.update();
-      const score = this.getScore();
-      // console.log('score', score, this.prevScore, score - this.prevScore);
-      this.smartCanvas.restore();
+      const score = this.getScore(start, end);
       options.push(option);
-      scores.push(score - this.prevScore);
+      scores.push(score);
     }
 
     if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
@@ -359,64 +363,25 @@ export default class Drawer {
 
     // return top index
     return sortedScores[0][0];
-
-    // return random weighted by score
-    // const filteredScores = scores.map((s, i) => [i, s]).filter(el => el[1] > this.dynamicMinScore);
-    // const choice = choose(filteredScores.map(el => el[1] ** 2));
-    // const scoreIndex = filteredScores[choice][0];
-    // return scoreIndex;
-
-    // const highScore = sortedScores[0][1];
-
-    // // select from one of the better scores
-    // const topScores = sortedScores.filter(el => (el[1] - (highScore * 0.5)) > 0);
-
-    // randomly choose one of the better scores with probability equal to amount
-    // const choice = choose(sortedScores.map(el => el[1] ** 8));
-
-    // const scoreIndex = sortedScores[choice][0];
-    // return scoreIndex;
   }
 
   update(start, end, vel, score) {
     this.prevOption = { start, end, vel };
-    // console.log('New high score', this.prevScore + score, score);
     this.boid.run(vel);
-    this.smartCanvas.p.loadPixels();
-    this.stages.push({ dist: start.dist(end), img: this.smartCanvas.p.pixels.slice() });
 
-    // draw display version scaled up
-    if (this.pOverlay) {
-      this.pOverlay.clear();
-      if (this.bounds) {
-        this.pOverlay.push();
-        this.pOverlay.noFill();
-        this.pOverlay.stroke(255, 0, 0);
-        const [ sx, sy, ex, ey ] = this.bounds;
-        this.pOverlay.rect(sx, sy, ex - sx, ey - sy);
-        this.pOverlay.pop();
-      }
-      this.pOverlay.stroke(0);
-      this.boid.drawBoid(this.pOverlay);
-    }
-
-    this.smartCanvas.addSegment(start, end);
-    this.smartCanvas.update();
+    // Add the segment that was chosen
+    this.p.line(start.x, start.y, end.x, end.y);
     this.prevScore += score;
 
+    // Update the dynamic min score to filter out super minor updates
     this.dynamicMinScore = 50;
-    if (this.lineSegmentEnds.length > 5) {
-      this.dynamicMinScore = (this.prevScore / (this.lineSegmentEnds.length + 1)) / 5;
+    if (this.lineSegmentEnds.length > 10) {
+      this.dynamicMinScore = (this.prevScore / (this.lineSegmentEnds.length + 1)) / 10;
     }
   }
 
   isWithinBounds(v) {
-    let bounds = this.bounds;
-    if (!bounds) {
-      bounds = this.smartCanvas.bounds;
-    }
-
-    const [ sx, sy, ex, ey ] = bounds;
+    const [ sx, sy, ex, ey ] = [0, 0, this.p.width, this.p.height];
     if (v.x >= sx && v.y >= sy && v.x < ex && v.y < ey) {
       return true;
     }
@@ -435,19 +400,58 @@ class Boid {
   getNextVelOptions(segmentLength, angleRange, num) {
     const startAngle = this.vel.copy().setMag(segmentLength);
 
-    // Cycle through angles in range given
-    const angleDelta = (angleRange * 2) / (num - 1);
+    // Generate even distribution of angles with higher density at center
+    function getOffsetsAndDeltas(num, angleRange) {
+      let n = num / 2;
+      let sum = 0;
+      const offsets = [];
+      const deltas = [];
+      for (let i = 0; i < n; i += 1) {
+        offsets.push(sum);
+        deltas.push(n - i);
+        sum += (n - i);
+      }
+      for (let i = 0; i < n; i += 1) {
+        offsets.push(sum);
+        deltas.push(1 + i);
+        sum += (1 + i);
+      }
+      const numSegs = n * (n+1);
+      const segSize = angleRange / numSegs;
+      return [offsets, deltas].map(arr => arr.map(v => v * segSize));
+    }
     const options = [];
+    const [angleOffsets, angleDeltas] = getOffsetsAndDeltas(num, angleRange * 2);
+    console.log(angleOffsets, angleRange * 2);
     for (let i = 0; i < num; i += 1) {
-      // const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
-      // const angle = (angleDelta * i) + angleNoise;
-      const angle = this.p.randomGaussian() * angleRange;
-      const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+      const angleDelta = angleDeltas[i];
+      const angleOffset = angleOffsets[i];
+      const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
+      const angle = angleOffset + angleNoise - angleRange;
+      const vel = startAngle.copy().rotate(angle).setMag(segmentLength);
       options.push(vel);
     }
 
+    // Generate even distribution of angles with noise
+    // const angleDelta = (angleRange * 2) / (num - 1);
+    // const options = [];
+    // for (let i = 0; i < num; i += 1) {
+    //   const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
+    //   const angle = (angleDelta * i) + angleNoise - angleRange;
+    //   const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+    //   options.push(vel);
+    // }
+
+    // Generate random angles
+    // const options = [];
+    // for (let i = 0; i < num; i += 1) {
+    //   const angle = this.p.randomGaussian() * angleRange;
+    //   const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+    //   options.push(vel);
+    // }
+
     // get slightly altered copy of original
-    const prevCopy = this.vel.copy().rotate(getRandomArbitrary(-angleDelta / 16, angleDelta / 16));
+    const prevCopy = this.vel.copy().rotate(getRandomArbitrary(-Math.PI / 64, Math.PI / 64));
     options.push(prevCopy);
 
     return options.map(vel => ({
@@ -474,18 +478,4 @@ class Boid {
     this.prevPos = this.pos.copy();
     this.pos.add(this.vel);
   }
-
-  // For debugging purposes, draw the boid itself and its direction
-  drawBoid(p) {
-    p.push();
-    p.noFill();
-    p.stroke(0, 0, 0, 210);
-    p.ellipseMode(p.CENTER);
-    // Draw "boid" outline
-    p.ellipse(this.pos.x, this.pos.y, this.diameter, this.diameter);
-    // Draw velocity
-    p.line(this.pos.x, this.pos.y, this.pos.x + this.diameter, this.pos.y + this.diameter);
-    p.pop();
-  }
 }
-

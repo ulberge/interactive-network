@@ -1,15 +1,16 @@
 import p5 from 'p5';
 
 const settings = {
-  strokeWeight: 2,
-  speed: 0,
+  strokeWeight: 1,
+  speed: 1,
   angleRange: Math.PI * 0.85,
   segmentLength: 5,
   startMinTries: 3,
   startNumStarts: 8,
   startNumAngles: 4,
   nextMinTries: 4,
-  nextNumStarts: 8,
+  nextNumStarts: 12,
+  sensitivity: 10,
 };
 
 function delay(timer) {
@@ -27,6 +28,7 @@ function getRandomArbitrary(min, max) {
 export default class Drawer {
   constructor(smartCanvas) {
     this.smartCanvas = smartCanvas;
+    this._listeners = [];
   }
 
   /**
@@ -37,15 +39,34 @@ export default class Drawer {
     this.callback = callback;
 
     this.boid = new Boid(this.smartCanvas.p);
-    this.prevScore = 0;
     this.countStartFails = 0;
     this.countNextSegmentFails = 0;
     this.isDone = false;
     this.lineEnds = [];
     this.lineSegmentEnds = [];
     this.dynamicMinScore = 50;
+    this.scores = [];
 
     this.start();
+  }
+
+  addListener(fn) {
+    this._listeners.push(fn);
+  }
+
+  removeListener(fn) {
+    const i = this._listeners.indexOf(fn);
+    if (i > -1) {
+      this._listeners.splice(i, 1);
+    }
+  }
+
+  _notifyListeners(...params) {
+    for (let fn of this._listeners) {
+      if (fn) {
+        fn(...params);
+      }
+    }
   }
 
   async start() {
@@ -89,6 +110,7 @@ export default class Drawer {
   // Draw one step of animation, returns true if done
   drawTick() {
     if (this.boid.pos === null) {
+      this._notifyListeners('NEWLINE');
       const hasMoreStarts = this.getNewLine();
       if (!hasMoreStarts) {
         this.countStartFails++;
@@ -123,7 +145,7 @@ export default class Drawer {
     const starts = [];
     for (let i = 0; i < settings.startNumStarts; i += 1) {
       let start;
-      if ((this.lineEnds.length === 0 && this.lineSegmentEnds.length === 0) || Math.random() < 0.33) {
+      if ((this.lineEnds.length === 0 && this.lineSegmentEnds.length === 0) || Math.random() < 0.83) {
         // if no shadow, use random locations
         start = new p5.Vector(Math.random() * this.smartCanvas.shape[0], Math.random()  * this.smartCanvas.shape[1]);
       } else {
@@ -155,7 +177,7 @@ export default class Drawer {
         // Check the scores
         this.smartCanvas.addSegment(start, end, true);
         this.smartCanvas.update();
-        const score = this.getScore() - this.prevScore;
+        const score = this.getScore();
 
         // Record and undo
         this.smartCanvas.restore();
@@ -209,7 +231,7 @@ export default class Drawer {
       }
       this.smartCanvas.addSegment(start, end, true);
       this.smartCanvas.update();
-      const score = this.getScore() - this.prevScore;
+      const score = this.getScore();
       this.smartCanvas.restore();
       options.push(option);
       scores.push(score);
@@ -255,12 +277,14 @@ export default class Drawer {
     // Add the segment that was chosen
     this.smartCanvas.addSegment(start, end);
     this.smartCanvas.update();
-    this.prevScore += score;
+    this._notifyListeners('ADDSEG');
+    this.scores.push(score);
 
     // Update the dynamic min score to filter out super minor updates
     this.dynamicMinScore = 50;
-    if (this.lineSegmentEnds.length > 10) {
-      this.dynamicMinScore = (this.prevScore / (this.lineSegmentEnds.length + 1)) / 10;
+    if (this.scores.length > 5) {
+      const avgScore = this.scores.reduce((a, b) => a + b) / this.scores.length;
+      this.dynamicMinScore = avgScore / settings.sensitivity;
     }
   }
 
@@ -284,19 +308,58 @@ class Boid {
   getNextVelOptions(segmentLength, angleRange, num) {
     const startAngle = this.vel.copy().setMag(segmentLength);
 
-    // Cycle through angles in range given
-    const angleDelta = (angleRange * 2) / (num - 1);
+    // Generate even distribution of angles with higher density at center
+    function getOffsetsAndDeltas(num, angleRange) {
+      let n = num / 2;
+      let sum = 0;
+      const offsets = [];
+      const deltas = [];
+      for (let i = 0; i < n; i += 1) {
+        offsets.push(sum);
+        deltas.push(n - i);
+        sum += (n - i);
+      }
+      for (let i = 0; i < n; i += 1) {
+        offsets.push(sum);
+        deltas.push(1 + i);
+        sum += (1 + i);
+      }
+      const numSegs = n * (n+1);
+      const segSize = angleRange / numSegs;
+      return [offsets, deltas].map(arr => arr.map(v => v * segSize));
+    }
     const options = [];
+    const [angleOffsets, angleDeltas] = getOffsetsAndDeltas(num, angleRange * 2);
+    console.log(angleOffsets, angleRange * 2);
     for (let i = 0; i < num; i += 1) {
-      // const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
-      // const angle = (angleDelta * i) + angleNoise;
-      const angle = this.p.randomGaussian() * angleRange;
-      const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+      const angleDelta = angleDeltas[i];
+      const angleOffset = angleOffsets[i];
+      const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
+      const angle = angleOffset + angleNoise - angleRange;
+      const vel = startAngle.copy().rotate(angle).setMag(segmentLength);
       options.push(vel);
     }
 
+    // Generate even distribution of angles with noise
+    // const angleDelta = (angleRange * 2) / (num - 1);
+    // const options = [];
+    // for (let i = 0; i < num; i += 1) {
+    //   const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
+    //   const angle = (angleDelta * i) + angleNoise - angleRange;
+    //   const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+    //   options.push(vel);
+    // }
+
+    // Generate random angles
+    // const options = [];
+    // for (let i = 0; i < num; i += 1) {
+    //   const angle = this.p.randomGaussian() * angleRange;
+    //   const vel = startAngle.copy().setMag(segmentLength).rotate(angle);
+    //   options.push(vel);
+    // }
+
     // get slightly altered copy of original
-    const prevCopy = this.vel.copy().rotate(getRandomArbitrary(-angleDelta / 16, angleDelta / 16));
+    const prevCopy = this.vel.copy().rotate(getRandomArbitrary(-Math.PI / 64, Math.PI / 64));
     options.push(prevCopy);
 
     return options.map(vel => ({
