@@ -8,6 +8,7 @@ import Layout from '../Page/Layout';
 import KernelTuner from '../KernelTuner/KernelTuner';
 import NetworkBuilder from '../NetworkBuilder/NetworkBuilder';
 import Collage from '../Collage/Collage';
+import Harness from '../TestHarness/Harness';
 
 const history = createHashHistory();
 const theme = createMuiTheme({
@@ -82,7 +83,14 @@ export default function App() {
                 <Collage />
               )}
             />
-            <Redirect path="*" to="/builder" />
+            <Route
+              name="Harness"
+              path="/harness"
+              render={() => (
+                <Harness />
+              )}
+            />
+            <Redirect path="*" to="/harness" />
           </Switch>
         </Layout>
       </Router>

@@ -2,7 +2,6 @@ import nj from 'numjs';
 import Network from '../../js/conv/network';
 import SmartCollage from './smartCollage';
 import Drawer from './draw';
-import { filters } from './storedFilters2';
 
 function rotateLayerInfos(layerInfos, rotations) {
   return layerInfos.map(layerInfo => {
@@ -27,6 +26,19 @@ function rotateNetworks(networkInfos) {
     const { layerInfos, rotations } = networkInfo;
     return rotations.map(rotation => rotateLayerInfos(layerInfos, rotation));
   });
+}
+
+function convolve(pxs0, pxs1) {
+  if (pxs0.length !== pxs1.length || pxs0[0].length !== pxs1[0].length) {
+    debugger;
+  }
+  let convSum = 0;
+  for (let y = 0; y < pxs0.length; y += 1) {
+    for (let x = 0; x < pxs0[0].length; x += 1) {
+      convSum += pxs0[y][x] * pxs1[y][x];
+    }
+  }
+  return convSum;
 }
 
 // get the sum of all the maximums by locations provided
@@ -76,87 +88,24 @@ function getMaxDiff(maxArr, prevMaxArr) {
   return { loc, v };
 }
 
-export function drawMaxPool(p, callback) {
-  // load salal network
-  const layerInfos = JSON.parse(localStorage.getItem('salal2_d_export'));
-  // make 4 rotations and pool at end
-  const networkInfos = [
-    {
-      layerInfos: [
-        ...layerInfos,
-        { // add pooling at end
-          type: 'maxPool2d',
-          poolSize: 5
-        }
-      ],
-      rotations: [0, 1, 2, 3]
-    }
-  ];
-
-  // Generate all the networks
-  const shape = [p.width, p.height]
-  const networks = rotateNetworks(networkInfos).flat().map(layerInfos => new Network(shape, layerInfos, true));
-  // turn off stats for speed
-  networks.forEach(network => network.noStats());
-  const smartCollage = new SmartCollage(p, shape, networks);
-  smartCollage.init();
-  const drawer = new Drawer(smartCollage);
-
-  const getScore = () => {
-    let maxArr;
-    networks.forEach(network => {
-      const finalArr = network.arrs[network.arrs.length - 1].arr.tolist()[0];
-      if (!maxArr) {
-        maxArr = finalArr;
-      } else {
-        finalArr.forEach((row, y) => row.forEach((v, x) => {
-          v = v * 1.1;
-          if (v > maxArr[y][x]) {
-            maxArr[y][x] = v;
-          }
-        }))
-      }
-    });
-    // get sum of max array and return
-    const maxSum = maxArr.flat().flat().reduce((a, b) => a + b);
-    return maxSum;
-  };
-  drawer.draw(getScore, callback);
-
-  return () => drawer.stop();
-}
-
-export function drawStoredPrototype(p, callback, update) {
+export default function drawNetwork(kernels, rewards, p, callback, update) {
   const shape = [p.width, p.height];
-  const networkInfos = [
-    {
-      layerInfos: [
-        {
-          type: 'conv2d',
-          filters,
-          kernelSize: 31
-        },
-      ],
-      rotations: [0, 1, 2, 3]
-    }
-  ];
   const layerInfos = [
     {
       type: 'conv2d',
-      filters: rotateNetworks(networkInfos).flat().map(layerInfos => layerInfos[0].filters).flat(),
-      kernelSize: 31
+      filters: kernels.map(k => [k]),
+      kernelSize: kernels[0].length
     },
     { // add pooling at end
       type: 'maxPool2d',
-      poolSize: 19
+      poolSize: 3
     }
   ];
   // Generate all the networks
-  const networks = [new Network(shape, layerInfos)];
-  // turn off stats for speed
-  networks.forEach(network => network.noStats());
-  const smartCollage = new SmartCollage(p, shape, networks);
-  smartCollage.addListener(update);
+  const network = new Network(shape, layerInfos);
+  network.noStats();
+  const smartCollage = new SmartCollage(p, shape, [network]);
+  // smartCollage.addListener(update);
   smartCollage.init();
   const drawer = new Drawer(smartCollage);
 
@@ -181,9 +130,13 @@ export function drawStoredPrototype(p, callback, update) {
   });
 
   const getScore = (shouldSetValues=false) => {
+    // get output arrs
+    const arrsRaw = network.arrs[network.arrs.length - 1].arr.tolist();
+
+    // adjust for rewards
+    const arrs = arrsRaw.map((arr, i) => arr.map((row, y) => row.map((v, x) => rewards[i][y][x] * v)));
 
     // if lower overall score, return 0
-    const arrs = networks.map(network => network.arrs[network.arrs.length - 1].arr.tolist()).flat();
     const maxArr = getMaxArr(arrs);
     const maxSum = getSum(maxArr, actLocs);
     if (maxSum < prevSum) {
@@ -213,7 +166,9 @@ export function drawStoredPrototype(p, callback, update) {
     }
     return score;
   };
-  drawer.draw(getScore, callback);
+  drawer.draw(getScore, () => {
+    callback(smartCollage);
+  });
 
-  return { drawer, networks };
+  return drawer;
 }

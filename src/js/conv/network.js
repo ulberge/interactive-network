@@ -4,6 +4,7 @@ import MaxPoolLayer from './maxPoolLayer';
 import { getShadows } from '../networkShadow';
 import p5 from 'p5';
 import * as tf from '@tensorflow/tfjs';
+tf.enableProdMode();
 
 export default class Network {
   constructor(inputShape, layerInfos, noShadows=false) {

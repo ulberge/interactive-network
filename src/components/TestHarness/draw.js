@@ -5,7 +5,7 @@ const settings = {
   speed: 1,
   angleRange: Math.PI * 0.85,
   segmentLength: 5,
-  startMinTries: 3000,
+  startMinTries: 100,
   startNumStarts: 8,
   startNumAngles: 4,
   nextMinTries: 4,

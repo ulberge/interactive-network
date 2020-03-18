@@ -8,7 +8,7 @@ import { drawMaxPool, drawStoredPrototype } from './drawCollage';
 import NetworkBuilderWaterfall from '../NetworkBuilder/NetworkBuilderWaterfall';
 // import { storedPrototype } from './stored';
 
-const canvasSize = 100;
+const canvasSize = 150;
 const shape = [canvasSize, canvasSize];
 
 const saveDrawing = (p, container) => {
