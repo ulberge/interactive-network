@@ -85,7 +85,7 @@ h2 {
 #saved-drawings {
   margin: 25px;
 }
-#saved-drawings img {
+#saved-drawings img, .saved-drawings img {
   margin: -160px -200px -200px -200px;
   margin: -40px -50px -50px -50px;
   margin: -80px -100px -100px -100px;
@@ -117,4 +117,9 @@ h2 {
 .composite .waterfall {
   width: auto;
   display: inline-block;
+}
+
+.zoom93 img {
+  width: 93px !important;
+  height: 93px !important;
 }

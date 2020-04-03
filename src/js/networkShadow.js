@@ -47,6 +47,9 @@ function deconvolve(layerTransposes, output, layerIndex) {
 
 // calculate the network shadow
 export function getShadows(layerInfos) {
+  const be = tf.getBackend();
+  tf.setBackend('cpu');
+
   // get tf transpose layers
   const layerTransposes = layerInfos.map(layerInfo => {
     if (layerInfo.type === 'conv2d') {
@@ -75,6 +78,8 @@ export function getShadows(layerInfos) {
     }
     shadows.push(row);
   }
+
+  tf.setBackend(be).then(done => console.log(be + ' ready'));
 
   return shadows;
 }

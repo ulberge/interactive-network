@@ -31,7 +31,7 @@ function scale3DArray(arr3D) {
 
 function NetworkBuilderWaterfall(props) {
   const { networkData, onSelectKernel, zoomSelection } = props;
-  console.log('nd', networkData);
+  // console.log('nd', networkData);
 
   const [ outputSelection, setOutputSelection ] = useState(null);
 

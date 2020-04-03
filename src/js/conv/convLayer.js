@@ -1,5 +1,6 @@
 import nj from 'numjs';
 import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-wasm';
 import { dtype, dilateBounds } from './convArray';
 
 export default class ConvLayer {
@@ -23,6 +24,7 @@ export default class ConvLayer {
     let ct1;
 
     const d = dirty.reshape([1, ...dirty.shape]).selection;
+    // console.log('reshape dirty', Date.now() - ct0);
     const input = tf.tensor4d(d.data, d.shape);
 
     ct1 = Date.now();
@@ -34,15 +36,14 @@ export default class ConvLayer {
     if (backend) {
       // save original backend for reset
       _backend = tf.getBackend();
-      tf.setBackend(backend);
+      // tf.setBackend(backend);
     }
 
     times.push(tf.getBackend());
     const output = this._tflayer.apply(input);
-
     if (backend) {
       // reset backend
-      tf.setBackend(_backend);
+      // tf.setBackend(_backend);
     }
 
     ct1 = Date.now();
@@ -80,7 +81,7 @@ export default class ConvLayer {
     const size = h * w * this._kernelSize * this._rawFilters.length;
 
     // the default for calculations is cpu
-    tf.setBackend('cpu');
+    // tf.setBackend('cpu');
 
     // over a certain size, webgl is faster
     // at small sizes, the penalty for syncing data makes cpu faster

@@ -50,6 +50,12 @@ export default class SmartCollage {
    * @param {boolean} makeBackup - If true, store the affected canvas area in the backup cache before change is applied.
    */
   addSegment(start, end, makeBackup=false) {
+    // const danger = 4;
+    // if (!makeBackup) {
+    //   if (start.x < danger || end.x < danger || start.y < danger || end.y < danger || (this.p.width - start.x) < danger || (this.p.height - start.y) < danger) {
+    //     debugger;
+    //   }
+    // }
     // sanitize
     start = safePt(start, this.bounds);
     end = safePt(end, this.bounds);

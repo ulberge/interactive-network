@@ -1,16 +1,38 @@
 import p5 from 'p5';
+const bresenham = require('bresenham-js');
 
+// Parts
+// const settings = {
+//   strokeWeight: 0.6,
+//   speed: 1,
+//   angleRange: Math.PI * 0.85,
+//   segmentLength: 3,
+//   startSegmentLength: 3,
+//   startMinTries: 30,
+//   startNumStarts: 12,
+//   startNumAngles: 1,
+//   nextMinTries: 4,
+//   nextNumStarts: 12,
+//   sensitivity: 10,
+//   startMinScore: 10,
+//   nextMinScore: 10,
+// };
+
+// Lines
 const settings = {
-  strokeWeight: 1,
+  strokeWeight: 0.6,
   speed: 1,
   angleRange: Math.PI * 0.85,
-  segmentLength: 5,
-  startMinTries: 100,
-  startNumStarts: 8,
-  startNumAngles: 4,
+  segmentLength: 3,
+  startSegmentLength: 3,
+  startMinTries: 50,
+  startNumStarts: 20,
+  startNumAngles: 1,
   nextMinTries: 4,
   nextNumStarts: 12,
-  sensitivity: 5,
+  sensitivity: 10,
+  startMinScore: 500,
+  nextMinScore: 200,
 };
 
 function delay(timer) {
@@ -26,8 +48,9 @@ function getRandomArbitrary(min, max) {
 }
 
 export default class Drawer {
-  constructor(smartCanvas) {
+  constructor(smartCanvas, pTest) {
     this.smartCanvas = smartCanvas;
+    this.pTest = pTest;
     this._listeners = [];
   }
 
@@ -44,9 +67,11 @@ export default class Drawer {
     this.isDone = false;
     this.lineEnds = [];
     this.lineSegmentEnds = [];
+    this.lineSegments = [];
     this.dynamicMinScore = 50;
     this.scores = [];
     this.smartCanvas.p.strokeWeight(settings.strokeWeight);
+    this.startTime = new Date().getTime();
     this.start();
   }
 
@@ -92,8 +117,23 @@ export default class Drawer {
           this.drawingTimer = setTimeout(runDraw, settings.speed);
         }
       } else {
+        console.log('\n\n\n');
+        console.log('TOTAL TIME: ' + (new Date().getTime() - this.startTime));
+        console.log('TIME FOR LAST SEARCH: ' + (new Date().getTime() - this.lastStartSeriesState));
+        console.log('\n\n\n');
+
         if (this.callback) {
-          setTimeout(this.callback, 0); // wrap in setTimeout in case async is depended on (can fail on first attempt)
+          setTimeout(() => {
+            if (this.pTest) {
+              this.pTest.clear();
+              this.lineSegments.forEach(seg => {
+                const { start, end } = seg;
+                const size = this.pTest._testSize;
+                this.pTest.line(start.x * size, start.y * size, end.x * size, end.y * size);
+              });
+            }
+            this.callback()
+          }, 0); // wrap in setTimeout in case async is depended on (can fail on first attempt)
         }
       }
     }
@@ -109,6 +149,12 @@ export default class Drawer {
 
   // Draw one step of animation, returns true if done
   drawTick() {
+    // const totalScore = this.scores.reduce((a, b) => a + b, 0);
+    // console.log('totalScore', totalScore);
+    // if (totalScore > (534000600 * 1.5)) {
+    //   return true;
+    // }
+
     if (this.boid.pos === null) {
       this._notifyListeners('NEWLINE');
       const hasMoreStarts = this.getNewLine();
@@ -120,6 +166,7 @@ export default class Drawer {
         }
       } else {
         this.countStartFails = 0;
+        this.lastStartSeriesState = new Date().getTime();
       }
     } else {
       const hasNextSegment = this.getNextSegment();
@@ -139,15 +186,18 @@ export default class Drawer {
   }
 
   getNewLine() {
-    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find start. Attempting ' + (settings.startNumStarts * settings.startNumAngles) + ' times.');
 
     // Select starts with equal weight between random, at line ends, or along the lines
     const starts = [];
+    const pad = 2;
     for (let i = 0; i < settings.startNumStarts; i += 1) {
       let start;
-      if ((this.lineEnds.length === 0 && this.lineSegmentEnds.length === 0) || Math.random() < 0.83) {
+      if ((this.lineEnds.length === 0 && this.lineSegmentEnds.length === 0) || Math.random() < 0.75) {
         // if no shadow, use random locations
-        start = new p5.Vector(Math.random() * this.smartCanvas.shape[0], Math.random()  * this.smartCanvas.shape[1]);
+        start = new p5.Vector(
+          (Math.random() * (this.smartCanvas.shape[0] - (pad * 2))) + pad,
+          (Math.random() * (this.smartCanvas.shape[1] - (pad * 2))) + pad,
+        );
       } else {
         if (this.lineSegmentEnds.length === 0 || Math.random() < 0.5) {
           start = chooseRandom(this.lineEnds);
@@ -155,7 +205,7 @@ export default class Drawer {
           start = chooseRandom(this.lineSegmentEnds);
         }
         // Add random noise
-        const offsetMax = 3;
+        const offsetMax = 1;
         start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
       }
       starts.push(start);
@@ -165,12 +215,20 @@ export default class Drawer {
     const options = [];
     const scores = [];
     for (let start of starts) {
+      const vels = this.boid.getStartVelOptions(settings.startSegmentLength, settings.startNumAngles);
       for (let j = 0; j < settings.startNumAngles; j += 1) {
-        const vel = p5.Vector.random2D().setMag(settings.segmentLength);
+        // const vel = p5.Vector.random2D().setMag(settings.segmentLength);
+        const vel = vels[j];
         const end = start.copy().add(vel);
 
         if (!this.isWithinBounds(start) || !this.isWithinBounds(end)) {
-          console.log('rejected', start, end);
+          // console.log('rejected: Out of Bounds', start, end);
+          continue;
+        }
+
+        // Check if it crosses a white square
+        if (!this.doesCrossWhiteSquare(start, end, 2, 100)) {
+          console.log('new line rejected: Does not cross open area', start, end);
           continue;
         }
 
@@ -186,9 +244,16 @@ export default class Drawer {
       }
     }
 
+    console.log('Try #' + (this.countStartFails + 1) + ' to find start. Attempting ' + options.length + ' potential options.');
+
     // Filter out scores that are too low (to eliminate drawing lines slightly thicker and darker)
-    if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
-      console.log('No scores over ' + this.dynamicMinScore + ' found');
+    // if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
+    //   console.log('No scores over ' + this.dynamicMinScore + ' found');
+    //   return false; // if no more improvements possible, halt
+    // }
+
+    if (scores.filter(s => s > settings.startMinScore).length === 0) {
+      // console.log('No scores over 0 found');
       return false; // if no more improvements possible, halt
     }
 
@@ -196,7 +261,7 @@ export default class Drawer {
     const optionIndex = this.chooseScore(scores);
     const score = scores[optionIndex];
     const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-    console.log('Found ' + scores.length + ' starts with average score ' + avgScore, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
+    console.log('Chose: ' + score + ', Found ' + scores.length + ' starts with average score ' + avgScore, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
     const { start, end, vel } = options[optionIndex];
 
     // Always add start
@@ -214,19 +279,17 @@ export default class Drawer {
   }
 
   getNextSegment() {
-    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + settings.nextNumStarts + ' times.');
     const options = [];
     const scores = [];
 
     // Try angles center at angle segments
     const segmentLength = Math.max(1, settings.segmentLength * Math.pow(0.85, this.countNextSegmentFails));
-    console.log('segmentLength', segmentLength);
     const testOptions = this.boid.getNextVelOptions(segmentLength, settings.angleRange, settings.nextNumStarts);
 
     for (let option of testOptions) {
       const { start, end } = option;
       if (!this.isWithinBounds(start) || !this.isWithinBounds(end)) {
-        console.log('Next segment rejection', start, end);
+        // console.log('Next segment rejection', start, end);
         continue;
       }
       this.smartCanvas.addSegment(start, end, true);
@@ -237,18 +300,31 @@ export default class Drawer {
       scores.push(score);
     }
 
-    if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
-      console.log('Next segment no scores over ' + this.dynamicMinScore);
+    console.log('Try #' + (this.countNextSegmentFails + 1) + ' to find next segment. Attempting ' + options.length + ' potential options.');
+
+    // if (scores.filter(s => s > this.dynamicMinScore).length === 0) {
+    //   console.log('Next segment no scores over ' + this.dynamicMinScore);
+    //   return false; // if no more improvements possible, halt
+    // }
+    if (scores.filter(s => s > settings.nextMinScore).length === 0) {
+      // console.log('No scores over 0 found');
       return false; // if no more improvements possible, halt
     }
 
     const optionIndex = this.chooseScore(scores);
 
     const { start, end, vel } = options[optionIndex];
+
+    // Check if it crosses a white square
+    // if (!this.doesCrossWhiteSquare(start, end, 2, 20)) {
+    //   console.log('next segment rejected: Does not cross open  area', start, end);
+    //   return;
+    // }
+
     // const lineInfo = lineInfos[optionIndex];
     const score = scores[optionIndex];
     // console.log('update', optionIndex, start, end, vel, score, scores);
-    console.log('Chose ' + optionIndex, 'Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
+    // console.log('Chose ' + optionIndex, 'Found ' + scores.length + ' segments with average score ' + (scores.reduce((a, b) => a + b, 0) / scores.length), scores, scores.slice().sort((a, b) => (a > b) ? -1 : 1));
 
     this.lineSegmentEnds.push(start);
     this.update(start, end, vel, score);
@@ -271,6 +347,7 @@ export default class Drawer {
   }
 
   update(start, end, vel, score) {
+    this.lineSegments.push({start, end});
     this.prevOption = { start, end, vel };
     this.boid.run(vel);
 
@@ -295,6 +372,27 @@ export default class Drawer {
     }
     return false;
   }
+
+  // Does this line cross squares that are white based on the threshold?
+  doesCrossWhiteSquare(start, end, amt=1, threshold=1) {
+    const squares = bresenham([Math.floor(start.x), Math.floor(start.y)], [Math.floor(end.x), Math.floor(end.y)]);
+
+    const p = this.smartCanvas.p;
+    let count = 0;
+    for (const pt of squares) {
+      const [x, y] = pt;
+      const c = p.get(x, y);
+      if (c[3] <= threshold) {
+        count++;
+      }
+
+      if (count >= amt) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
 
 // A class for an agent that can be controlled to make a drawing
@@ -303,6 +401,20 @@ class Boid {
     this.diameter = 10;
     this.reset();
     this.p = p;
+  }
+
+  getStartVelOptions(segmentLength, num) {
+    // Generate even distribution of angles with noise
+    const angleDelta = (Math.PI * 2) / num;
+    const options = [];
+    for (let i = 0; i < num; i += 1) {
+      const angleNoise = getRandomArbitrary(-angleDelta / 2, angleDelta / 2);
+      const angle = (angleDelta * i) + angleNoise;
+      const vel = new p5.Vector(1, 0).setMag(segmentLength).rotate(angle);
+      options.push(vel);
+    }
+
+    return options;
   }
 
   getNextVelOptions(segmentLength, angleRange, num) {
@@ -330,7 +442,7 @@ class Boid {
     }
     const options = [];
     const [angleOffsets, angleDeltas] = getOffsetsAndDeltas(num, angleRange * 2);
-    console.log(angleOffsets, angleRange * 2);
+    // console.log(angleOffsets, angleRange * 2);
     for (let i = 0; i < num; i += 1) {
       const angleDelta = angleDeltas[i];
       const angleOffset = angleOffsets[i];

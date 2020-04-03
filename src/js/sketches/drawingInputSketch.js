@@ -41,8 +41,10 @@ export function getSketch(shape, smartCanvasRef) {
       } else {
         // at end of mouse press, update LineInfo
         if (dirty) {
+          const ct0 = Date.now();
           smartCanvasRef.current.update();
           dirty = false;
+          console.log(Date.now() - ct0);
         }
       }
     };

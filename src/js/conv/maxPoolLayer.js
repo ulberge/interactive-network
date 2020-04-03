@@ -22,10 +22,10 @@ export default class MaxPoolLayer {
     const size = h * w;
     const sizeThreshold = 3000;
     if (size > sizeThreshold) {
-      tf.setBackend('webgl');
-      console.log('opting to use webgl');
+      // tf.setBackend('webgl');
+      // console.log('opting to use webgl');
     } else {
-      tf.setBackend('cpu');
+      // tf.setBackend('cpu');
     }
 
     // tf backend
@@ -35,7 +35,7 @@ export default class MaxPoolLayer {
     const updateShape = [ this.output._channels, h, w ];
     const update = nj[dtype](output.dataSync()).reshape(updateShape);
 
-    tf.setBackend('cpu');
+    // tf.setBackend('cpu');
 
     this.output.assign(update, null, updateBounds);
 

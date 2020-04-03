@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { getAllKernels } from '../../js/kernel';
 import { getNetworkSettings } from './house';
@@ -10,12 +10,13 @@ import NetworkBuilderEditKernelDialog from './NetworkBuilderEditKernelDialog';
 import NetworkLoader from './NetworkLoader';
 import NetworkTrainer from './NetworkTrainer';
 import NetworkBuilderEditNetworkDialog from './NetworkBuilderEditNetworkDialog';
+import * as tf from '@tensorflow/tfjs';
 
 const last = localStorage.getItem('lastNetworkName');
 const lastNetworkSettings = JSON.parse(localStorage.getItem(last));
 const defaultNetworkSettings = getNetworkSettings();
 
-const canvasSize = 100;
+const canvasSize = 600;
 
 function NetworkBuilder(props) {
   const { kernelSettings } = props;
@@ -51,6 +52,15 @@ function NetworkBuilder(props) {
     layerInfos.push(...networkSettings.layerInfos);
     return layerInfos;
   }, [ networkSettings, kernels ]);
+
+  useEffect(() => {
+    // const be = 'webgl';
+    // const be = 'cpu';
+    const be = 'wasm';
+    setTimeout(() => {
+      tf.setBackend(be).then(() => console.log(be + ' ready'));
+    }, 500);
+  }, []);
 
   const handleOpenEdit = (layerIndex, filterIndex, kernelIndex) => {
     console.log(layerIndex, filterIndex, kernelIndex);

@@ -4,6 +4,7 @@ import MaxPoolLayer from './maxPoolLayer';
 import { getShadows } from '../networkShadow';
 import p5 from 'p5';
 import * as tf from '@tensorflow/tfjs';
+import nj from 'numjs';
 tf.enableProdMode();
 
 export default class Network {
@@ -56,25 +57,52 @@ export default class Network {
   /**
    * Given a change to the input layer, update all
    */
-  run(dirty, dirtyBounds) {
-    const backend = tf.getBackend();
-    // update first layer
-    this.arrs[0].assign(dirty, 0, dirtyBounds);
+  run(dirty, dirtyBounds, alt=false) {
+    // if (alt) {
+    //   let ct0 = Date.now();
+    //   const all = this.arrs[0]._arr;
+    //   // const d = all.reshape([1, ...all.shape]).selection;
+    //   const d = all.selection;
+    //   const outputTensor = tf.tidy(() => {
+    //     let inputTensor = tf.tensor4d(d.data, [1, ...all.shape]);
+    //     // console.log('data prep', Date.now() - ct0);
+    //     let ct02 = Date.now();
+    //     for (const [i, layer] of this.layers.entries()) {
+    //       inputTensor = layer._tflayer.apply(inputTensor);
+    //     }
+    //     // console.log('run net appluy', Date.now() - ct02);
+    //     return inputTensor;
+    //   });
 
-    // propogate through network by running layers
-    // const t00 = Date.now();
-    for (const [i, layer] of this.layers.entries()) {
-      // const t0 = Date.now();
-      layer.run();
-      // const t1 = Date.now();
-      // console.log('time for layer ' + i, t1 - t0);
-    }
-    // const t01 = Date.now();
-    // console.log('total network time', t01 - t00);
+    //   // let ct03 = Date.now();
+    //   outputTensor.dataSync();
+    //   // console.log('data sync', Date.now() - ct03);
+    //   outputTensor.dispose();
+    //   // console.log('run net', Date.now() - ct0);
+    //   // this.arrs[this.arrs.length - 1].clean();
+    //   return;
+    // }
 
-    // mark last layer clean (or it will accumlate dirty!)
-    this.arrs[this.arrs.length - 1].clean();
-    tf.setBackend(backend);
+    tf.tidy(() => {
+      // const backend = tf.getBackend();
+      // update first layer
+      this.arrs[0].assign(dirty, 0, dirtyBounds);
+
+      // propogate through network by running layers
+      // const t00 = Date.now();
+      for (const [i, layer] of this.layers.entries()) {
+        // const t0 = Date.now();
+        layer.run();
+        // const t1 = Date.now();
+        // console.log('time for layer ' + i, t1 - t0);
+      }
+      // const t01 = Date.now();
+      // console.log('total network time', t01 - t00);
+
+      // mark last layer clean (or it will accumlate dirty!)
+      this.arrs[this.arrs.length - 1].clean();
+      // tf.setBackend(backend);
+    });
   }
 
   getOutput(i) {

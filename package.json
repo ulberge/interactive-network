@@ -7,7 +7,9 @@
     "@material-ui/icons": "^4.5.1",
     "@material-ui/lab": "^4.0.0-alpha.40",
     "@tensorflow/tfjs": "^1.7.0",
+    "@tensorflow/tfjs-backend-wasm": "^1.7.1",
     "@tensorflow/tfjs-vis": "^1.3.0",
+    "bresenham-js": "0.0.0",
     "d3": "^5.15.0",
     "fibers": "^4.0.2",
     "history": "^4.10.1",
@@ -26,6 +28,7 @@
     "vega": "^5.9.1"
   },
   "scripts": {
+    "wasm": "cp node_modules/@tensorflow/tfjs-backend-wasm/dist/tfjs-backend-wasm.wasm ./public",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

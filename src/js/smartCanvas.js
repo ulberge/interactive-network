@@ -14,13 +14,61 @@ function safePt(pt, bounds) {
   return new p5.Vector(x, y);
 }
 
+// Adapted from : https://medium.com/mlreview/a-guide-to-receptive-field-arithmetic-for-convolutional-neural-networks-e0f514068807
+function outFromIn(layer, layerIn) {
+  // const n_in = layerIn[0];
+  const j_in = layerIn[0];
+  const r_in = layerIn[1];
+  const pool_in = layerIn[3];
+  // const start_in = layerIn[3];
+  const k = layer[0];// kernelSize;
+  const s = layer[1];// stride;
+  // const p = layer[2];// padding;
+  const pool_size = layer[2];// poolSize;
+
+  // const n_out = Math.floor((n_in - k + 2*p)/s) + 1;
+  // const actualP = (n_out-1)*s - n_in + k;
+  // const pR = Math.ceil(actualP/2);
+  // const pL = Math.floor(actualP/2);
+
+  const j_out = j_in * s;
+  const r_out = r_in + (k - 1)*j_in;
+  const pool_out = pool_size * pool_in;
+  const start_out = pool_out / 2;
+  return [j_out, r_out, start_out, pool_out];
+  // return [n_out, j_out, r_out, start_out];
+}
+
+function getReceptiveFieldInfos(layerInfos, canvasSize) {
+  const layers = layerInfos.map(layer => {
+    if (layer.type === 'conv2d') {
+      return [layer.kernelSize, 1, 1];
+    } else {
+      return [layer.poolSize, layer.poolSize, layer.poolSize];
+    }
+  })
+
+  let currentLayer = [1, 1, 0.5, 1];
+  console.log(currentLayer);
+  const receptiveFieldInfos = [];
+  layers.forEach(layer => {
+    currentLayer = outFromIn(layer, currentLayer);
+    receptiveFieldInfos.push(currentLayer.slice(0, 3)); // we can prune the number of features, not useful later
+    console.log(currentLayer, layer);
+  });
+
+  return receptiveFieldInfos;
+}
+
 export default class SmartCanvas {
-  constructor(p, shape, layerInfos) {
+  constructor(p, pOverlay, shape, layerInfos) {
     // assumes p is blank
     this.p = p;
+    this.pOverlay = pOverlay;
     this.shape = shape;
     this.layerInfos = layerInfos;
     this.network = new Network(this.shape, layerInfos);
+    this.receptiveFieldInfos = getReceptiveFieldInfos(layerInfos, shape[0]);
     this._dirtyBounds = null;
     this._backup = null;
     this._listeners = [];
@@ -43,6 +91,20 @@ export default class SmartCanvas {
   get bounds() {
     const [ maxY, maxX ] = this.shape;
     return [ 0, 0, maxX, maxY ];
+  }
+
+  getReceptiveField(layerIndex, location) {
+    const [ jump, size, offset ] = this.receptiveFieldInfos[layerIndex];
+    const { x, y } = location;
+    // get center of receptive field
+    const cx = (jump * x) + offset;
+    const cy = (jump * y) + offset;
+    // get bounds
+    let start = new p5.Vector(cx - (size / 2), cy - (size / 2));
+    let end = new p5.Vector(cx + (size / 2), cy + (size / 2));
+    start = safePt(start, this.bounds);
+    end = safePt(end, this.bounds);
+    return [start.x, start.y, end.x, end.y];
   }
 
   /**
@@ -103,14 +165,32 @@ export default class SmartCanvas {
   update(notify=true) {
     if (this._dirtyBounds) {
       // get dirty area
+      let ct0 = Date.now();
       const [ sx, sy, ex, ey ] = this._dirtyBounds;
       const g = this.p.get(sx, sy, ex - sx, ey - sy);
+      // console.log('get dirty area', ex - sx, ey - sy, Date.now() - ct0);
       g.loadPixels();
+      // console.log('load dirty area', ex - sx, ey - sy, Date.now() - ct0);
+      ct0 = Date.now();
+
       const dirty = nj[dtype](g.pixels).reshape(g.height, g.width, 4).slice(null, null, [3, 4]).reshape(1, g.height, g.width);
+      // const dirty = '';
+      // console.log('reshape', Date.now() - ct0);
       this.network.run(dirty, this._dirtyBounds);
+      ct0 = Date.now();
       if (notify) {
         this._notifyListeners({ network: this.network, dirtyBounds: [...this._dirtyBounds] });
       }
+      // console.log('notify', Date.now() - ct0);
+      // let t = Date.now() - ct0;
+      // if (typeof window.ttot === 'undefined') {
+      //   window.ttot = 0;
+      //   window.tcount = 0;
+      // } else {
+      //   window.ttot += t;
+      //   window.tcount += 1;
+      // }
+      // console.log(window.ttot / window.tcount, ' current -> ', t);
       this._dirtyBounds = null; // reset dirty bounds
     }
   }

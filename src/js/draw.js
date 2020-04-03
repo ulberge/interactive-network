@@ -1,11 +1,11 @@
 import p5 from 'p5';
 
 const settings = {
-  strokeWeight: 2,
+  strokeWeight: 1,
   speed: 0,
   angleRange: Math.PI * 0.85,
   // angleRange: Math.PI * 0.1,
-  segmentLength: 5,
+  segmentLength: 6,
   startMinTries: 3000,
   startNumStarts: 8,
   startNumAngles: 4,
@@ -84,24 +84,28 @@ export default class Drawer {
    */
   async draw(layerIndex, filterIndex, location, callback) {
     // calc shadow (2D array of activation potential) which is the size of the theoretical receptive field
-    this.shadow = this.smartCanvas.network.shadows[layerIndex][filterIndex];
+    // this.shadow = this.smartCanvas.network.shadows[layerIndex][filterIndex];
 
-    // the center of the shadow
-    const { x, y } = this.smartCanvas.network.getShadowOffset(layerIndex, location);
-    const h = this.shadow.length;
-    const w = this.shadow[0].length;
-    this.bounds = [
-      Math.floor(x - (w / 2)),
-      Math.floor(y - (h / 2)),
-      Math.ceil(x + (w / 2)),
-      Math.ceil(y + (h / 2))
-    ];
-    this.shadowOffset = this.bounds.slice(0, 2);
+    // // the center of the shadow
+    // const { x, y } = this.smartCanvas.network.getShadowOffset(layerIndex, location);
+    // const h = this.shadow.length;
+    // const w = this.shadow[0].length;
+    // this.bounds = [
+    //   Math.floor(x - (w / 2)),
+    //   Math.floor(y - (h / 2)),
+    //   Math.ceil(x + (w / 2)),
+    //   Math.ceil(y + (h / 2))
+    // ];
+    // this.shadowOffset = this.bounds.slice(0, 2);
 
     // TODO: limit # of channels by passing channel filter
     this.getScore = () => {
-      const { x, y } = location;
-      return this.smartCanvas.network.arrs[layerIndex + 1].arr.tolist()[filterIndex][y][x];
+      // const { x, y } = location;
+      // return this.smartCanvas.network.arrs[layerIndex + 1].arr.tolist()[filterIndex][y][x];
+      // const score = Math.max(...this.smartCanvas.network.arrs[this.smartCanvas.network.arrs.length - 1].arr.tolist().flat().flat());
+      // sum
+      const score = this.smartCanvas.network.arrs[layerIndex + 1].arr.tolist()[filterIndex].flat().map(v => v ** 2).reduce((a, b) => a + b);
+      return score;
     };
 
     // initialize new drawer
@@ -163,8 +167,10 @@ export default class Drawer {
   // Draw one step of animation, returns true if done
   drawTick() {
     // console.log('drawTick');
+    // this.boid.pos = null;
     if (this.boid.pos === null) {
       const hasMoreStarts = this.getNewLine();
+      this.addedSegs = 0;
       if (!hasMoreStarts) {
         this.countStartFails++;
         if (this.countStartFails >= settings.startMinTries) {
@@ -176,6 +182,10 @@ export default class Drawer {
       }
     } else {
       const hasNextSegment = this.getNextSegment();
+      this.addedSegs++;
+      if (this.addedSegs > 10) {
+        this.boid.pos = null;
+      }
       if (!hasNextSegment) {
         this.countNextSegmentFails++;
         if (this.countNextSegmentFails >= settings.nextMinTries) {
@@ -212,7 +222,7 @@ export default class Drawer {
       //   start.copy().add(new p5.Vector(Math.random() * offsetMax, Math.random() * offsetMax));
       // }
 
-      if (this.lineEnds.length === 0 || Math.random() < 0.3) {
+      if (this.lineEnds.length === 0 || Math.random() < 0.99) {
       // if (this.lineEnds.length === 0) {
         if (this.shadow) {
           // choose random point from shadow if no line ends or with probability
@@ -250,9 +260,25 @@ export default class Drawer {
           continue;
         }
 
+        let ct0orig = Date.now();
         this.smartCanvas.addSegment(start, end, true);
-        this.smartCanvas.update();
+        // console.log('add seg', Date.now() - ct0orig);
+        let ct0 = Date.now()
+        this.smartCanvas.update(false);
+        // console.log('update canvas', Date.now() - ct0);
+        ct0 = Date.now()
         const score = this.getScore();
+        // console.log('get score', Date.now() - ct0);
+        const t = Date.now() - ct0orig;
+        if (!window.tcount2 || !window.t2) {
+          window.tcount2 = 0;
+          window.t2 = 0;
+        }
+        window.tcount2++;
+        window.t2 += t;
+      console.log(window.t2 / window.tcount2, window.tcount2, t);
+
+
         // console.log('score', score, this.prevScore, score - this.prevScore);
         this.smartCanvas.restore();
         options.push({ start, vel, end });
@@ -319,9 +345,26 @@ export default class Drawer {
         console.log('Next segment rejection', start, end);
         continue;
       }
+
+
+      let ct0orig = Date.now();
       this.smartCanvas.addSegment(start, end, true);
-      this.smartCanvas.update();
+      // console.log('add seg', Date.now() - ct0orig);
+      let ct0 = Date.now()
+      this.smartCanvas.update(false);
+      // console.log('update canvas', Date.now() - ct0);
+      ct0 = Date.now()
       const score = this.getScore();
+      // console.log('get score', Date.now() - ct0);
+      const t = Date.now() - ct0orig;
+      if (!window.tcount2 || !window.t2) {
+        window.tcount2 = 0;
+        window.t2 = 0;
+      }
+      window.tcount2++;
+      window.t2 += t;
+    console.log(window.t2 / window.tcount2, window.tcount2, t);
+
       // console.log('score', score, this.prevScore, score - this.prevScore);
       this.smartCanvas.restore();
       options.push(option);

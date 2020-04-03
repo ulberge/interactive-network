@@ -88,18 +88,22 @@ function getMaxDiff(maxArr, prevMaxArr) {
   return { loc, v };
 }
 
-export default function drawNetwork(kernels, rewards, p, callback, update) {
+export default function drawNetwork(kernels, rewards, p, callback, pTest) {
   const shape = [p.width, p.height];
   const layerInfos = [
+    // { // add pooling at beginning
+    //   type: 'maxPool2d',
+    //   poolSize: 3
+    // },
     {
       type: 'conv2d',
       filters: kernels.map(k => [k]),
       kernelSize: kernels[0].length
     },
-    { // add pooling at end
-      type: 'maxPool2d',
-      poolSize: 3
-    }
+    // { // add pooling at end
+    //   type: 'maxPool2d',
+    //   poolSize: 3
+    // }
   ];
   // Generate all the networks
   const network = new Network(shape, layerInfos);
@@ -107,11 +111,11 @@ export default function drawNetwork(kernels, rewards, p, callback, update) {
   const smartCollage = new SmartCollage(p, shape, [network]);
   // smartCollage.addListener(update);
   smartCollage.init();
-  const drawer = new Drawer(smartCollage);
+  const drawer = new Drawer(smartCollage, pTest);
 
   // Focus on acts at a single location at a time
   let actLoc = null;
-  const actLocs = [];
+  const actLocs = {};
   let prevMaxArr = null;
   let prevSum = 0;
 
@@ -151,7 +155,7 @@ export default function drawNetwork(kernels, rewards, p, callback, update) {
       const { loc, v } = getMaxDiff(maxArr, prevMaxArr);
       if (shouldSetValues) {
         actLoc = loc;
-        actLocs.push(`${actLoc.x},${actLoc.y}`);
+        actLocs[`${actLoc.x},${actLoc.y}`] = true;
       }
       score = v;
     } else {
