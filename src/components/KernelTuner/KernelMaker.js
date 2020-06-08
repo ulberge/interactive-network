@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -15,18 +15,11 @@ function KernelMaker(props) {
   const [ kernelSettings, setKernelSettings ] = useState(defaultKernelSettings);
   const { numComponents, lambda, sigma, windowSize, types } = kernelSettings;
 
-  const timerRef = useRef(null);
   const updateKernelSettingsCallback = useCallback((field, value) => {
     const newKernelSettings = { ...kernelSettings, [field]: value }
     setKernelSettings(newKernelSettings);
+    updateKernelSettings(newKernelSettings);
 
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    // delay global update to make the kernel tuner UI update smoothly
-    timerRef.current = setTimeout(() => {
-      updateKernelSettings(newKernelSettings);
-    }, 100);
   }, [ setKernelSettings, kernelSettings, updateKernelSettings ]);
 
   const kernels = useMemo(() => {

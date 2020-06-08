@@ -18,32 +18,14 @@ export default class MaxPoolLayer {
     const h = maxY - minY;
     const w = maxX - minX;
 
-    const size = h * w;
-    const sizeThreshold = 3000;
-    if (size > sizeThreshold) {
-      tf.setBackend('webgl');
-      console.log('opting to use webgl');
-    } else {
-      tf.setBackend('cpu');
-    }
-
-    // tf backend
     const d = dirty.reshape([1, ...dirty.shape]).selection;
     const input = tf.tensor4d(d.data, d.shape);
     const output = this._tflayer.apply(input);
     const updateShape = [ this.output._channels, h, w ];
     const update = nj[dtype](output.dataSync()).reshape(updateShape);
 
-    tf.setBackend('cpu');
-
     this.output.assign(update, null, updateBounds);
-
-    if (size > sizeThreshold) {
-      this.output.calcStats(output, 'webgl');
-    } else {
-      this.output.calcStats(output, 'cpu');
-    }
-
+    this.output.calcStats(output);
     this.input.clean();
   }
 }

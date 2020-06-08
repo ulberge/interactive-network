@@ -6,7 +6,7 @@ import KernelInspectorViewOutput from './KernelInspectorViewOutput';
 import { getKernels } from '../../js/kernel';
 
 // shape of the drawing area
-const shape = [ 100, 100 ];
+const shape = [ 60, 60 ];
 // const shape = [ 256, 256 ];
 const defaultPt = { x: Math.floor(shape[0] / 2) - 1, y: Math.floor(shape[1] / 2) - 1 }
 

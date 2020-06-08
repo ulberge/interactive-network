@@ -15,8 +15,8 @@ const defaultKernelSettings = {
   numComponents: 2, // actual num is 2^numComponents
   lambda: 4.9,
   sigma: 3.3,
-  windowSize: 9,
-  types: [kernelTypes[0], kernelTypes[2]]
+  windowSize: 7,
+  types: [kernelTypes[0], kernelTypes[1]]
 };
 // Check the saved kernel settings have not been corrupted somehow
 function areValidKernelSettings(kernelSettings) {

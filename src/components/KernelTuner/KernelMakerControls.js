@@ -52,10 +52,10 @@ const KernelMakerControls = memo(function KernelMakerControls(props) {
           defaultValue={props.numComponents}
           track={false}
           aria-labelledby="number of components"
-          marks={[1, 2, 3, 4, 5].map(value => ({ value, label: (2 ** value) }))}
+          marks={[1, 2, 3].map(value => ({ value, label: (2 ** value) }))}
           step={1}
           min={1}
-          max={5}
+          max={3}
           onChange={(event, value) => props.onChange('numComponents', value)}
         />
       </div>
@@ -66,10 +66,10 @@ const KernelMakerControls = memo(function KernelMakerControls(props) {
           track={false}
           aria-labelledby="window size"
           valueLabelDisplay="auto"
-          marks={[3, 5, 7, 9, 11, 13, 15].map(value => ({ value, label: value }))}
+          marks={[3, 5, 7, 9, 11].map(value => ({ value, label: value }))}
           step={2}
           min={3}
-          max={15}
+          max={11}
           onChange={(event, value) => props.onChange('windowSize', value)}
         />
       </div>
@@ -95,7 +95,7 @@ const KernelMakerControls = memo(function KernelMakerControls(props) {
           aria-labelledby="sigma"
           valueLabelDisplay="auto"
           step={0.1}
-          min={0.1}
+          min={0.6}
           max={8}
           onChange={(event, value) => props.onChange('sigma', value)}
           style={{ padding: '24px 0' }}

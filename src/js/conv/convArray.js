@@ -66,14 +66,8 @@ export default class ConvArray {
   /**
    * Clears the dirtyBounds
    */
-  calcStats(outputTensor, backend='cpu') {
+  calcStats(outputTensor) {
     if (this._dirtyBounds) {
-      let _backend;
-      if (backend) {
-        // save original backend for reset
-        _backend = tf.getBackend();
-      }
-
       const [ minX, minY, maxX, maxY ] = this._dirtyBounds;
       const h = maxY - minY;
       const w = maxX - minX;
@@ -82,17 +76,8 @@ export default class ConvArray {
       let ct0 = Date.now();
       let ct1;
 
-      if (backend) {
-        tf.setBackend(backend);
-      }
-
       times.push(tf.getBackend());
       const idsT = outputTensor.argMax(1);
-
-      if (backend) {
-        // reset backend
-        tf.setBackend(_backend);
-      }
 
       ct1 = Date.now();
       times.push('argmax -> ');
@@ -131,17 +116,8 @@ export default class ConvArray {
       times.push(ct1 - ct0);
       ct0 = ct1;
 
-      if (backend) {
-        tf.setBackend(backend);
-      }
-
       times.push(tf.getBackend());
       const maxT = flatOutputTensor.gather(idLookups);
-
-      if (backend) {
-        // reset backend
-        tf.setBackend(_backend);
-      }
 
       ct1 = Date.now();
       times.push('gather -> ');
@@ -158,7 +134,7 @@ export default class ConvArray {
       times.push(ct1 - ct0);
       ct0 = ct1;
 
-      console.log('calc stats:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
+      console.log('calc stats:', 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
     }
   }
 

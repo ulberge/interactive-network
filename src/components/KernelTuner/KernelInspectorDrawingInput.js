@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
-import DebounceSlider from '../UI/DebounceSlider';
+import Slider from '@material-ui/core/Slider';
 import SmartCanvas from '../../js/smartCanvas';
 import p5 from 'p5';
 import { getSketch } from '../../js/sketches/drawingInputSketch';
@@ -62,7 +62,7 @@ function KernelInspectorDrawingInput(props) {
       </Grid>
       <Grid item style={{ margin: '20px auto', maxWidth: '200px', minWidth: '160px' }}>
         <div>
-          <DebounceSlider
+          <Slider
             defaultValue={rotation}
             track={false}
             aria-labelledby="drawing rotation"
@@ -72,7 +72,6 @@ function KernelInspectorDrawingInput(props) {
             min={-360}
             max={360}
             onChange={(event, value) => setRotation(value)}
-            timer={20}
           />
         </div>
         <div style={{ marginTop: '10px', textAlign: 'center' }}>Test rotation invariance</div>

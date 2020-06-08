@@ -1,7 +1,7 @@
 import nj from 'numjs';
 
-// export const kernelTypes = ['┃', '╻', '┗', '┳', '╋', 'Y', '>', '_/', ')', '⭑'];
-export const kernelTypes = ['I', 'i', 'L', 'T', 'X', 'Y', '>', '_/', ')', '⭑'];
+// export const kernelTypes = ['I', 'i', 'L', 'T', 'X', 'Y', '>', '_/', ')', '⭑'];
+export const kernelTypes = ['I', 'i', 'L', 'T', 'X'];
 
 // Returns a f(x, y) for 2D cosine wave at angle theta of width inverse lambda from -PI to PI, scaled by pos and neg
 function getCosWaveFn(theta, lambda, period=1) {

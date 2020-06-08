@@ -59,7 +59,7 @@ export function getSketch(kernels) {
         // check if mouse is in canvas (with padding of zoomWindow)
         const x = Math.floor(p.mouseX / scale);
         const y = Math.floor(p.mouseY / scale);
-        const zoomScale = scale * 6;
+        const zoomScale = scale * 4;
         const isMouseInBounds = p._isMouseInBounds();
         if (isMouseInBounds && drawWindow) {
           // if so, we need to redraw with overlay

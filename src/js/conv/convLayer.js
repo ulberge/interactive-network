@@ -13,7 +13,13 @@ export default class ConvLayer {
     this._tflayer = getConvLayer(nj[dtype](filters.map(filter => filter.map(kernel => kernel ? kernel : nj.zeros([kernelSize, kernelSize], dtype).tolist()))), kernelSize);
   }
 
-  runWith(backend) {
+  run() {
+    // updateBounds for this layer will be the dirtyBounds eroded by the padding for convolution
+    const updateBounds = dilateBounds(this.input.dirtyBounds, -this._pad);
+    const [ minX, minY, maxX, maxY ] = updateBounds;
+    const h = maxY - minY;
+    const w = maxX - minX;
+
     const dirty = this.input.dirty;
 
     // tf backend
@@ -29,20 +35,8 @@ export default class ConvLayer {
     times.push(ct1 - ct0);
     ct0 = ct1;
 
-    let _backend;
-    if (backend) {
-      // save original backend for reset
-      _backend = tf.getBackend();
-      tf.setBackend(backend);
-    }
-
     times.push(tf.getBackend());
     const output = this._tflayer.apply(input);
-
-    if (backend) {
-      // reset backend
-      tf.setBackend(_backend);
-    }
 
     ct1 = Date.now();
     times.push('apply conv -> ');
@@ -65,47 +59,12 @@ export default class ConvLayer {
     times.push(ct1 - ct0);
     ct0 = ct1;
 
-    console.log('conv stats:', backend, 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
-
-    return { output, updateArr };
-  }
-
-  run() {
-    // updateBounds for this layer will be the dirtyBounds eroded by the padding for convolution
-    const updateBounds = dilateBounds(this.input.dirtyBounds, -this._pad);
-    const [ minX, minY, maxX, maxY ] = updateBounds;
-    const h = maxY - minY;
-    const w = maxX - minX;
-    const size = h * w * this._kernelSize * this._rawFilters.length;
-
-    // the default for calculations is cpu
-    tf.setBackend('cpu');
-
-    // over a certain size, webgl is faster
-    // at small sizes, the penalty for syncing data makes cpu faster
-    const useWebGL = ((h * w) >= (150 * 150)) || size > 8000000;
-
-    let result;
-    const sizeDisplay = `${w} x ${h} x ${this._kernelSize} x ${this._rawFilters.length} = ${size}`;
-    if (useWebGL) {
-      console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing webgl backend');
-      result = this.runWith('webgl');
-    } else {
-      console.log('dirty size x kernel x kernels -> ', sizeDisplay, ' -> electing cpu backend');
-      result = this.runWith('cpu');
-    }
-    const { output, updateArr } = result;
+    console.log('conv stats:', 'total time -> ', times.reduce((a, b) => Number.isInteger(b) ? a + b : a, 0), ...times);
 
     const updateShape = [ this.output._channels, h, w ];
     const update = updateArr.reshape(updateShape);
     this.output.assign(update, null, updateBounds);
-
-    if (useWebGL) {
-      this.output.calcStats(output, 'webgl');
-    } else {
-      this.output.calcStats(output, 'cpu');
-    }
-
+    this.output.calcStats(output);
     this.input.clean();
   }
 }
