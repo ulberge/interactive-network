@@ -5,6 +5,8 @@
 
 This thesis presents a series of web tools for directly crafting the weights of convolutional neural networks (CNNs) to make line drawings. The goal is to make art and to better understand how CNNs encode visual concepts. The tools developed as part of this work are called the Kernel Tuner and the Network Builder. They combine an editable canvas, interactive visualizations, and the hand-crafting of weights. 
 
+A live demo of the Kernel Tuner can be found here: [Kernel Tuner Demo](https://ulberge.github.io/interactive-network/)
+
 ## Kernel Tuner
 
 The Kernel Tuner is a parametric tool for crafting a single layer of weights to extract basic features from a line drawing.
