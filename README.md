@@ -53,6 +53,10 @@ Typically, the process of using the Network Builder starts with the manual entry
 
 ![Network Builder Use (2)](./readme/nb_use2.gif "Network Builder Use (2)")
 
+### Network for detecting a bottle
+
+![Bottle-detecting Network](./readme/bottlenet.png "Bottle-detecting Network")
+
 ## Generative line drawing system
 
 The generative line drawing system operates iteratively on the current state of a canvas by drawing or erasing marks of a few pixels in length. The algorithm has two options: it can start a new line or continue a line it is already drawing. Either way, it generates batches of random segments, tests how each segment changes the activation score, and then chooses the highest score. Through this method, the algorithm greedily maximizes the activation of the network. The system terminates when it can no longer find segments that sufficiently improve the activation score (based on a tuned threshold). Additionally, it uses a line end detector to inject options that connect to existing line ends. This small modification makes the system much more likely to draw meaningful shapes.
