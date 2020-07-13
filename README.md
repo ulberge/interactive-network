@@ -1,29 +1,74 @@
-# Crafting the Weights of a CNN to Make a Line Drawing
+# Hand-Crafting Neural Networks for Art-Making
 **By: Erik Ulberg**
-
-For a complete description of the project, see [https://www.erikulberg.com/#/thesis](https://www.erikulberg.com/#/thesis)
 
 *Part of a thesis in partial fulfillment of the requirements for the degree of [Master of Science in Computational Design](https://soa.cmu.edu/mscd) degree at Carnegie Mellon University*
 
-This thesis presents a series of web tools for directly crafting the weights of convolutional neural networks (CNNs) to make line drawings. The goal is to make art and to better understand how CNNs encode visual concepts.
+This thesis presents a series of web tools for directly crafting the weights of convolutional neural networks (CNNs) to make line drawings. The goal is to make art and to better understand how CNNs encode visual concepts. The tools developed as part of this work are called the Kernel Tuner and the Network Builder. They combine an editable canvas, interactive visualizations, and the hand-crafting of weights. 
 
 ## Kernel Tuner
 
-The kernel tuner is a parametric tool for creating kernels for the first convolutional layer. Inspired by Gabor filters and early CV work, kernels are generated using a Gaussian function and a sine wave. They detect different types of interesting features in a line drawing such as lines, line ends, corners, T, X and Y-intersections.
+The Kernel Tuner is a parametric tool for crafting a single layer of weights to extract basic features from a line drawing.
 
-![Kernel Tuner](./readme/kerneltuner.gif "Kernel Tuner")
+### Diagram
 
-## Kernel Inspector
+![Kernel Tuner Diagram](./readme/kt_diag.png "Kernel Tuner Diagram")
 
-The inspector tool is useful for diagnosing how kernels interact with line drawings. After making a drawing, users can see the top activation at a given point in a color-coded map. When they select a point, a chart shows the top activations at the point and the kernels are displayed as overlays to demonstrate how they are being activated. The inspector can be used simultaneously with the tuner for fine-grained adjusting.
+### Controls
 
-![Kernel Inspector](./readme/kernelinspector.gif "Kernel Inspector")
+Inspired by Gabor filters and early CV work, kernels are generated using a Gaussian function and a sine wave. They detect different types of interesting features in a line drawing such as lines, line ends, corners, T, X and Y-intersections.
 
-## Network Builder (*In Progress*)
+![Kernel Tuner Controls](./readme/kerneltuner.gif "Kernel Tuner Controls")
 
-The above tools provide the first convolutional layer that translates from pixels to a higher level of abstraction: line drawing features. Users build networks on top of this foundation to make line drawings. 
+### Use
 
-![Kernel Inspector](./readme/nb_use.mp4 "Kernel Inspector")
+Generally, the process of using the Kernel Tuner begins by making a drawing on the canvas to serve as the basis for evaluating sets of parameters. Next, the sliders within the user interface are used to rapidly test different parameters. The canvas can also be rotated to see how tolerant the kernels are to variance. While these updates are made, the Kernel Tuner provides real time visualizations of how the network responds. Through this iterative process, the tool facilitates human-led jumps through the search space of possible kernels.
+
+![Kernel Tuner Inspector](./readme/kernelinspector.gif "Kernel Tuner Inspector")
+
+![Kernel Tuner Inspector (2)](./readme/kt_inspect2.gif "Kernel Tuner Inspector (2)")
+
+### A line end detector designed with the Kernel Tuner
+
+The Kernel Tuner was used to produce a set of weights for a line end detector for the drawing system. After about an hour of experimentation, a set of eight kernels of five pixels across was chosen. Fewer and smaller kernels minimized the number of calculations performed during convolution and thus allowed the algorithm to operate more efficiently. Since the detector did not have to be perfect, these kernels were an attractive balance between speed and accuracy. It is important to note that the eight kernels produced were not a one-size fits all solution for detecting line ends in images. Instead, they were a solution for a particular creative project with a certain type of image.
+
+![Line End Detector](./readme/kt_lineend.gif "Line End Detector")
+
+## Network Builder
+
+The Network Builder uses the kernels from the Kernel Tuner as its first layer and assists with the more ambitious goal of hand-crafting multiple layers of convolutionand pooling. Since explanation becomes more difficult withmultiple layers, the Network Builder also offers opportunities for understanding the network’s function through observation. It achieves this by plugging in the network as areward function for a generative line drawing system.
+
+### Diagram
+
+![Network Builder Diagram](./readme/nb_diag.png "Network Builder Diagram")
+
+### Use
+
+Typically, the process of using the Network Builder starts with the manual entry of kernel weights (with the help of functions for rotation, reflection, and shifting). Then, the generative algorithm is run to produce several sample outputs to evaluate the success of the weights. If the samples do not match expectations, the generative algorithm is run again until it reproduces an aspect that is not intended (such as premature stopping). The algorithm can be paused to allow the user to draw and erase on the canvas while observing changes in network activations. This helps to explain why the final activation score is not responding as expected. Following inspection of the network activations, the steps are repeated. This crafting process involves both observation (of the generative system's response to a given canvas state) and explanation (through the tracing of network weights).
+
+![Network Builder Use](./readme/nb_use.webp "Network Builder Use")
+
+![Network Builder Use (2)](./readme/nb_use2.gif "Network Builder Use (2)")
+
+## Generative line drawing system
+
+The line drawing system operates iteratively on the current state of a canvas by drawing or erasing marks of a few pixels in length. The algorithm has two options: it can start a new line or continue a line it is already drawing. Either way, it generates batches of random segments, tests how each segment changes the activation score, and then chooses the highest score. Through this method, the algorithm greedily maximizes the activation of the network. The system terminates when it can no longer find segments that sufficiently improve the activation score (based on a tuned threshold). Additionally, it uses a line end detector to inject options that connect to existing line ends. This small modification makes the system much more likely to draw meaningful shapes.
+
+### Completing bottles from random human input
+
+![Generative Line Drawing System](./readme/bottles.gif "Generative Line Drawing System")
+
+![Bottles Output](./readme/bottles_all.png "Bottles Output")
+
+### Conceptual artwork
+
+Multiple versions of the generative system maximizing different parts of the bottle-detecting network (starting from the lower layers and moving up) were run. The artistic process involved writing small programs for running the generative algorithm as well as tweaking thresholds and parameters within the algorithm (such as the ratio of drawing to erasing or when to halt).
+
+![Canvas of Bottles](./readme/handpaint.gif "Canvas of Bottles")
+
+#### Printing out and hand painting the result.
+
+![Hand-painted Output](./readme/handpaint.png "Hand-painted Output")
+
 
 ---
 
