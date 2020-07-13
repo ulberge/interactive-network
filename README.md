@@ -23,9 +23,11 @@ Inspired by Gabor filters and early CV work, kernels are generated using a Gauss
 
 Generally, the process of using the Kernel Tuner begins by making a drawing on the canvas to serve as the basis for evaluating sets of parameters. Next, the sliders within the user interface are used to rapidly test different parameters. The canvas can also be rotated to see how tolerant the kernels are to variance. While these updates are made, the Kernel Tuner provides real time visualizations of how the network responds. Through this iterative process, the tool facilitates human-led jumps through the search space of possible kernels.
 
-![Kernel Tuner Inspector](./readme/kernelinspector.gif "Kernel Tuner Inspector")
-
 ![Kernel Tuner Inspector (2)](./readme/kt_inspect2.gif "Kernel Tuner Inspector (2)")
+
+### Zoom in on color-coded diagram
+
+![Kernel Tuner Inspector](./readme/kernelinspector.gif "Kernel Tuner Inspector")
 
 ### A line end detector designed with the Kernel Tuner
 
@@ -47,17 +49,23 @@ Typically, the process of using the Network Builder starts with the manual entry
 
 ![Network Builder Use](./readme/nb_use.webp "Network Builder Use")
 
+### Inspecting activation scores during live drawing
+
 ![Network Builder Use (2)](./readme/nb_use2.gif "Network Builder Use (2)")
 
 ## Generative line drawing system
 
-The line drawing system operates iteratively on the current state of a canvas by drawing or erasing marks of a few pixels in length. The algorithm has two options: it can start a new line or continue a line it is already drawing. Either way, it generates batches of random segments, tests how each segment changes the activation score, and then chooses the highest score. Through this method, the algorithm greedily maximizes the activation of the network. The system terminates when it can no longer find segments that sufficiently improve the activation score (based on a tuned threshold). Additionally, it uses a line end detector to inject options that connect to existing line ends. This small modification makes the system much more likely to draw meaningful shapes.
+The generative line drawing system operates iteratively on the current state of a canvas by drawing or erasing marks of a few pixels in length. The algorithm has two options: it can start a new line or continue a line it is already drawing. Either way, it generates batches of random segments, tests how each segment changes the activation score, and then chooses the highest score. Through this method, the algorithm greedily maximizes the activation of the network. The system terminates when it can no longer find segments that sufficiently improve the activation score (based on a tuned threshold). Additionally, it uses a line end detector to inject options that connect to existing line ends. This small modification makes the system much more likely to draw meaningful shapes.
 
 ### Completing bottles from random human input
 
 ![Generative Line Drawing System](./readme/bottles.gif "Generative Line Drawing System")
 
+#### Outputs of bottle system
+
 ![Bottles Output](./readme/bottles_all.png "Bottles Output")
+
+*Random human input on top and result of generative system on bottom*
 
 ### Conceptual artwork
 
@@ -65,9 +73,18 @@ Multiple versions of the generative system maximizing different parts of the bot
 
 ![Canvas of Bottles](./readme/handpaint.gif "Canvas of Bottles")
 
-#### Printing out and hand painting the result.
+### Printing out and hand painting the result.
 
 ![Hand-painted Output](./readme/handpaint.png "Hand-painted Output")
+
+### Other outputs
+
+![Output #2](./readme/out_spread.png "Output #2")
+
+![Output #3](./readme/out_pollock.png "Output #3")
+
+*The bottle drawing system run on Jackson Pollock's Autumn Rhythm (Number 30).*
+
 
 ---
 
