@@ -23,11 +23,14 @@ The inspector tool is useful for diagnosing how kernels interact with line drawi
 
 The above tools provide the first convolutional layer that translates from pixels to a higher level of abstraction: line drawing features. Users build networks on top of this foundation to make line drawings. 
 
-<figure class="video_container">
-  <video autoplay loop muted playsinline>
-    <source src="./readme/nb_use.mp4" type="video/mp4">
-  </video>
-</figure>
+<div>
+   test
+  <figure class="video_container">
+    <video autoplay loop muted playsinline>
+      <source src="./readme/nb_use.mp4" type="video/mp4">
+    </video>
+  </figure>
+</div>
 
 ---
 
