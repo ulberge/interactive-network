@@ -69,7 +69,6 @@ Multiple versions of the generative system maximizing different parts of the bot
 
 ![Hand-painted Output](./readme/handpaint.png "Hand-painted Output")
 
-
 ---
 
 ## Create React App
