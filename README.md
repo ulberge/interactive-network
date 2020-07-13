@@ -23,7 +23,7 @@ The inspector tool is useful for diagnosing how kernels interact with line drawi
 
 The above tools provide the first convolutional layer that translates from pixels to a higher level of abstraction: line drawing features. Users build networks on top of this foundation to make line drawings. 
 
-![Kernel Inspector](./readme/nb_use.mp4 "Kernel Inspector")
+![Network Builder Use](./readme/nb_use.webp "Network Builder Use")
 
 ---
 
