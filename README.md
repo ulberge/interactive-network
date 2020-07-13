@@ -25,11 +25,9 @@ The above tools provide the first convolutional layer that translates from pixel
 
 <div>
    test
-  <figure class="video_container">
     <video autoplay loop muted playsinline>
       <source src="./readme/nb_use.mp4" type="video/mp4">
     </video>
-  </figure>
 </div>
 
 ---
